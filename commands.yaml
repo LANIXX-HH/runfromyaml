@@ -1,8 +1,9 @@
 ---
 cmd:
   - type: "shell"
-    name: "hallo"
-    desc: "eine Testfunktion"
+    debug: false
+    name: "list"
+    desc: "liste auf"
     values:
       - ls
       - -lisa
@@ -14,8 +15,9 @@ cmd:
     confdest: /tmp/eins.conf
     confperm: 0644
   - type: "shell"
-    name: "wasanderes"
-    desc: "eine andere Testfunktion"
+    debug: false
+    name: "conf"
+    desc: "erstelle zwei.conf und gebe es aus"
     values:
       - cat
       - /tmp/zwei.conf
@@ -25,3 +27,10 @@ cmd:
       test
     confdest: /tmp/zwei.conf
     confperm: 0644
+  - type: "shell"
+    debug: false
+    name: "brew"
+    desc: "installiere curl brew packages"
+    values:
+      - brew 
+      - install curl
