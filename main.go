@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"strings"
 	"sync"
 
 	"gopkg.in/yaml.v2"
@@ -14,6 +13,7 @@ import (
 // Config 2
 type Config struct {
 	Type     string
+	Debug    bool
 	Name     string
 	Desc     string
 	Values   []string
@@ -33,10 +33,9 @@ func check(e error) {
 	}
 }
 
-func exeCmd(cmd string, wg *sync.WaitGroup) {
-	fmt.Println(cmd)
-	parts := strings.Fields(cmd)
-	out, err := exec.Command(parts[0], parts[1]).Output()
+func exeCmd(cmd []string, desc string, wg *sync.WaitGroup) {
+	fmt.Println("==> command: " + desc + ": " + cmd[0] + " " + cmd[1])
+	out, err := exec.Command(cmd[0], cmd[1]).Output()
 	if err != nil {
 		fmt.Println("error occured")
 		fmt.Printf("%s", err)
@@ -62,25 +61,26 @@ func main() {
 	//err = yaml.Unmarshal(yamlFile, &config)
 	check(err)
 
-	fmt.Printf("\n%+v\n\n", config)
 	for i := 0; i < len(config.Cfgs); i++ {
 		if config.Cfgs[i].Type == "shell" {
-
-			fmt.Printf("Name: %+v\n", config.Cfgs[i].Name)
-			fmt.Printf("Beschreibung: %+v\n", config.Cfgs[i].Desc)
-			fmt.Printf("Command: %+v\n", config.Cfgs[i].Values[0])
-			fmt.Printf("Config: %+v\n", config.Cfgs[i].Conf)
-			fmt.Printf("\n")
-
-			runcommand := config.Cfgs[i].Values[0]
-			for j := 1; j < len(config.Cfgs); j++ {
-				runcommand = runcommand + " " + config.Cfgs[i].Values[j]
+			if config.Cfgs[i].Debug {
+				fmt.Printf("\n%+v\n\n", config)
+				fmt.Printf("Name: %+v\n", config.Cfgs[i].Name)
+				fmt.Printf("Beschreibung: %+v\n", config.Cfgs[i].Desc)
+				fmt.Printf("Command: %+v\n", config.Cfgs[i].Values[0])
+				fmt.Printf("Config: %+v\n", config.Cfgs[i].Conf)
+				fmt.Printf("\n")
 			}
-			fmt.Printf(runcommand + "\n")
+
+			if len(config.Cfgs[i].Conf) > 0 && len(config.Cfgs[i].Confdest) > 0 {
+				if config.Cfgs[i].Confperm == os.FileMode(0000) {
+					config.Cfgs[i].Confperm = 0644
+				}
+				writeFile(config.Cfgs[i].Conf, config.Cfgs[i].Confdest, config.Cfgs[i].Confperm)
+			}
 
 			wg.Add(1)
-			writeFile(config.Cfgs[i].Conf, config.Cfgs[i].Confdest, config.Cfgs[i].Confperm)
-			go exeCmd(runcommand, wg)
+			go exeCmd(config.Cfgs[i].Values, config.Cfgs[i].Desc, wg)
 			wg.Wait()
 
 			fmt.Printf("\n")
