@@ -1,0 +1,27 @@
+---
+cmd:
+  - type: "shell"
+    name: "hallo"
+    desc: "eine Testfunktion"
+    values:
+      - ls
+      - -lisa
+    conf: | 
+      test
+        test
+          test
+      test
+    confdest: /tmp/eins.conf
+    confperm: 0644
+  - type: "shell"
+    name: "wasanderes"
+    desc: "eine andere Testfunktion"
+    values:
+      - cat
+      - /tmp/zwei.conf
+    conf: | 
+      test
+      test
+      test
+    confdest: /tmp/zwei.conf
+    confperm: 0644
