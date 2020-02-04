@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 
 	"gopkg.in/yaml.v2"
@@ -34,8 +35,9 @@ func check(e error) {
 }
 
 func exeCmd(cmd []string, desc string, wg *sync.WaitGroup) {
-	fmt.Println("==> command: " + desc + ": " + cmd[0] + " " + cmd[1])
-	out, err := exec.Command(cmd[0], cmd[1]).Output()
+	cmdoptions := strings.Join(cmd[1:], " ")
+	fmt.Println("==> command: " + desc + ": " + cmd[0] + " " + cmdoptions)
+	out, err := exec.Command(cmd[0], cmdoptions).Output()
 	if err != nil {
 		fmt.Println("error occured")
 		fmt.Printf("%s", err)
@@ -50,9 +52,16 @@ func writeFile(file string, path string, perm os.FileMode) {
 	check(err)
 }
 
+func remove(slice []string, i int) []string {
+	copy(slice[i:], slice[i+1:])
+	return slice[:len(slice)-1]
+}
+
 func main() {
 	var config Configs
 	wg := new(sync.WaitGroup)
+	argsWithoutProg := os.Args[1:]
+	argsWithoutProgAsString := strings.Join(argsWithoutProg, ",")
 
 	yamlFile, err := ioutil.ReadFile("commands.yaml")
 	check(err)
@@ -63,7 +72,8 @@ func main() {
 
 	for i := 0; i < len(config.Cfgs); i++ {
 		if config.Cfgs[i].Type == "shell" {
-			if config.Cfgs[i].Debug {
+			//if config.Cfgs[i].Debug {
+			if strings.Contains(argsWithoutProgAsString, "--debug") {
 				fmt.Printf("\n%+v\n\n", config)
 				fmt.Printf("Name: %+v\n", config.Cfgs[i].Name)
 				fmt.Printf("Beschreibung: %+v\n", config.Cfgs[i].Desc)
