@@ -1,12 +1,11 @@
 ---
 cmd:
   - type: "shell"
-    debug: false
     name: "list"
     desc: "liste auf"
     values:
-      - ls
-      - -lisa
+      - ls 
+      - -lisa 
     conf: | 
       test
         test
@@ -15,7 +14,6 @@ cmd:
     confdest: /tmp/eins.conf
     confperm: 0644
   - type: "shell"
-    debug: false
     name: "conf"
     desc: "erstelle zwei.conf und gebe es aus"
     values:
@@ -28,9 +26,16 @@ cmd:
     confdest: /tmp/zwei.conf
     confperm: 0644
   - type: "shell"
-    debug: false
+    name: "git"
+    desc: "zeige das aktuelle status von git"
+    values:
+      - git
+      - status
+  - type: shell
     name: "brew"
     desc: "installiere curl brew packages"
     values:
-      - brew 
-      - install curl
+      - brew
+      - install
+      - curl
+

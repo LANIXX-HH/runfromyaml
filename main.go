@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -14,7 +15,6 @@ import (
 // Config 2
 type Config struct {
 	Type     string
-	Debug    bool
 	Name     string
 	Desc     string
 	Values   []string
@@ -34,15 +34,17 @@ func check(e error) {
 	}
 }
 
-func exeCmd(cmd []string, desc string, wg *sync.WaitGroup) {
-	cmdoptions := strings.Join(cmd[1:], " ")
-	fmt.Println("==> command: " + desc + ": " + cmd[0] + " " + cmdoptions)
-	out, err := exec.Command(cmd[0], cmdoptions).Output()
-	if err != nil {
-		fmt.Println("error occured")
-		fmt.Printf("%s", err)
+func exeCommand(cmd []string, desc string, wg *sync.WaitGroup) {
+	fmt.Println("==> command: " + desc)
+	command := exec.Command(cmd[0], cmd[1:]...)
+	fmt.Println(command)
+	command.Stdout = os.Stdout
+	command.Stdin = os.Stdin
+	command.Stderr = os.Stderr
+
+	if err := command.Run(); err != nil {
+		log.Fatalf("Start: %v", err)
 	}
-	fmt.Printf("%s", out)
 	wg.Done()
 }
 
@@ -90,9 +92,8 @@ func main() {
 			}
 
 			wg.Add(1)
-			go exeCmd(config.Cfgs[i].Values, config.Cfgs[i].Desc, wg)
+			go exeCommand(config.Cfgs[i].Values, config.Cfgs[i].Desc, wg)
 			wg.Wait()
-
 			fmt.Printf("\n")
 		}
 	}
