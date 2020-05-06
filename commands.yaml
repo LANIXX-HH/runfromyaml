@@ -1,12 +1,7 @@
 ---
 cmd:
-  - type: "shell"
-    name: "list"
-    desc: "liste auf"
-    values:
-      - ls 
-      - -lisa 
-    conf: | 
+  - type: "conf"
+    confdata: | 
       test
         test
           test
@@ -14,17 +9,24 @@ cmd:
     confdest: /tmp/eins.conf
     confperm: 0644
   - type: "shell"
-    name: "conf"
-    desc: "erstelle zwei.conf und gebe es aus"
+    name: "list"
+    desc: "liste auf"
     values:
-      - cat
-      - /tmp/zwei.conf
-    conf: | 
+      - ls 
+      - -lisa 
+  - type: "conf"
+    confdata: | 
       test
       test
       test
     confdest: /tmp/zwei.conf
     confperm: 0644
+  - type: "shell"
+    name: "conf"
+    desc: "erstelle zwei.conf und gebe es aus"
+    values:
+      - cat
+      - /tmp/zwei.conf
   - type: "shell"
     name: "git"
     desc: "zeige das aktuelle status von git"

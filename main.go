@@ -6,27 +6,12 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"reflect"
 	"strings"
 	"sync"
 
 	"gopkg.in/yaml.v2"
 )
-
-// Config 2
-type Config struct {
-	Type     string
-	Name     string
-	Desc     string
-	Values   []string
-	Conf     string
-	Confdest string
-	Confperm os.FileMode
-}
-
-// Configs cool
-type Configs struct {
-	Cfgs []Config `yaml:"cmd"`
-}
 
 func check(e error) {
 	if e != nil {
@@ -60,41 +45,80 @@ func remove(slice []string, i int) []string {
 }
 
 func main() {
-	var config Configs
-	wg := new(sync.WaitGroup)
+	var results map[interface{}][]interface{}
+	var types map[interface{}]interface{}
+	var values string
+	var cmds []string
+	var desc string
+	var conf string
+	var confdest string
+	var perm os.FileMode
+
 	argsWithoutProg := os.Args[1:]
 	argsWithoutProgAsString := strings.Join(argsWithoutProg, ",")
 
 	yamlFile, err := ioutil.ReadFile("commands.yaml")
-	check(err)
-
-	err = yaml.UnmarshalStrict(yamlFile, &config)
-	//err = yaml.Unmarshal(yamlFile, &config)
-	check(err)
-
-	for i := 0; i < len(config.Cfgs); i++ {
-		if config.Cfgs[i].Type == "shell" {
-			//if config.Cfgs[i].Debug {
+	err = yaml.Unmarshal(yamlFile, &results)
+	for key := range results["cmd"] {
+		if !reflect.ValueOf(results["cmd"][key].(map[interface{}]interface{})).IsNil() {
+			types = results["cmd"][key].(map[interface{}]interface{})
 			if strings.Contains(argsWithoutProgAsString, "--debug") {
-				fmt.Printf("\n%+v\n\n", config)
-				fmt.Printf("Name: %+v\n", config.Cfgs[i].Name)
-				fmt.Printf("Beschreibung: %+v\n", config.Cfgs[i].Desc)
-				fmt.Printf("Command: %+v\n", config.Cfgs[i].Values[0])
-				fmt.Printf("Config: %+v\n", config.Cfgs[i].Conf)
+				fmt.Printf("\n%+v\n\n", types)
+				fmt.Printf("Config: %+v\n", key)
+				fmt.Printf("Name: %+v\n", types["name"])
+				fmt.Printf("Beschreibung: %+v\n", types["desc"])
+				fmt.Printf("Command: %+v\n", values)
+				fmt.Printf("Config: %+v\n", types["conf"])
+				fmt.Printf("Config: %+v\n", types["confdest"])
+				fmt.Printf("Config: %+v\n", types["confperm"])
 				fmt.Printf("\n")
 			}
-
-			if len(config.Cfgs[i].Conf) > 0 && len(config.Cfgs[i].Confdest) > 0 {
-				if config.Cfgs[i].Confperm == os.FileMode(0000) {
-					config.Cfgs[i].Confperm = 0644
-				}
-				writeFile(config.Cfgs[i].Conf, config.Cfgs[i].Confdest, config.Cfgs[i].Confperm)
+			if conf != "" && confdest != "" && string(perm) != "" {
+				writeFile(conf, confdest, perm)
 			}
-
-			wg.Add(1)
-			go exeCommand(config.Cfgs[i].Values, config.Cfgs[i].Desc, wg)
-			wg.Wait()
+			if types["type"] == "shell" {
+				if strings.Contains(argsWithoutProgAsString, "--debug") {
+					fmt.Printf("\n%+v\n\n", types)
+					fmt.Printf("Config: %+v\n", key)
+					fmt.Printf("Name: %+v\n", types["name"])
+					fmt.Printf("Beschreibung: %+v\n", types["desc"])
+					fmt.Printf("Command: %+v\n", values)
+					fmt.Printf("\n")
+				}
+				wg := new(sync.WaitGroup)
+				if !reflect.ValueOf(types["values"].(interface{})).IsNil() {
+					values = fmt.Sprintf("%v", types["values"].(interface{}))
+					values = strings.TrimPrefix(values, "[")
+					values = strings.TrimSuffix(values, "]")
+					cmds = strings.Fields(values)
+				}
+				if string(types["desc"].(string)) != "" {
+					desc = fmt.Sprintf("%v", types["desc"])
+				}
+				wg.Add(1)
+				go exeCommand(cmds, desc, wg)
+				wg.Wait()
+			}
+			if types["conf"] == "conf" {
+				if strings.Contains(argsWithoutProgAsString, "--debug") {
+					fmt.Printf("\n%+v\n\n", types)
+					fmt.Printf("Config: %+v\n", types["conf"])
+					fmt.Printf("Config: %+v\n", types["confdest"])
+					fmt.Printf("Config: %+v\n", types["confperm"])
+					fmt.Printf("\n")
+				}
+				if reflect.ValueOf(types["conf"].(string)).String() != "" {
+					conf = types["confdata"].(string)
+				}
+				if reflect.ValueOf(types["confdest"].(string)).String() != "" {
+					confdest = types["confdest"].(string)
+				}
+				if reflect.ValueOf(types["confperm"].(int)).Int() != 0 {
+					perm = os.FileMode(int(types["confperm"].(int)))
+				}
+			}
 			fmt.Printf("\n")
 		}
 	}
+	check(err)
 }
