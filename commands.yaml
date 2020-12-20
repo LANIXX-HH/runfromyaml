@@ -40,4 +40,8 @@ cmd:
       - brew
       - install
       - curl
-
+  - type: shell
+    desc: "print shell environment"
+    name: "print-shell-env"
+    values:
+      - env

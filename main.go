@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -62,17 +63,26 @@ func main() {
 	var confdata string
 	var confdest string
 	var confperm os.FileMode
+	var file string
+	var help bool
+	var debug bool
 
-	argsWithoutProg := os.Args[1:]
-	argsWithoutProgAsString := strings.Join(argsWithoutProg, ",")
+	programm := os.Args
 
-	yamlFile, err := ioutil.ReadFile("commands.yaml")
+	// parse flags
+	flag.StringVar(&file, "file", "commands.yaml", "input config filename")
+	flag.BoolVar(&help, "help", false, "Display this help")
+	flag.BoolVar(&debug, "debug", false, "Debug Mode")
+	flag.Parse()
+
+	yamlFile, err := ioutil.ReadFile(file)
 	err = yaml.Unmarshal(yamlFile, &results)
 	for key := range results["cmd"] {
 		if !reflect.ValueOf(results["cmd"][key].(map[interface{}]interface{})).IsNil() {
 			types = results["cmd"][key].(map[interface{}]interface{})
-			if strings.Contains(argsWithoutProgAsString, "--debug") {
-				fmt.Printf("\n%+v\n\n", types)
+			if debug {
+				fmt.Printf("\n", programm)
+				fmt.Printf("\n\n%+v\n\n", types)
 				fmt.Printf("Config: %+v\n", key)
 				fmt.Printf("Name: %+v\n", types["name"])
 				fmt.Printf("Beschreibung: %+v\n", types["desc"])
@@ -83,7 +93,7 @@ func main() {
 				fmt.Printf("\n")
 			}
 			if types["type"] == "shell" {
-				if strings.Contains(argsWithoutProgAsString, "--debug") {
+				if debug {
 					fmt.Printf("\n%+v\n\n", types)
 					fmt.Printf("Config: %+v\n", key)
 					fmt.Printf("Name: %+v\n", types["name"])
@@ -106,7 +116,7 @@ func main() {
 				wg.Wait()
 			}
 			if types["type"] == "conf" {
-				if strings.Contains(argsWithoutProgAsString, "--debug") {
+				if debug {
 					fmt.Printf("\n%+v\n\n", types)
 					fmt.Printf("Config: %+v\n", types["confdata"])
 					fmt.Printf("Config: %+v\n", types["confdest"])
@@ -124,7 +134,7 @@ func main() {
 				}
 				if confdata != "" && confdest != "" && string(confperm) != "" {
 					writeFile(confdata, confdest, confperm)
-					readFile(string(confdest))
+					//readFile(string(confdest))
 				}
 			}
 			fmt.Printf("\n")
