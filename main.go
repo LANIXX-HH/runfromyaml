@@ -39,6 +39,15 @@ func writeFile(file string, path string, perm os.FileMode) {
 	check(err)
 }
 
+func readFile(file string) {
+	content, err := ioutil.ReadFile(file)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("File contents: %s", content)
+}
+
 func remove(slice []string, i int) []string {
 	copy(slice[i:], slice[i+1:])
 	return slice[:len(slice)-1]
@@ -50,9 +59,9 @@ func main() {
 	var values string
 	var cmds []string
 	var desc string
-	var conf string
+	var confdata string
 	var confdest string
-	var perm os.FileMode
+	var confperm os.FileMode
 
 	argsWithoutProg := os.Args[1:]
 	argsWithoutProgAsString := strings.Join(argsWithoutProg, ",")
@@ -68,13 +77,10 @@ func main() {
 				fmt.Printf("Name: %+v\n", types["name"])
 				fmt.Printf("Beschreibung: %+v\n", types["desc"])
 				fmt.Printf("Command: %+v\n", values)
-				fmt.Printf("Config: %+v\n", types["conf"])
+				fmt.Printf("Config: %+v\n", types["confdata"])
 				fmt.Printf("Config: %+v\n", types["confdest"])
 				fmt.Printf("Config: %+v\n", types["confperm"])
 				fmt.Printf("\n")
-			}
-			if conf != "" && confdest != "" && string(perm) != "" {
-				writeFile(conf, confdest, perm)
 			}
 			if types["type"] == "shell" {
 				if strings.Contains(argsWithoutProgAsString, "--debug") {
@@ -99,22 +105,26 @@ func main() {
 				go exeCommand(cmds, desc, wg)
 				wg.Wait()
 			}
-			if types["conf"] == "conf" {
+			if types["type"] == "conf" {
 				if strings.Contains(argsWithoutProgAsString, "--debug") {
 					fmt.Printf("\n%+v\n\n", types)
-					fmt.Printf("Config: %+v\n", types["conf"])
+					fmt.Printf("Config: %+v\n", types["confdata"])
 					fmt.Printf("Config: %+v\n", types["confdest"])
 					fmt.Printf("Config: %+v\n", types["confperm"])
 					fmt.Printf("\n")
 				}
-				if reflect.ValueOf(types["conf"].(string)).String() != "" {
-					conf = types["confdata"].(string)
+				if reflect.ValueOf(types["confdata"].(string)).String() != "" {
+					confdata = types["confdata"].(string)
 				}
 				if reflect.ValueOf(types["confdest"].(string)).String() != "" {
 					confdest = types["confdest"].(string)
 				}
 				if reflect.ValueOf(types["confperm"].(int)).Int() != 0 {
-					perm = os.FileMode(int(types["confperm"].(int)))
+					confperm = os.FileMode(int(types["confperm"].(int)))
+				}
+				if confdata != "" && confdest != "" && string(confperm) != "" {
+					writeFile(confdata, confdest, confperm)
+					readFile(string(confdest))
 				}
 			}
 			fmt.Printf("\n")
