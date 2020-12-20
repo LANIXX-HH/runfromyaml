@@ -11,7 +11,17 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/fatih/color"
+
 	"gopkg.in/yaml.v2"
+)
+
+const (
+	InfoColor    = "\033[1;34m%s\033[0m"
+	NoticeColor  = "\033[1;36m%s\033[0m"
+	WarningColor = "\033[1;33m%s\033[0m"
+	ErrorColor   = "\033[1;31m%s\033[0m"
+	DebugColor   = "\033[0;36m%s\033[0m"
 )
 
 func check(e error) {
@@ -21,9 +31,9 @@ func check(e error) {
 }
 
 func exeCommand(cmd []string, desc string, wg *sync.WaitGroup) {
-	fmt.Println("==> command: " + desc)
+	color.New(color.FgGreen).Println("==> " + desc)
 	command := exec.Command(cmd[0], cmd[1:]...)
-	fmt.Println(command)
+	color.New(color.FgYellow).Println("Command:", cmd, "\n")
 	command.Stdout = os.Stdout
 	command.Stdin = os.Stdin
 	command.Stderr = os.Stderr
@@ -75,30 +85,39 @@ func main() {
 	flag.BoolVar(&debug, "debug", false, "Debug Mode")
 	flag.Parse()
 
+	red := color.New(color.FgRed).PrintfFunc()
+	yellow := color.New(color.FgYellow).PrintfFunc()
+	green := color.New(color.FgGreen).PrintfFunc()
+	blue := color.New(color.FgBlue).PrintfFunc()
+	white := color.New(color.FgHiWhite).PrintfFunc()
+	cyan := color.New(color.FgHiCyan).PrintfFunc()
+
+	if debug {
+		red("\n", programm)
+	}
+
 	yamlFile, err := ioutil.ReadFile(file)
 	err = yaml.Unmarshal(yamlFile, &results)
 	for key := range results["cmd"] {
 		if !reflect.ValueOf(results["cmd"][key].(map[interface{}]interface{})).IsNil() {
 			types = results["cmd"][key].(map[interface{}]interface{})
 			if debug {
-				fmt.Printf("\n", programm)
-				fmt.Printf("\n\n%+v\n\n", types)
-				fmt.Printf("Config: %+v\n", key)
-				fmt.Printf("Name: %+v\n", types["name"])
-				fmt.Printf("Beschreibung: %+v\n", types["desc"])
-				fmt.Printf("Command: %+v\n", values)
-				fmt.Printf("Config: %+v\n", types["confdata"])
-				fmt.Printf("Config: %+v\n", types["confdest"])
-				fmt.Printf("Config: %+v\n", types["confperm"])
+				cyan("\n\n%+v\n\n", types)
+				blue("Name: %+v\n", types["name"])
+				blue("Beschreibung: %+v\n", types["desc"])
+				blue("Key: %+v\n", key)
+				blue("Command: %+v\n", values)
+				blue("Data:\n---\n%+v\n---\n", types["confdata"])
+				blue("Destination: %+v\n", types["confdest"])
+				blue("Permissions: %+v\n", types["confperm"])
 				fmt.Printf("\n")
 			}
 			if types["type"] == "shell" {
 				if debug {
-					fmt.Printf("\n%+v\n\n", types)
-					fmt.Printf("Config: %+v\n", key)
-					fmt.Printf("Name: %+v\n", types["name"])
-					fmt.Printf("Beschreibung: %+v\n", types["desc"])
-					fmt.Printf("Command: %+v\n", values)
+					white("Key: %+v\n", key)
+					green("Name: %+v\n", types["name"])
+					green("Beschreibung: %+v\n", types["desc"])
+					yellow("Command: %+v\n", values)
 					fmt.Printf("\n")
 				}
 				wg := new(sync.WaitGroup)
@@ -117,10 +136,9 @@ func main() {
 			}
 			if types["type"] == "conf" {
 				if debug {
-					fmt.Printf("\n%+v\n\n", types)
-					fmt.Printf("Config: %+v\n", types["confdata"])
-					fmt.Printf("Config: %+v\n", types["confdest"])
-					fmt.Printf("Config: %+v\n", types["confperm"])
+					yellow("Config: %+v\n", types["confdata"])
+					yellow("Config: %+v\n", types["confdest"])
+					yellow("Config: %+v\n", types["confperm"])
 					fmt.Printf("\n")
 				}
 				if reflect.ValueOf(types["confdata"].(string)).String() != "" {
