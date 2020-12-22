@@ -8,7 +8,7 @@ cmd:
       test
     confdest: /tmp/eins.conf
     confperm: 0644
-  - type: "shell"
+  - type: "exec"
     name: "list"
     desc: "liste auf"
     values:
@@ -21,27 +21,25 @@ cmd:
       test
     confdest: /tmp/zwei.conf
     confperm: 0644
-  - type: "shell"
+  - type: "exec"
     name: "conf"
     desc: "erstelle zwei.conf und gebe es aus"
     values:
       - cat
       - /tmp/zwei.conf
-  - type: "shell"
+  - type: "exec"
     name: "git"
     desc: "zeige das aktuelle status von git"
     values:
       - git
       - status
   - type: shell
-    name: "brew"
-    desc: "installiere curl brew packages"
-    values:
-      - brew
-      - install
-      - curl
-  - type: shell
     desc: "print shell environment"
     name: "print-shell-env"
     values:
       - env
+  - type: shell
+    desc: "print shell environment"
+    name: "print-shell-env"
+    values:
+      - echo $HOME

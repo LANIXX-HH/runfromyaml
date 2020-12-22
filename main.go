@@ -12,16 +12,9 @@ import (
 	"sync"
 
 	"github.com/fatih/color"
+	"github.com/ionrock/procs"
 
 	"gopkg.in/yaml.v2"
-)
-
-const (
-	InfoColor    = "\033[1;34m%s\033[0m"
-	NoticeColor  = "\033[1;36m%s\033[0m"
-	WarningColor = "\033[1;33m%s\033[0m"
-	ErrorColor   = "\033[1;31m%s\033[0m"
-	DebugColor   = "\033[0;36m%s\033[0m"
 )
 
 func check(e error) {
@@ -30,9 +23,29 @@ func check(e error) {
 	}
 }
 
+func exeCommandWithinBash(cmd []string, desc string, wg *sync.WaitGroup) {
+	color.New(color.FgGreen).Println("==> " + desc)
+	fmt.Println(cmd)
+	var bash []string
+	bash = append([]string{"bash", "-c"}, strings.Join(cmd, " "))
+	command := exec.Command(bash[0], bash[1:]...)
+	command.Env = os.Environ()
+	color.New(color.FgYellow).Println("Command:", bash, "\n")
+	command.Stdout = os.Stdout
+	command.Stdin = os.Stdin
+	command.Stderr = os.Stderr
+	fmt.Sprintln(bash)
+
+	if err := command.Run(); err != nil {
+		log.Fatalf("Start: %v", err)
+	}
+	wg.Done()
+}
+
 func exeCommand(cmd []string, desc string, wg *sync.WaitGroup) {
 	color.New(color.FgGreen).Println("==> " + desc)
 	command := exec.Command(cmd[0], cmd[1:]...)
+	command.Env = os.Environ()
 	color.New(color.FgYellow).Println("Command:", cmd, "\n")
 	command.Stdout = os.Stdout
 	command.Stdin = os.Stdin
@@ -41,6 +54,53 @@ func exeCommand(cmd []string, desc string, wg *sync.WaitGroup) {
 	if err := command.Run(); err != nil {
 		log.Fatalf("Start: %v", err)
 	}
+	wg.Done()
+}
+
+func exeCommandTest(cmd []string, desc string, wg *sync.WaitGroup) {
+
+	// define command set
+	cmds := []*exec.Cmd{
+		exec.Command(cmd[0], cmd[1:]...),
+	}
+
+	// init procs with command set
+	p := procs.Process{Cmds: cmds}
+
+	// parse environment variables
+	env := procs.ParseEnv(os.Environ())
+	p.Env = env
+
+	// prepare output handler
+	p.OutputHandler = func(line string) string {
+		color.New(color.FgGreen).Println("==> " + desc)
+		color.New(color.FgYellow).Println("Command: ", cmd)
+		return line
+	}
+
+	// prepare error handler
+	p.ErrHandler = func(line string) string {
+		color.New(color.FgRed).Println("Command: ", cmd)
+		return line
+		fmt.Println(cmds)
+		fmt.Println(p)
+		fmt.Println(env)
+		os.Exit(0)
+		return line
+	}
+
+	color.New(color.FgGreen).Println("==> " + desc)
+	color.New(color.FgYellow).Println("Command: ", cmd)
+
+	p.Run()
+	p.Wait()
+
+	color.New(color.FgBlue).Println(cmds)
+	color.New(color.FgBlue).Println(p)
+	color.New(color.FgBlue).Println(env)
+
+	out, _ := p.Output()
+	fmt.Printf(string(out))
 	wg.Done()
 }
 
@@ -112,7 +172,7 @@ func main() {
 				blue("Permissions: %+v\n", types["confperm"])
 				fmt.Printf("\n")
 			}
-			if types["type"] == "shell" {
+			if types["type"] == "exec" {
 				if debug {
 					white("Key: %+v\n", key)
 					green("Name: %+v\n", types["name"])
@@ -132,6 +192,28 @@ func main() {
 				}
 				wg.Add(1)
 				go exeCommand(cmds, desc, wg)
+				wg.Wait()
+			}
+			if types["type"] == "shell" {
+				if debug {
+					white("Key: %+v\n", key)
+					green("Name: %+v\n", types["name"])
+					green("Beschreibung: %+v\n", types["desc"])
+					yellow("Command: %+v\n", values)
+					fmt.Printf("\n")
+				}
+				wg := new(sync.WaitGroup)
+				if !reflect.ValueOf(types["values"].(interface{})).IsNil() {
+					values = fmt.Sprintf("%v", types["values"].(interface{}))
+					values = strings.TrimPrefix(values, "[")
+					values = strings.TrimSuffix(values, "]")
+					cmds = strings.Fields(values)
+				}
+				if string(types["desc"].(string)) != "" {
+					desc = fmt.Sprintf("%v", types["desc"])
+				}
+				wg.Add(1)
+				go exeCommandWithinBash(cmds, desc, wg)
 				wg.Wait()
 			}
 			if types["type"] == "conf" {
