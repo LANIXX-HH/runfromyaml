@@ -13,13 +13,15 @@ import (
 	"github.com/ionrock/procs"
 )
 
-func check(e error) {
+//Check error
+func Check(e error) {
 	if e != nil {
 		panic(e)
 	}
 }
 
-func exeCommandWithinBash(cmd []string, desc string, wg *sync.WaitGroup) {
+//ExeCommandWithinBash run a command in a shell with wait parameter and pring description to shell
+func ExeCommandWithinBash(cmd []string, desc string, wg *sync.WaitGroup) {
 	color.New(color.FgGreen).Println("==> " + desc)
 	fmt.Println(cmd)
 	var bash []string
@@ -38,7 +40,8 @@ func exeCommandWithinBash(cmd []string, desc string, wg *sync.WaitGroup) {
 	wg.Done()
 }
 
-func exeCommand(cmd []string, desc string, wg *sync.WaitGroup) {
+//ExeCommand run a commad form string array with wait parameted and print description
+func ExeCommand(cmd []string, desc string, wg *sync.WaitGroup) {
 	color.New(color.FgGreen).Println("==> " + desc)
 	command := exec.Command(cmd[0], cmd[1:]...)
 	command.Env = os.Environ()
@@ -53,7 +56,8 @@ func exeCommand(cmd []string, desc string, wg *sync.WaitGroup) {
 	wg.Done()
 }
 
-func exeCommandTest(cmd []string, desc string, wg *sync.WaitGroup) {
+// ExeCommandTest is a test exec function
+func ExeCommandTest(cmd []string, desc string, wg *sync.WaitGroup) {
 
 	// define command set
 	cmds := []*exec.Cmd{
@@ -77,7 +81,6 @@ func exeCommandTest(cmd []string, desc string, wg *sync.WaitGroup) {
 	// prepare error handler
 	p.ErrHandler = func(line string) string {
 		color.New(color.FgRed).Println("Command: ", cmd)
-		return line
 		fmt.Println(cmds)
 		fmt.Println(p)
 		fmt.Println(env)
@@ -100,13 +103,15 @@ func exeCommandTest(cmd []string, desc string, wg *sync.WaitGroup) {
 	wg.Done()
 }
 
-func writeFile(file string, path string, perm os.FileMode) {
+// WriteFile write a file
+func WriteFile(file string, path string, perm os.FileMode) {
 	bytefile := []byte(file)
 	err := ioutil.WriteFile(path, bytefile, perm)
-	check(err)
+	Check(err)
 }
 
-func readFile(file string) {
+//ReadFile read file
+func ReadFile(file string) {
 	content, err := ioutil.ReadFile(file)
 	if err != nil {
 		log.Fatal(err)
@@ -115,7 +120,8 @@ func readFile(file string) {
 	fmt.Printf("File contents: %s", content)
 }
 
-func remove(slice []string, i int) []string {
+//Remove element from slice
+func Remove(slice []string, i int) []string {
 	copy(slice[i:], slice[i+1:])
 	return slice[:len(slice)-1]
 }

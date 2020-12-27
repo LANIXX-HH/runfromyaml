@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/fatih/color"
+	functions "github.com/lanixx/runfromyaml/pkg"
 	"gopkg.in/yaml.v2"
 )
 
@@ -83,7 +84,7 @@ func main() {
 					desc = fmt.Sprintf("%v", types["desc"])
 				}
 				wg.Add(1)
-				go exeCommand(cmds, desc, wg)
+				go functions.ExeCommand(cmds, desc, wg)
 				wg.Wait()
 			}
 			if types["type"] == "shell" {
@@ -105,7 +106,7 @@ func main() {
 					desc = fmt.Sprintf("%v", types["desc"])
 				}
 				wg.Add(1)
-				go exeCommandWithinBash(cmds, desc, wg)
+				go functions.ExeCommandWithinBash(cmds, desc, wg)
 				wg.Wait()
 			}
 			if types["type"] == "conf" {
@@ -125,12 +126,12 @@ func main() {
 					confperm = os.FileMode(int(types["confperm"].(int)))
 				}
 				if confdata != "" && confdest != "" && string(confperm) != "" {
-					writeFile(confdata, confdest, confperm)
+					functions.WriteFile(confdata, confdest, confperm)
 					//readFile(string(confdest))
 				}
 			}
 			fmt.Printf("\n")
 		}
 	}
-	check(err)
+	functions.Check(err)
 }
