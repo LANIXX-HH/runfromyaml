@@ -1,8 +1,7 @@
-package functions
+package exec
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -13,15 +12,8 @@ import (
 	"github.com/ionrock/procs"
 )
 
-//Check error
-func Check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
 //ExeCommandWithinBash run a command in a shell with wait parameter and pring description to shell
-func ExeCommandWithinBash(cmd []string, desc string, wg *sync.WaitGroup) {
+func CommandShell(cmd []string, desc string, wg *sync.WaitGroup) {
 	color.New(color.FgGreen).Println("==> " + desc)
 	fmt.Println(cmd)
 	var bash []string
@@ -41,7 +33,7 @@ func ExeCommandWithinBash(cmd []string, desc string, wg *sync.WaitGroup) {
 }
 
 //ExeCommand run a commad form string array with wait parameted and print description
-func ExeCommand(cmd []string, desc string, wg *sync.WaitGroup) {
+func Command(cmd []string, desc string, wg *sync.WaitGroup) {
 	color.New(color.FgGreen).Println("==> " + desc)
 	command := exec.Command(cmd[0], cmd[1:]...)
 	command.Env = os.Environ()
@@ -57,7 +49,7 @@ func ExeCommand(cmd []string, desc string, wg *sync.WaitGroup) {
 }
 
 // ExeCommandTest is a test exec function
-func ExeCommandTest(cmd []string, desc string, wg *sync.WaitGroup) {
+func CommandTest(cmd []string, desc string, wg *sync.WaitGroup) {
 
 	// define command set
 	cmds := []*exec.Cmd{
@@ -101,27 +93,4 @@ func ExeCommandTest(cmd []string, desc string, wg *sync.WaitGroup) {
 	out, _ := p.Output()
 	fmt.Printf(string(out))
 	wg.Done()
-}
-
-// WriteFile write a file
-func WriteFile(file string, path string, perm os.FileMode) {
-	bytefile := []byte(file)
-	err := ioutil.WriteFile(path, bytefile, perm)
-	Check(err)
-}
-
-//ReadFile read file
-func ReadFile(file string) {
-	content, err := ioutil.ReadFile(file)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Printf("File contents: %s", content)
-}
-
-//Remove element from slice
-func Remove(slice []string, i int) []string {
-	copy(slice[i:], slice[i+1:])
-	return slice[:len(slice)-1]
 }
