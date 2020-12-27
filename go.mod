@@ -1,6 +1,6 @@
 module github.com/lanixx/runfromyaml
 
-go 1.13
+go 1.15
 
 require (
 	github.com/fatih/color v1.10.0
