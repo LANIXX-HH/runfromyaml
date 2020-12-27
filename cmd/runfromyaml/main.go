@@ -10,7 +10,10 @@ import (
 	"sync"
 
 	"github.com/fatih/color"
-	functions "github.com/lanixx/runfromyaml/pkg"
+
+	exec "github.com/lanixx/runfromyaml/pkg/exec"
+	functions "github.com/lanixx/runfromyaml/pkg/functions"
+
 	"gopkg.in/yaml.v2"
 )
 
@@ -84,7 +87,7 @@ func main() {
 					desc = fmt.Sprintf("%v", types["desc"])
 				}
 				wg.Add(1)
-				go functions.ExeCommand(cmds, desc, wg)
+				go exec.Command(cmds, desc, wg)
 				wg.Wait()
 			}
 			if types["type"] == "shell" {
@@ -106,7 +109,7 @@ func main() {
 					desc = fmt.Sprintf("%v", types["desc"])
 				}
 				wg.Add(1)
-				go functions.ExeCommandWithinBash(cmds, desc, wg)
+				go exec.CommandShell(cmds, desc, wg)
 				wg.Wait()
 			}
 			if types["type"] == "conf" {
