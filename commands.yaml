@@ -43,3 +43,30 @@ cmd:
     name: "print-shell-env"
     values:
       - echo $HOME
+  - type: docker
+    desc: "run command from docker container"
+    name: "docker-run"
+    command: exec
+    container: container
+    values:
+      - ls 
+      - -lisa
+  - type: "docker-compose"
+    name: "docker-compose-start"
+    desc: "start docker-compose command"
+    options:
+      - -p test
+      - -f docker-compose.yml
+    values:
+      - up -d
+  - type: "docker-compose"
+    name: "docker-compose-run"
+    desc: "run docker-compose command"
+    options:
+      - -p test
+      - -f docker-compose.yml
+      - exec
+      - -u root
+      - container
+    values:
+      - ls -lisa

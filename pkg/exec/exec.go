@@ -12,7 +12,56 @@ import (
 	"github.com/ionrock/procs"
 )
 
-//ExeCommandWithinBash run a command in a shell with wait parameter and pring description to shell
+//CommandDockerRun run a command in a docker container with wait parameter and print description to shell
+func CommandDockerRun(dcommand string, container string, cmd []string, desc string, wg *sync.WaitGroup) {
+	color.New(color.FgGreen).Println("==> " + desc)
+	fmt.Println(cmd)
+	var docker []string
+
+	if dcommand == "run" {
+		docker = append([]string{"docker", dcommand, "-it", "--rm", container, "bash", "-c"}, strings.Join(cmd, " "))
+
+	}
+	if dcommand == "exec" {
+		docker = append([]string{"docker", dcommand, container, "bash", "-c"}, strings.Join(cmd, " "))
+
+	}
+
+	command := exec.Command(docker[0], docker[1:]...)
+	command.Env = os.Environ()
+	color.New(color.FgYellow).Println("Command:", docker, "\n")
+	command.Stdout = os.Stdout
+	command.Stdin = os.Stdin
+	command.Stderr = os.Stderr
+
+	fmt.Sprintln(docker)
+
+	if err := command.Run(); err != nil {
+		log.Fatalf("Start: %v", err)
+	}
+	wg.Done()
+}
+
+//CommandDockerComposeExec run a command in a docker container with wait parameter and print description to shell
+//docker-compose -p $PROJECT -f $_COMPOSE_FILE --project-directory $_PWD exec -u $_PHP_WEB_USER $DOCKER_EXEC_PARAM ${@:1:1} bash -c "${@:2}"
+func CommandDockerComposeExec(options []string, cmd []string, desc string, wg *sync.WaitGroup) {
+	color.New(color.FgGreen).Println("==> " + desc)
+	var compose []string
+
+	compose = append(options, cmd...)
+	command := exec.Command("docker-compose", compose...)
+	command.Env = os.Environ()
+	color.New(color.FgYellow).Println("Command:", "docker-compose", compose, "\n")
+	command.Stdout = os.Stdout
+	command.Stdin = os.Stdin
+	command.Stderr = os.Stderr
+	if err := command.Run(); err != nil {
+		log.Fatalf("Start: %v", err)
+	}
+	wg.Done()
+}
+
+//CommandShell run a command in a shell with wait parameter and print description to shell
 func CommandShell(cmd []string, desc string, wg *sync.WaitGroup) {
 	color.New(color.FgGreen).Println("==> " + desc)
 	fmt.Println(cmd)
@@ -32,7 +81,7 @@ func CommandShell(cmd []string, desc string, wg *sync.WaitGroup) {
 	wg.Done()
 }
 
-//ExeCommand run a commad form string array with wait parameted and print description
+//Command run a commad form string array with wait parameted and print description
 func Command(cmd []string, desc string, wg *sync.WaitGroup) {
 	color.New(color.FgGreen).Println("==> " + desc)
 	command := exec.Command(cmd[0], cmd[1:]...)

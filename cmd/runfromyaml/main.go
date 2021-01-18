@@ -22,10 +22,12 @@ var (
 	types    map[interface{}]interface{}
 	values   string
 	cmds     []string
+	options  []string
 	desc     string
 	confdata string
 	confdest string
 	confperm os.FileMode
+	command  string
 	file     string
 	help     bool
 	debug    bool
@@ -110,6 +112,56 @@ func main() {
 				}
 				wg.Add(1)
 				go exec.CommandShell(cmds, desc, wg)
+				wg.Wait()
+			}
+			if types["type"] == "docker" {
+				if debug {
+					white("Key: %+v\n", key)
+					green("Name: %+v\n", types["name"])
+					green("Beschreibung: %+v\n", types["desc"])
+					yellow("Command: %+v\n", values)
+					fmt.Printf("\n")
+				}
+				wg := new(sync.WaitGroup)
+				if !reflect.ValueOf(types["values"].(interface{})).IsNil() {
+					values = fmt.Sprintf("%v", types["values"].(interface{}))
+					values = strings.TrimPrefix(values, "[")
+					values = strings.TrimSuffix(values, "]")
+					cmds = strings.Fields(values)
+				}
+				if string(types["desc"].(string)) != "" {
+					desc = fmt.Sprintf("%v", types["desc"])
+				}
+				wg.Add(1)
+				go exec.CommandDockerRun(types["command"].(string), types["container"].(string), cmds, desc, wg)
+				wg.Wait()
+			}
+			if types["type"] == "docker-compose" {
+				if debug {
+					white("Key: %+v\n", key)
+					green("Name: %+v\n", types["name"])
+					green("Beschreibung: %+v\n", types["desc"])
+					yellow("Command: %+v\n", values)
+					fmt.Printf("\n")
+				}
+				wg := new(sync.WaitGroup)
+				if !reflect.ValueOf(types["values"].(interface{})).IsNil() {
+					values = fmt.Sprintf("%v", types["values"].(interface{}))
+					values = strings.TrimPrefix(values, "[")
+					values = strings.TrimSuffix(values, "]")
+					cmds = strings.Fields(values)
+				}
+				if !reflect.ValueOf(types["options"].(interface{})).IsNil() {
+					values = fmt.Sprintf("%v", types["options"].(interface{}))
+					values = strings.TrimPrefix(values, "[")
+					values = strings.TrimSuffix(values, "]")
+					options = strings.Fields(values)
+				}
+				if string(types["desc"].(string)) != "" {
+					desc = fmt.Sprintf("%v", types["desc"])
+				}
+				wg.Add(1)
+				go exec.CommandDockerComposeExec(options, cmds, desc, wg)
 				wg.Wait()
 			}
 			if types["type"] == "conf" {
