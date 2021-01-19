@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -55,6 +56,26 @@ func CommandDockerComposeExec(options []string, cmd []string, desc string, wg *s
 	command.Stdout = os.Stdout
 	command.Stdin = os.Stdin
 	command.Stderr = os.Stderr
+	if err := command.Run(); err != nil {
+		log.Fatalf("Start: %v", err)
+	}
+	wg.Done()
+}
+
+//CommandSSH run a command in a shell with wait parameter and print description to shell
+func CommandSSH(user string, port int, host string, options []string, cmd []string, desc string, wg *sync.WaitGroup) {
+	color.New(color.FgGreen).Println("==> " + desc)
+	fmt.Println(cmd)
+	var ssh []string
+	ssh = append(append([]string{"ssh", "-p", strconv.Itoa(port), "-l", user, host}, options...), cmd...)
+	command := exec.Command(ssh[0], ssh[1:]...)
+	command.Env = os.Environ()
+	color.New(color.FgYellow).Println("Command:", ssh, "\n")
+	command.Stdout = os.Stdout
+	command.Stdin = os.Stdin
+	command.Stderr = os.Stderr
+	fmt.Sprintln(ssh)
+
 	if err := command.Run(); err != nil {
 		log.Fatalf("Start: %v", err)
 	}

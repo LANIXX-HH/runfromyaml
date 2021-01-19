@@ -31,6 +31,9 @@ var (
 	file     string
 	help     bool
 	debug    bool
+	user     string
+	port     int
+	host     string
 )
 
 func main() {
@@ -162,6 +165,34 @@ func main() {
 				}
 				wg.Add(1)
 				go exec.CommandDockerComposeExec(options, cmds, desc, wg)
+				wg.Wait()
+			}
+			if types["type"] == "ssh" {
+				if debug {
+					white("Key: %+v\n", key)
+					green("Name: %+v\n", types["name"])
+					green("Beschreibung: %+v\n", types["desc"])
+					yellow("Command: %+v\n", values)
+					fmt.Printf("\n")
+				}
+				wg := new(sync.WaitGroup)
+				if !reflect.ValueOf(types["values"].(interface{})).IsNil() {
+					values = fmt.Sprintf("%v", types["values"].(interface{}))
+					values = strings.TrimPrefix(values, "[")
+					values = strings.TrimSuffix(values, "]")
+					cmds = strings.Fields(values)
+				}
+				if !reflect.ValueOf(types["options"].(interface{})).IsNil() {
+					values = fmt.Sprintf("%v", types["options"].(interface{}))
+					values = strings.TrimPrefix(values, "[")
+					values = strings.TrimSuffix(values, "]")
+					options = strings.Fields(values)
+				}
+				if string(types["desc"].(string)) != "" {
+					desc = fmt.Sprintf("%v", types["desc"])
+				}
+				wg.Add(1)
+				go exec.CommandSSH(types["user"].(string), types["port"].(int), types["host"].(string), options, cmds, desc, wg)
 				wg.Wait()
 			}
 			if types["type"] == "conf" {

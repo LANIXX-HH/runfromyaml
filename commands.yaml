@@ -43,6 +43,16 @@ cmd:
     name: "print-shell-env"
     values:
       - echo $HOME
+  - type: "ssh"
+    name: "ssh-run"
+    desc: "run ls command via ssh connection"
+    user: username
+    host: example.com
+    port: 22
+    options:
+      - -i ~/.ssh/id_rsa
+    values:
+      - ls -lisa
   - type: docker
     desc: "run command from docker container"
     name: "docker-run"
