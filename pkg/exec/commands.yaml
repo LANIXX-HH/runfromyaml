@@ -38,9 +38,7 @@ cmd:
     desc: "print shell environment"
     name: "print-shell-env"
     values:
-      - ls -lisa;
-      - ls 
-      - -la
+      - ls -lisa
   - type: shell
     desc: "print shell environment"
     name: "print-shell-env"
@@ -79,11 +77,11 @@ cmd:
   - type: "ssh"
     name: "ssh-run"
     desc: "run ls command via ssh connection"
-    user: user
-    host: example.com
-    port: 22
+    user: root
+    host: lanixx.com
+    port: 222
     options:
-      - -i ~/.ssh/id_rsa-example
+      - -i ~/.ssh/id_rsa-lanixx
     values:
       - ls 
       - -lisa;

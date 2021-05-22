@@ -103,7 +103,6 @@ func main() {
 					yellow("Command: %+v\n", values)
 					fmt.Printf("\n")
 				}
-				wg := new(sync.WaitGroup)
 				if !reflect.ValueOf(types["values"].(interface{})).IsNil() {
 					values = fmt.Sprintf("%v", types["values"].(interface{}))
 					values = strings.TrimPrefix(values, "[")
@@ -113,9 +112,15 @@ func main() {
 				if string(types["desc"].(string)) != "" {
 					desc = fmt.Sprintf("%v", types["desc"])
 				}
-				wg.Add(1)
-				go exec.CommandShell(cmds, desc, wg)
-				wg.Wait()
+				temp_cmds := strings.Join(cmds, " ")
+				cmds := strings.Split(temp_cmds, ";")
+				wg := new(sync.WaitGroup)
+				for ind, shcmds := range cmds {
+					shcmd := strings.Split(shcmds, " ")
+					wg.Add(1)
+					go exec.CommandShell(shcmd, desc, wg, ind)
+					wg.Wait()
+				}
 			}
 			if types["type"] == "docker" {
 				if debug {
@@ -211,7 +216,7 @@ func main() {
 				if reflect.ValueOf(types["confperm"].(int)).Int() != 0 {
 					confperm = os.FileMode(int(types["confperm"].(int)))
 				}
-				if confdata != "" && confdest != "" && string(confperm) != "" {
+				if confdata != "" && confdest != "" && string(rune(confperm)) != "" {
 					functions.WriteFile(confdata, confdest, confperm)
 					//readFile(string(confdest))
 				}
