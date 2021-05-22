@@ -20,7 +20,7 @@ func CommandDockerRun(dcommand string, container string, cmd []string, desc stri
 	temp_cmds := strings.Join(cmd, " ")
 	cmds := strings.Split(temp_cmds, ";")
 
-	for ind, str := range cmds {
+	for _, str := range cmds {
 		if dcommand == "run" {
 			docker = []string{"docker", dcommand, "-it", "--rm", container, "sh", "-c", string(str)}
 
@@ -32,7 +32,7 @@ func CommandDockerRun(dcommand string, container string, cmd []string, desc stri
 
 		command := exec.Command(docker[0], docker[1:]...)
 		command.Env = os.Environ()
-		color.New(color.FgYellow).Println("Command (", ind, ") :", docker, "\n")
+		color.New(color.FgYellow).Println("cmd[docker]:", docker, "\n")
 		command.Stdout = os.Stdout
 		command.Stdin = os.Stdin
 		command.Stderr = os.Stderr
@@ -58,7 +58,7 @@ func CommandDockerComposeExec(options []string, cmd []string, desc string, wg *s
 	compose = append(options, cmd...)
 	command := exec.Command("docker-compose", compose...)
 	command.Env = os.Environ()
-	color.New(color.FgYellow).Println("Command:", "docker-compose", compose, "\n")
+	color.New(color.FgYellow).Println("cmd[docker-compose]:", compose, "\n")
 	command.Stdout = os.Stdout
 	command.Stdin = os.Stdin
 	command.Stderr = os.Stderr
@@ -77,12 +77,12 @@ func CommandSSH(user string, port int, host string, options []string, cmd []stri
 	temp_cmds := strings.Join(cmd, " ")
 	cmds := strings.Split(temp_cmds, ";")
 
-	for ind, sshcmd := range cmds {
+	for _, sshcmd := range cmds {
 		var ssh []string
 		ssh = append(append([]string{"ssh", "-p", strconv.Itoa(port), "-l", user, host}, options...), sshcmd)
 		command := exec.Command(ssh[0], ssh[1:]...)
 		command.Env = os.Environ()
-		color.New(color.FgYellow).Println("Command (", ind, "):", ssh, "\n")
+		color.New(color.FgYellow).Println("cmd[ssh]:", ssh, "\n")
 		command.Stdout = os.Stdout
 		command.Stdin = os.Stdin
 		command.Stderr = os.Stderr
@@ -106,7 +106,7 @@ func CommandShell(cmd []string, desc string, wg *sync.WaitGroup, index int) {
 	bash = append([]string{"bash", "-c"}, strings.Join(cmd, " "))
 	command := exec.Command(bash[0], bash[1:]...)
 	command.Env = os.Environ()
-	color.New(color.FgYellow).Println("Command(", index, "):", bash, "\n")
+	color.New(color.FgYellow).Println("cmd[shell]:", bash, "\n")
 	command.Stdout = os.Stdout
 	command.Stdin = os.Stdin
 	command.Stderr = os.Stderr
@@ -127,11 +127,11 @@ func Command(cmd []string, desc string, wg *sync.WaitGroup) {
 	cmds := strings.Split(temp_cmds, ";")
 	fmt.Println(cmds)
 
-	for ind, onecmds := range cmds {
+	for _, onecmds := range cmds {
 		onecmd := strings.Split(onecmds, " ")
 		command := exec.Command(onecmd[0], onecmd[1:]...)
 		command.Env = os.Environ()
-		color.New(color.FgYellow).Println("Command(", ind, "):", command, "\n")
+		color.New(color.FgYellow).Println("cmd[exec]:", command, "\n")
 		command.Stdout = os.Stdout
 		command.Stdin = os.Stdin
 		command.Stderr = os.Stderr
@@ -162,13 +162,13 @@ func CommandTest(cmd []string, desc string, wg *sync.WaitGroup) {
 	// prepare output handler
 	p.OutputHandler = func(line string) string {
 		color.New(color.FgGreen).Println("==> " + desc)
-		color.New(color.FgYellow).Println("Command: ", cmd)
+		color.New(color.FgYellow).Println("cmd: ", cmd)
 		return line
 	}
 
 	// prepare error handler
 	p.ErrHandler = func(line string) string {
-		color.New(color.FgRed).Println("Command: ", cmd)
+		color.New(color.FgRed).Println("cmd: ", cmd)
 		fmt.Println(cmds)
 		fmt.Println(p)
 		fmt.Println(env)
