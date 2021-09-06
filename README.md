@@ -4,7 +4,7 @@ Actually it's a playground and an attempt to write a tool with which I can both 
 
 # Why didn't I go with ansible?
 
-My goal was to rewrite an existing bash tool in go. An essential part was a collection of all commands that need to be executed both inside the Docker container and outside the container to build the project. At the time, ansible was too complicated for that. This project is only one part, which only reads the commands from YAML and can execute them both outside and inside the container. Also conceivable are commands via SSH (Todo)
+My goal was to rewrite an existing bash tool in go. An essential part was a collection of all commands that need to be executed both inside the Docker container and outside the container to build the project. At the time, ansible was too complicated for that. This project is only one part, which only reads the commands from YAML and can execute them both outside and inside the container. Also conceivable are commands via SSH (Todo).
 
 # HowTo build
 
