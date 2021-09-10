@@ -10,7 +10,7 @@ My goal was to rewrite an existing bash tool in go. An essential part was a coll
 
 ~~~shell
 go mod download
-go build ./cmd/runfromyaml
+go build
 go install runfromyaml
 ~~~
 
