@@ -10,7 +10,6 @@ jobs:
       uses: ngs/go-release.action@v1.0.1
       env:
         GO111MODULE: "on" 
-        CMD_PATH: ./cmd/runfromyaml
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GOARCH: "386"
         GOOS: linux
