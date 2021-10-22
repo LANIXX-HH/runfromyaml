@@ -14,6 +14,12 @@ go build
 go install runfromyaml
 ~~~
 
+# How To get
+
+~~~shell
+curl --silent --location "https://github.com/lanixx-hh/runfromyaml/releases/latest/download/runfromyaml-$(uname -s)-$(uname -m).tar.gz" | tar xz
+~~~
+
 # HowTo execute
 
 simple run pick commands.yaml in current directory and run all defined commands from this yaml file with descriptions
