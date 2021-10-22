@@ -1,0 +1,157 @@
+---
+cmd:
+  - type: "shell"
+    name: "lsh"
+    desc: "create tooling directory"
+    values:
+      - mkdir -p /tmp/tooling
+  - type: "conf"
+    confdest: /tmp/tooling/aws-assume.sh
+    confperm: 0755
+    confdata: |
+      #!/bin/bash
+      SSO_ACCOUNT=$(aws sts get-caller-identity --output json --profile "$AWS_PROFILE" | jq -r '.Account')
+      export ROLE=${1:-arn:aws:iam::$SSO_ACCOUNT:role/continuous}
+      export NAME=${2:-$SSO_PROFILE}
+      export DURATION=${3:-3600}
+      aws sts assume-role --output json --role-arn "$ROLE" --role-session-name "$NAME" --duration-seconds "$DURATION" --profile "$AWS_PROFILE" | jq -r ' "export AWS_ACCESS_KEY_ID=" + .Credentials.AccessKeyId + "\n" + "export AWS_SECRET_ACCESS_KEY=" + .Credentials.SecretAccessKey + "\n" + "export AWS_SECURITY_TOKEN=" + .Credentials.SessionToken + "\n" + "export AWS_SESSION_TOKEN=" + .Credentials.SessionToken'
+  - type: "conf"
+    confdest: /tmp/tooling/entrypoint.sh
+    confperm: 0755
+    confdata: |
+      #!/bin/bash
+      export KUBECONFIG=$KUBECONFIG
+      ### set docker sock rights
+      sudo chmod 0777 /var/run/docker.sock >/dev/null 2>&1
+      sudo chmod 0777 /tmp/boot.log >/dev/null 2>&1
+      sudo chmod 666 /dev/null
+      ### init env
+      (
+        echo "### START"
+        date
+      ) >>/tmp/boot.log
+      echo "### END" >>/tmp/boot.log 2>&1
+      ### if run interactive shell
+      if [ -t 0 ]; then
+        git config --global pull.rebase true
+        git config --global rebase.autoStash true
+        git config --global push.default current
+        echo "start ssh-agent ..."
+        (
+          eval "$(ssh-agent -s)"
+          ssh-add "$SSH_PRIVATE_KEY_FILE"
+        ) >>/tmp/boot.log 2>&1
+        echo "export kubeconfig $KUBECONFIG"
+        export KUBECONFIG=$KUBECONFIG
+      fi
+      export ENVIRONMENT=ae-${AWS_PROFILE:-test}
+      ### run command
+      if [ "x$*" = "x" ]; then
+        exec "$SHELL"
+      else
+        exec "$@"
+      fi
+  - type: "conf"
+    confdata: |
+      ### A Multi-Stage-Dockerfile to create a container which is provisioned with
+      ### all the tooling necessary to provision the infrastructure
+      ### build final image
+      ARG USER=${USER:-user}
+      ARG UID=${UID:-1000}
+      ARG IMAGE=${IMAGE:-final}
+      ARG TAG=${TAG:-latest}
+      #ARG HELM_VERSION=${HELM_VERSION:-3.1.1}
+      #ARG TERRAGRUNT_VERSION=${TERRAGRUNT_VERSION:-0.25.3}
+      #ARG TERRAFORM_VERSION=${TERRAFORM_VERSION:-'[0.12.29]'}
+      FROM $IMAGE:$TAG
+      ARG USER
+      ARG UID
+      #ARG TERRAFORM_VERSION
+      #ARG TERRAGRUNT_VERSION
+      #ARG HELM_VERSION
+      USER root
+      ### create runner user and group
+      RUN addgroup ${USER:-user}
+      RUN adduser \
+          --disabled-password \
+          --gecos "" \
+          --home "/home/${USER}" \
+          --ingroup "${USER}" \
+          --uid "${UID}" \
+          ${USER}
+      ### add sudo
+      RUN echo "${USER} ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/user && chmod 0440 /etc/sudoers.d/user
+      ### make user 'user' as default and set home dir as workdir
+      #RUN addgroup docker && addgroup ${USER:-user} docker
+      WORKDIR /home/${USER:-user}
+      RUN rm /bin/sh && ln -s /bin/bash /bin/sh && rm /bin/ash && ln -s /bin/bash /bin/ash && usermod -s /bin/zsh ${USER}
+      RUN chown -R ${USER} /oh-my-zsh
+      RUN if [ "$HELM_VERSION" != "" ]; then for version in $HELM_VERSION; do ( echo "---"; echo "install HELM version $version ..."; sudo helmenv install "$version"; sudo helmenv local "$version"; ) >> /tmp/boot.log 2>&1; done; fi
+      RUN if  [ "$TERRAFORM_VERSION" != "" ]; then for version in $TERRAFORM_VERSION; do ( echo "---"; echo "install TERRAFORM version $version ..."; sudo tfenv install "$version"; sudo tfenv use "$version";) >> /tmp/boot.log 2>&1; done; fi
+      RUN if [ "$TERRAGRUNT_VERSION" != "" ]; then for version in $TERRAGRUNT_VERSION; do ( echo "---"; echo "install TERRAGRUNT version $version ..."; sudo tgenv install "$version"; sudo tgenv use "$version") >> /tmp/boot.log 2>&1; done; fi
+      COPY entrypoint.sh /entrypoint.sh
+      COPY aws-assume.sh /usr/local/bin/aws-assume.sh
+      ### set user
+      USER ${USER:-user}
+      ### apply helmenv 3.1.1 and install helmdiff
+      RUN touch ~/.zshrc
+      ENTRYPOINT ["/entrypoint.sh"]
+    confdest: /tmp/tooling/Dockerfile
+    confperm: 0644
+  - type: "conf"
+    confdata: |
+      version: "3"
+      services:
+        tooling:
+          volumes:
+            - ${HOME}/Projects/dot_files:${HOME}
+            - ${HOME}/Projects/dot_files:/home/${USER}
+            - ${HOME}/Projects:/home/${USER}/Projects
+            - ${HOME}/Projects:${HOME}/Projects
+            - /var/run/docker.sock:/var/run/docker.sock
+    confdest: /tmp/tooling/volumes-mac.yaml
+    confperm: 0644
+  - type: "conf"
+    confdata: |
+      version: "3"
+      services:
+        tooling:
+          privileged: true
+          entrypoint: "/entrypoint.sh"
+          network_mode: "host"
+          container_name: "tooling"
+          hostname: "tooling"
+          build:
+            context: .
+            args:
+              IMAGE: ghcr.io/lanixx-hh/tooling-base
+              TAG: latest
+              USER: ${USER:-user}
+              UID: ${UID:-1000}
+              TERRAFORM_VERSION: '0.11.14 0.12.30'
+              TERRAGRUNT_VERSION: '0.25.5 0.25.3'
+              HELM_VERSION: '3.5.0'
+          environment:
+            SHELL: /bin/zsh
+            KUBECONFIG: /home/${USER}/.kube/config
+            SSH_PRIVATE_KEY_FILE: /home/${USER}/.ssh/id_rsa
+            SSO_PROFILE: ${SSO_PROFILE:-}
+    confdest: /tmp/tooling/docker-compose.yaml
+    confperm: 0644
+  - type: "shell"
+    name: "lsh"
+    desc: "start tooling"
+    values:
+      - export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/Users/anatolilichii/.local/bin &&
+      - ( export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/Users/anatolilichii/.local/bin &&
+      - docker pull ghcr.io/lanixx-hh/tooling-base:latest &&
+      - docker-compose
+      - -f /tmp/tooling/docker-compose.yaml
+      - --project-directory /tmp/tooling
+      - build tooling) ;
+      - export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/Users/anatolilichii/.local/bin &&
+      - docker-compose
+      - -f /tmp/tooling/volumes-mac.yaml
+      - -f /tmp/tooling/docker-compose.yaml
+      - --project-directory /tmp/tooling
+      - run tooling
