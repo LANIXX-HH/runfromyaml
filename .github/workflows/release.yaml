@@ -14,7 +14,7 @@ jobs:
         goarch: 386
         goversion: 1.17
         binary_name: runfromyaml
-        asset_name: ${{ env.BINARY_NAME }}-${{ env.RELEASE_TAG }}-Linux-i686
+        asset_name: runfromyaml-Linux-i686
   release-linux-amd64:
     name: "release linux/amd64"
     runs-on: ubuntu-latest
@@ -28,7 +28,7 @@ jobs:
         goarch: amd64
         goversion: 1.17
         binary_name: runfromyaml
-        asset_name: ${{ env.BINARY_NAME }}-${{ env.RELEASE_TAG }}-Linux-x86_64
+        asset_name: runfromyaml-Linux-x86_64
   release-linux-arm:
     name: "release linux/arm"
     runs-on: ubuntu-latest
@@ -42,7 +42,7 @@ jobs:
         goarch: arm
         goversion: 1.17
         binary_name: runfromyaml
-        asset_name: ${{ env.BINARY_NAME }}-${{ env.RELEASE_TAG }}-Linux-armvXl
+        asset_name: runfromyaml-Linux-armvXl
   release-linux-arm64:
     name: "release linux/arm64"
     runs-on: ubuntu-latest
@@ -56,7 +56,7 @@ jobs:
         goarch: arm64
         goversion: 1.17
         binary_name: runfromyaml
-        asset_name: ${{ env.BINARY_NAME }}-${{ env.RELEASE_TAG }}-Linux-arm64
+        asset_name: runfromyaml-Linux-arm64
   release-darwin-amd64:
     name: "release darwin/amd64"
     runs-on: ubuntu-latest
@@ -70,7 +70,7 @@ jobs:
         goarch: amd64
         goversion: 1.17
         binary_name: runfromyaml
-        asset_name: ${{ env.BINARY_NAME }}-${{ env.RELEASE_TAG }}-Darwin-amd64
+        asset_name: runfromyaml-Darwin-amd64
   release-darwin-arm64:
     name: "release darwin/arm64"
     runs-on: ubuntu-latest
@@ -84,7 +84,7 @@ jobs:
         goarch: arm64
         goversion: 1.17
         binary_name: runfromyaml
-        asset_name: ${{ env.BINARY_NAME }}-${{ env.RELEASE_TAG }}-Darwin-arm64
+        asset_name: runfromyaml-Darwin-arm64
   release-windows-386:
     name: "release windows/386"
     runs-on: ubuntu-latest
@@ -98,7 +98,7 @@ jobs:
         goarch: 386
         goversion: 1.17
         binary_name: runfromyaml
-        asset_name: ${{ env.BINARY_NAME }}-${{ env.RELEASE_TAG }}-Windows-i686
+        asset_name: runfromyaml-Windows-i686
   release-windows-amd64:
     name: "release windows/amd64"
     runs-on: ubuntu-latest
@@ -112,4 +112,4 @@ jobs:
         goarch: amd64
         goversion: 1.17
         binary_name: runfromyaml
-        asset_name: ${{ env.BINARY_NAME }}-${{ env.RELEASE_TAG }}-Windows-x86_64
+        asset_name: runfromyaml-Windows-x86_64
