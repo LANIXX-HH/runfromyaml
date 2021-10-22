@@ -70,7 +70,7 @@ jobs:
         goarch: amd64
         goversion: 1.17
         binary_name: runfromyaml
-        asset_name: runfromyaml-Darwin-amd64
+        asset_name: runfromyaml-Darwin-x86_64
   release-darwin-arm64:
     name: "release darwin/arm64"
     runs-on: ubuntu-latest
