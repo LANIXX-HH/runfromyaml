@@ -14,7 +14,7 @@ go build
 go install runfromyaml
 ~~~
 
-# How To get
+# How To get the binary
 
 ~~~shell
 curl --silent --location "https://github.com/lanixx-hh/runfromyaml/releases/latest/download/runfromyaml-$(uname -s)-$(uname -m).tar.gz" | tar xz
@@ -38,4 +38,10 @@ with more debug output
 
 ~~~shell
 runfromyaml -file=my-collection.yaml -debug
+~~~
+
+# Full example based on tooling image setup
+
+~~~shell
+curl --silent --location https://raw.githubusercontent.com/LANIXX-HH/runfromyaml/master/examples/tooling.sh | sh
 ~~~
