@@ -6,15 +6,25 @@ cmd:
     values:
       - mkdir -p /tmp/tooling
   - type: "conf"
+    confdest: /tmp/tooling/aws-mfa-login.sh
+    confperm: 0755
+    confdata: |
+      #!/bin/bash
+      : "${AWS_PROFILE_NAME:?Please specify AWS_PROFILE_NAME to get account id}"
+      : "${AWS_USER_NAME:?Please specify AWS_USER_NAME for aws profile $AWS_PROFILE}"
+      : "${AWS_MFA_TOKEN:?Please specify AWS MFA token for user $AWS_USER_NAME}"
+      AWS_ACCOUNT_ID=$(aws sts get-caller-identity --output json --profile "$AWS_PROFILE_NAME" | jq -r '.Account')
+      aws sts get-session-token --serial-number "arn:aws:iam::${AWS_ACCOUNT_ID}:mfa/${AWS_USER_NAME}" --token-code $AWS_MFA_TOKEN --profile "$AWS_PROFILE_NAME" | jq -r ' "export AWS_ACCESS_KEY_ID=" + .Credentials.AccessKeyId + "\n" + "export AWS_SECRET_ACCESS_KEY=" + .Credentials.SecretAccessKey + "\n" + "export AWS_SECURITY_TOKEN=" + .Credentials.SessionToken + "\n" + "export AWS_SESSION_TOKEN=" + .Credentials.SessionToken'
+  - type: "conf"
     confdest: /tmp/tooling/aws-assume.sh
     confperm: 0755
     confdata: |
       #!/bin/bash
-      SSO_ACCOUNT=$(aws sts get-caller-identity --output json --profile "$AWS_PROFILE" | jq -r '.Account')
-      export ROLE=${1:-arn:aws:iam::$SSO_ACCOUNT:role/continuous}
-      export NAME=${2:-$SSO_PROFILE}
-      export DURATION=${3:-3600}
-      aws sts assume-role --output json --role-arn "$ROLE" --role-session-name "$NAME" --duration-seconds "$DURATION" --profile "$AWS_PROFILE" | jq -r ' "export AWS_ACCESS_KEY_ID=" + .Credentials.AccessKeyId + "\n" + "export AWS_SECRET_ACCESS_KEY=" + .Credentials.SecretAccessKey + "\n" + "export AWS_SECURITY_TOKEN=" + .Credentials.SessionToken + "\n" + "export AWS_SESSION_TOKEN=" + .Credentials.SessionToken'
+      : "${ROLE:?Please specify ROLE name which should be assumed}"
+      : "${NAME:-$ROLE}"
+      : "${DURATION:?Please specify DURATION for assume session e.g. 3600 seconds}"
+      : "${AWS_ACCOUNT_ID:?Please specify AWS_ACCOUNT_ID for the destination role}"
+      aws sts assume-role --output json --role-arn "arn:aws:iam::${AWS_ACCOUNT_ID}:role/$ROLE" --role-session-name "$NAME" --duration-seconds "$DURATION" | jq -r ' "export AWS_ACCESS_KEY_ID=" + .Credentials.AccessKeyId + "\n" + "export AWS_SECRET_ACCESS_KEY=" + .Credentials.SecretAccessKey + "\n" + "export AWS_SECURITY_TOKEN=" + .Credentials.SessionToken + "\n" + "export AWS_SESSION_TOKEN=" + .Credentials.SessionToken'
   - type: "conf"
     confdest: /tmp/tooling/entrypoint.sh
     confperm: 0755
