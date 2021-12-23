@@ -1,0 +1,395 @@
+---
+cmd:
+  - type: "shell"
+    name: "lsh"
+    desc: "create tooling directory"
+    values:
+      - mkdir -p /home/user/.tmp/tooling
+  - type: "conf"
+    confdest: /home/user/.tmp/tooling/aws-mfa-login.sh
+    confperm: 0755
+    confdata: |
+      #!/bin/bash
+      : "${AWS_PROFILE_NAME:?Please specify AWS_PROFILE_NAME to get account id}"
+      : "${AWS_USER_NAME:?Please specify AWS_USER_NAME for aws profile $AWS_PROFILE}"
+      : "${AWS_MFA_TOKEN:?Please specify AWS MFA token for user $AWS_USER_NAME}"
+      AWS_ACCOUNT_ID=$(aws sts get-caller-identity --output json --profile "$AWS_PROFILE_NAME" | jq -r '.Account')
+      aws sts get-session-token --serial-number "arn:aws:iam::${AWS_ACCOUNT_ID}:mfa/${AWS_USER_NAME}" --token-code $AWS_MFA_TOKEN --profile "$AWS_PROFILE_NAME" | jq -r ' "export AWS_ACCESS_KEY_ID=" + .Credentials.AccessKeyId + "\n" + "export AWS_SECRET_ACCESS_KEY=" + .Credentials.SecretAccessKey + "\n" + "export AWS_SECURITY_TOKEN=" + .Credentials.SessionToken + "\n" + "export AWS_SESSION_TOKEN=" + .Credentials.SessionToken'
+  - type: "conf"
+    confdest: /home/user/.tmp/tooling/aws-assume.sh
+    confperm: 0755
+    confdata: |
+      #!/bin/bash
+      : "${ROLE:?Please specify ROLE name which should be assumed}"
+      : "${DURATION:?Please specify DURATION for assume session e.g. 3600 seconds}"
+      : "${AWS_ACCOUNT_ID:?Please specify AWS_ACCOUNT_ID for the destination role}"
+      aws sts assume-role --output json --role-arn "arn:aws:iam::${AWS_ACCOUNT_ID}:role/$ROLE" --role-session-name "$ROLE" --duration-seconds "$DURATION" | jq -r ' "export AWS_ACCESS_KEY_ID=" + .Credentials.AccessKeyId + "\n" + "export AWS_SECRET_ACCESS_KEY=" + .Credentials.SecretAccessKey + "\n" + "export AWS_SECURITY_TOKEN=" + .Credentials.SessionToken + "\n" + "export AWS_SESSION_TOKEN=" + .Credentials.SessionToken'
+  - type: "conf"
+    confdest: /home/user/.tmp/tooling/aws-sso.sh
+    confperm: 0755
+    confdata: |
+      #!/bin/bash
+      #init
+      SSO_STATUS=""
+      STS_TMP_FILE=$(mktemp)
+      AWS_SSO_ENVS=""
+      export STS_TMP_FILE AWS_SSO_ENVS SSO_STATUS
+
+      aws_profile() {
+         #aws main workflow
+         if [ "$AWS_PROFILE" = "" ]; then
+            # pre checks, if sso profiles dont exist, if no profiles exist after aws sso profile creation, then exit
+            test "$(aws configure list-profiles)" = "" && (aws configure sso && exit 0)
+
+            # create select dialog
+            STR=$(aws configure list-profiles | grep -v default | sed 's|$| \r|g')
+            mystage=$(dialog --menu \
+               "which STAGE would you like to choose" 0 0 0 \
+               $STR 3>&1 1>&2 2>&3)
+
+            #clear screen
+            dialog --clear
+
+            # set sso profile by selected choise
+            case "$mystage" in
+            "$mystage")
+               STAGE="$mystage"
+               ;;
+            "")
+               STAGE="dev"
+               ;;
+            esac
+
+            #export sso profile
+            export AWS_PROFILE=$STAGE
+         fi
+         test "$AWS_PROFILE" = "" && exit 0
+         echo $AWS_PROFILE | grep "Error" && exit 0
+      }
+
+      aws_sso_login() {
+         MY_PROFILE="$1"
+         # https://github.com/99designs/aws-vault/issues/449
+         START_URL=$(aws configure get sso_start_url --profile "$MY_PROFILE")
+         CLIENT=$(aws sso-oidc register-client --client-name anatoli.lichii@fielmann.com --client-type public)
+         DEVICE_AUTH=$(aws sso-oidc start-device-authorization --client-id "$(echo "$CLIENT" | jq -r '.clientId')" --client-secret "$(echo "$CLIENT" | jq -r '.clientSecret')" --start-url "$START_URL")
+
+         URI=$(echo "$DEVICE_AUTH" | jq -r '.verificationUriComplete')
+         dialog --title "SSO Login URI" --prgbox "echo; echo; echo 'Please click on this link to complete the login process:'; echo; echo; echo $URI" 20 80
+
+         mkdir -p "$HOME/.aws/sso/cache"
+         aws sso-oidc create-token --grant-type urn:ietf:params:oauth:grant-type:device_code --device-code "$(echo "$DEVICE_AUTH" | jq -r '.deviceCode')" --client-id "$(echo "$CLIENT" | jq -r '.clientId')" --client-secret "$(echo "$CLIENT" | jq -r '.clientSecret')" >"$HOME/.aws/sso/cache/$(echo -n "$(aws configure get sso_start_url --profile "$MY_PROFILE")" | sha1sum | cut -f1 -d' ').json"
+      }
+
+      aws_login() {
+         while true; do
+            #run sts call, read json object and parse errors
+            STS_JSON="$(aws sts get-caller-identity --output json --profile "$AWS_PROFILE" --debug 2>"$STS_TMP_FILE")"
+            SSO_STATUS=$(grep -E "botocore.exceptions|error" <"$STS_TMP_FILE" | tail -1)
+            export SSO_STATUS
+
+            # if aws config exist and contains sso_start_url and export of selected sso profile is possible
+            if test "$(get_profile "$AWS_PROFILE")" != "" && test "$(get_config sso_start_url "$AWS_PROFILE")" != "" && test "$SSO_STATUS" = ""; then
+               break
+            else
+               #otherwise parse exit status and try to login again or create don't existing profile
+               if (echo "$SSO_STATUS" | grep "ProfileNotFound" >/dev/null); then
+                  echo "Profile not found... "
+                  rm -rf "$HOME/.aws/credentials" "$HOME/.aws/cli" "$HOME/.aws/sso"
+                  TEMP_PROFILE=$AWS_PROFILE
+                  unset AWS_PROFILE
+                  aws configure sso --profile "$TEMP_PROFILE" &&
+                     AWS_PROFILE=$TEMP_PROFILE &&
+                     export AWS_PROFILE
+               elif (echo "$SSO_STATUS" | grep "SSOTokenLoadError" >/dev/null); then
+                  echo "SSO token load error: You need to login again ... "
+                  aws_sso_login "$AWS_PROFILE"
+               elif (echo "$SSO_STATUS" | grep "UnauthorizedSSOTokenError" >/dev/null); then
+                  echo "Unauthorized SSO token error: You need to login again ... "
+                  aws_sso_login "$AWS_PROFILE"
+               elif (echo "$SSO_STATUS" | grep "ForbiddenException" >/dev/null); then
+                  echo "Forbidden exception: Your sso profile must be reconfigured ... "
+                  aws configure sso --profile "$AWS_PROFILE"
+                  aws sts get-caller-identity --output json --profile "$AWS_PROFILE" >/dev/null 2>&1
+               elif test "$SSO_STATUS" != ""; then
+                  echo -e "This error message cannot be processed:\n\t\t$SSO_STATUS"
+                  echo "exit"
+                  exit 1
+               fi
+            fi
+         done
+      }
+
+      export_vars() {
+         AWS_SSO_ACCOUNT_ID=$(get_config sso_account_id "$AWS_PROFILE")
+         AWS_SSO_ROLE_NAME=$(get_config sso_role_name "$AWS_PROFILE")
+         AWS_SSO_START_URL=$(get_config sso_start_url "$AWS_PROFILE")
+         export AWS_SSO_START_URL AWS_SSO_ROLE_NAME AWS_SSO_ACCOUNT_ID
+
+         # generate sha1 sum from json object sorted by key name without line ending charachter - this is json object for cached credentials
+         FILEHASH=$(echo -n "{\"accountId\":\"$AWS_SSO_ACCOUNT_ID\",\"roleName\":\"$AWS_SSO_ROLE_NAME\",\"startUrl\":\"$AWS_SSO_START_URL\"}" | sha1sum | cut -f1 -d' ')
+         FILE="$HOME/.aws/cli/cache/$FILEHASH.json"
+         export FILE
+
+         AWS_ACCESS_KEY_ID=$(jq -r '.Credentials.AccessKeyId' <"$FILE")
+         AWS_SESSION_TOKEN=$(jq -r '.Credentials.SessionToken' <"$FILE")
+         AWS_SECURITY_TOKEN=$(jq -r '.Credentials.SessionToken' <"$FILE")
+         AWS_SECRET_ACCESS_KEY=$(jq -r '.Credentials.SecretAccessKey' <"$FILE")
+         AWS_DEFAULT_REGION=$(get_config sso_region "$AWS_PROFILE")
+         # import aws sso credentials to current tty session
+         export AWS_ACCESS_KEY_ID AWS_SESSION_TOKEN AWS_SECURITY_TOKEN AWS_SECRET_ACCESS_KEY AWS_DEFAULT_REGION
+      }
+
+      assume() {
+         # backup selected sso profile and aws sso current credentials
+         mkdir -p "$HOME/.local"
+
+         AWS_ASSUME=${AWS_ASSUME:-$(dialog --defaultno --yesno "Current caller identity\n\n$(echo "$STS_JSON" | jq -r ".Arn")\n\nDo you want to assume another aws iam role?" 15 80 3>&1 1>&2 2>&3 && echo yes || echo no)}
+
+         if test "$AWS_ASSUME" == "yes"; then
+            AWS_SSO_ENVS="$HOME/.local/aws-assumed-envs-$AWS_PROFILE"
+            SSO_ACCOUNT=$(echo "$STS_JSON" | jq -r '.Account')
+            AWS_ASSUME_ROLE=${AWS_ASSUME_ROLE:-$(dialog --inputbox "Please, enter the aws iam role to generate aws arn which must be assumed\n\nExample generated string: arn:aws:iam::$SSO_ACCOUNT:role/ROLE\n\nROLE:\n" 15 80 3>&1 1>&2 2>&3)}
+            dialog --clear
+            if (aws-assume.sh "arn:aws:iam::$SSO_ACCOUNT:role/$AWS_ASSUME_ROLE" "$AWS_PROFILE" "3600" >"$AWS_SSO_ENVS"); then
+               echo "==>> ASSUMED AWS IAM ROLE: arn:aws:iam::$SSO_ACCOUNT:role/$AWS_ASSUME_ROLE "
+               export AWS_SSO_ROLE_NAME=$AWS_ASSUME_ROLE
+            else
+               echo "==>> NO ROLES HAS BEEN ASSUMED "
+            fi
+         else
+            test -f "$HOME/.local/aws-assumed-envs-$AWS_PROFILE" && rm "$HOME/.local/aws-assumed-envs-$AWS_PROFILE"
+         fi
+         # shellcheck disable=SC1090
+         test -f "$AWS_SSO_ENVS" && source "$AWS_SSO_ENVS"
+      }
+
+      get_config() {
+         grep -Ris "profile $2" -A 6 "$HOME/.aws/config" 2>/dev/null | grep "$1" | cut -f2 -d '=' | sed 's| *||g'
+      }
+      get_profile() {
+         grep -Ris "profile $1" "$HOME/.aws/config" 2>/dev/null
+      }
+
+      aws_main() {
+         aws_profile
+         aws_login
+      }
+
+      export_aws_vars() {
+         env | grep -E "AWS" | sed 's|^|export |g' >"$HOME/.local/aws-sso-envs"
+         env >/tmp/env
+      }
+
+      aws_select() {
+         AWS_EXPORT_VALUES=${AWS_EXPORT_VALUES:-$(dialog --checklist "Export AWS Credentials" 20 50 5 "PRF" "use AWS profile" on "ENV" "shell environment vars" on "CRD" "aws credentials" on 3>&1 1>&2 2>&3)}
+         dialog --clear
+      }
+
+      cleanup() {
+         rm -rf "$HOME/.local/aws-sso-envs" "$AWS_SSO_ENVS" "$HOME/.aws/credentials" "$HOME/.aws/cli/cache/*"
+      }
+
+      ### main
+      cleanup
+      aws_select
+
+      if echo "$AWS_EXPORT_VALUES" | grep "CRD" || echo "$AWS_EXPORT_VALUES" | grep "ENV"; then
+         aws_main
+         export_vars
+         assume
+      fi
+
+      if echo "$AWS_EXPORT_VALUES" | grep "ENV" >/dev/null 2>&1; then
+         export_aws_vars
+         echo "If you run this wrapper $0 manually, do not forget to import the temporarily created AWS SSO session with:
+      \$(cat \"$HOME/.local/aws-sso-envs\" \"$AWS_SSO_ENVS\")
+      "
+      fi
+
+      if echo "$AWS_EXPORT_VALUES" | grep "CRD" >/dev/null 2>&1; then
+         # synchronize aws scredentials
+         cat <<EOF >"$HOME"/.aws/credentials
+      [$AWS_PROFILE]
+      aws_access_key_id = $AWS_ACCESS_KEY_ID
+      aws_secret_access_key = $AWS_SECRET_ACCESS_KEY
+      aws_session_token = $AWS_SESSION_TOKEN
+      aws_security_token = $AWS_SECURITY_TOKEN
+      EOF
+      fi
+
+      if echo "$AWS_EXPORT_VALUES" | grep "PRF" >/dev/null 2>&1; then
+         aws_profile
+         aws_login
+         export_aws_vars
+      fi
+
+      rm -f "$STS_TMP_FILE"
+  - type: "conf"
+    confdest: /home/user/.tmp/tooling/entrypoint.sh
+    confperm: 0755
+    confdata: | 
+      #!/bin/bash
+      
+      export KUBECONFIG=$KUBECONFIG
+      ### set docker sock rights
+      sudo chmod 0777 /var/run/docker.sock >/dev/null 2>&1
+      sudo chmod 0777 /tmp/boot.log >/dev/null 2>&1
+      #sudo chmod 666 /dev/null
+      
+      ### init env
+      (
+        echo "### START"
+        date
+      ) >>/tmp/boot.log
+      
+      echo "### END" >>/tmp/boot.log 2>&1
+      
+      ### if run interactive shell
+      if [ -t 0 ]; then
+      
+        git config --global pull.rebase true
+        git config --global rebase.autoStash true
+        git config --global push.default current
+      
+        echo "start ssh-agent ..."
+        (
+          eval "$(ssh-agent -s)"
+          ssh-add "$SSH_PRIVATE_KEY_FILE"
+        ) >>/tmp/boot.log 2>&1
+        echo "export kubeconfig $KUBECONFIG"
+        export KUBECONFIG=$KUBECONFIG
+      fi
+      
+      export ENVIRONMENT=ae-${AWS_PROFILE:-test}
+
+      ### run command
+      if [ "x$*" = "x" ]; then
+        exec "$SHELL"
+      else
+        exec "$@"
+      fi
+
+  - type: "conf"
+    confdata: | 
+      ### A Multi-Stage-Dockerfile to create a container which is provisioned with
+      ### all the tooling necessary to provision the infrastructure
+      
+      ### build final image
+      ARG USER=${USER:-user}
+      ARG UID=${UID:-1000}
+      ARG IMAGE=${IMAGE:-final}
+      ARG TAG=${TAG:-latest}
+      #ARG HELM_VERSION=${HELM_VERSION:-3.1.1}
+      #ARG TERRAGRUNT_VERSION=${TERRAGRUNT_VERSION:-0.25.3}
+      #ARG TERRAFORM_VERSION=${TERRAFORM_VERSION:-'[0.12.29]'}
+      
+      FROM $IMAGE:$TAG
+      
+      ARG USER
+      ARG UID
+      #ARG TERRAFORM_VERSION
+      #ARG TERRAGRUNT_VERSION
+      #ARG HELM_VERSION
+      
+      USER root
+      
+      ### create runner user and group
+      RUN addgroup ${USER:-user}
+      RUN adduser \
+          --disabled-password \
+          --gecos "" \
+          --home "/home/${USER}" \
+          --ingroup "${USER}" \
+          --uid "${UID}" \
+          ${USER}
+      
+      ### add sudo
+      RUN echo "${USER} ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/user && chmod 0440 /etc/sudoers.d/user
+      
+      
+      ### make user 'user' as default and set home dir as workdir
+      #RUN addgroup docker && addgroup ${USER:-user} docker
+      WORKDIR /home/${USER:-user}
+      
+      RUN rm /bin/sh && ln -s /bin/bash /bin/sh && rm /bin/ash && ln -s /bin/bash /bin/ash && usermod -s /bin/zsh ${USER}
+      
+      RUN chown -R ${USER} /oh-my-zsh
+      
+      RUN if [ "$HELM_VERSION" != "" ]; then for version in $HELM_VERSION; do ( echo "---"; echo "install HELM version $version ..."; sudo helmenv install "$version"; sudo helmenv local "$version"; ) >> /tmp/boot.log 2>&1; done; fi
+      
+      RUN if  [ "$TERRAFORM_VERSION" != "" ]; then for version in $TERRAFORM_VERSION; do ( echo "---"; echo "install TERRAFORM version $version ..."; sudo tfenv install "$version"; sudo tfenv use "$version";) >> /tmp/boot.log 2>&1; done; fi
+      
+      RUN if [ "$TERRAGRUNT_VERSION" != "" ]; then for version in $TERRAGRUNT_VERSION; do ( echo "---"; echo "install TERRAGRUNT version $version ..."; sudo tgenv install "$version"; sudo tgenv use "$version") >> /tmp/boot.log 2>&1; done; fi
+      
+      
+      COPY entrypoint.sh /entrypoint.sh
+      COPY aws-assume.sh /usr/local/bin/aws-assume.sh
+      COPY aws-mfa-login.sh /usr/local/bin/aws-mfa-login.sh
+      COPY aws-sso.sh /usr/local/bin/aws-sso.sh
+
+      ### set user
+      USER ${USER:-user}
+      
+      ### apply helmenv 3.1.1 and install helmdiff
+      RUN touch /home/${USER}/.zshrc
+      
+      ENTRYPOINT ["/entrypoint.sh"]
+    confdest: /home/user/.tmp/tooling/Dockerfile
+    confperm: 0644
+  - type: "conf"
+    confdata: | 
+      version: "3"
+      services:
+        tooling:
+          volumes:
+            - ${HOME}/Projects/dot_files:${HOME}
+            - ${HOME}/Projects/dot_files:/home/${USER}
+            - ${HOME}/Projects:/home/${USER}/Projects
+            - ${HOME}/Projects:${HOME}/Projects
+            - /var/run/docker.sock:/var/run/docker.sock
+    confdest: /home/user/.tmp/tooling/volumes-mac.yaml
+    confperm: 0644
+  - type: "conf"
+    confdata: | 
+      version: "3"
+      services:
+        tooling:
+          privileged: true
+          entrypoint: "/entrypoint.sh"
+          network_mode: "host"
+          container_name: "tooling"
+          hostname: "tooling"
+          build:
+            context: .
+            args:
+              IMAGE: ghcr.io/lanixx-hh/tooling-base
+              TAG: latest-arm64
+              USER: ${USER:-user}
+              UID: ${UID:-1000}
+              TERRAFORM_VERSION: '0.11.14 0.12.30'
+              TERRAGRUNT_VERSION: '0.25.5 0.25.3'
+              HELM_VERSION: '3.5.0'
+          environment:
+            SHELL: /bin/zsh
+            KUBECONFIG: /home/${USER}/.kube/config
+            SSH_PRIVATE_KEY_FILE: /home/${USER}/.ssh/id_rsa
+            SSO_PROFILE: ${SSO_PROFILE:-}
+    confdest: /home/user/.tmp/tooling/docker-compose.yaml
+    confperm: 0644
+  - type: "shell"
+    name: "lsh"
+    desc: "start tooling"
+    values:
+      - env > /home/user/.tmp/.env;
+      - export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/home/user/.local/bin:/opt/homebrew/bin && USER=$USER
+      - lima nerdctl pull --platform arm64 ghcr.io/lanixx-hh/tooling-base:latest-arm64 &&
+      - lima nerdctl compose
+      - -f /home/user/.tmp/tooling/docker-compose.yaml
+      - --project-directory /home/user/.tmp/tooling
+      - --env-file /home/user/.tmp/.env
+      - build;
+      - lima nerdctl run -it --rm -v $HOME/:/home/$USER  tooling_tooling:latest zsh;
+      - lima nerdctl kill $(lima nerdctl ps -q) > /dev/null 2>&1 || exit 0;
+      - lima nerdctl rm $(lima nerdctl ps -aq) > /dev/null 2>&1 || exit 0;
+
