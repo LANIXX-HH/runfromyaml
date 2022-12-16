@@ -13,7 +13,7 @@ import (
 )
 
 //CommandDockerRun run a command in a docker container with wait parameter and print description to shell
-func CommandDockerRun(dcommand string, container string, cmd []string, desc string, wg *sync.WaitGroup) {
+func CommandDockerRun(dcommand string, container string, cmd []string, desc string, _envs []string, wg *sync.WaitGroup) {
 	color.New(color.FgGreen).Println("==> " + desc)
 	var docker []string
 
@@ -31,7 +31,7 @@ func CommandDockerRun(dcommand string, container string, cmd []string, desc stri
 		}
 
 		command := exec.Command(docker[0], docker[1:]...)
-		command.Env = os.Environ()
+		command.Env = append(os.Environ(), _envs...)
 		color.New(color.FgYellow).Println("cmd[docker]:", docker, "\n")
 		command.Stdout = os.Stdout
 		command.Stdin = os.Stdin
@@ -51,13 +51,12 @@ func CommandDockerRun(dcommand string, container string, cmd []string, desc stri
 
 //CommandDockerComposeExec run a command in a docker container with wait parameter and print description to shell
 //docker-compose -p $PROJECT -f $_COMPOSE_FILE --project-directory $_PWD exec -u $_PHP_WEB_USER $DOCKER_EXEC_PARAM ${@:1:1} bash -c "${@:2}"
-func CommandDockerComposeExec(options []string, cmd []string, desc string, wg *sync.WaitGroup) {
-	color.New(color.FgGreen).Println("==> " + desc)
+func CommandDockerComposeExec(options []string, cmd []string, desc string, _envs []string, wg *sync.WaitGroup) {
 	var compose []string
-
+	color.New(color.FgGreen).Println("==> " + desc)
 	compose = append(options, cmd...)
 	command := exec.Command("docker-compose", compose...)
-	command.Env = os.Environ()
+	command.Env = append(os.Environ(), _envs...)
 	color.New(color.FgYellow).Println("cmd[docker-compose]:", compose, "\n")
 	command.Stdout = os.Stdout
 	command.Stdin = os.Stdin
@@ -71,17 +70,15 @@ func CommandDockerComposeExec(options []string, cmd []string, desc string, wg *s
 }
 
 //CommandSSH run a command in a shell with wait parameter and print description to shell
-func CommandSSH(user string, port int, host string, options []string, cmd []string, desc string, wg *sync.WaitGroup) {
+func CommandSSH(user string, port int, host string, options []string, cmd []string, desc string, _envs []string, wg *sync.WaitGroup) {
+	var ssh []string
 	color.New(color.FgGreen).Println("==> " + desc)
-
 	temp_cmds := strings.Join(cmd, " ")
 	cmds := strings.Split(temp_cmds, ";")
-
 	for _, sshcmd := range cmds {
-		var ssh []string
 		ssh = append(append([]string{"ssh", "-p", strconv.Itoa(port), "-l", user, host}, options...), sshcmd)
 		command := exec.Command(ssh[0], ssh[1:]...)
-		command.Env = os.Environ()
+		command.Env = append(os.Environ(), _envs...)
 		color.New(color.FgYellow).Println("cmd[ssh]:", ssh, "\n")
 		command.Stdout = os.Stdout
 		command.Stdin = os.Stdin
@@ -100,12 +97,12 @@ func CommandSSH(user string, port int, host string, options []string, cmd []stri
 }
 
 //CommandShell run a command in a shell with wait parameter and print description to shell
-func CommandShell(cmd []string, desc string, wg *sync.WaitGroup, index int) {
-	color.New(color.FgGreen).Println("==> " + desc)
+func CommandShell(cmd []string, desc string, wg *sync.WaitGroup, index int, _envs []string) {
 	var bash []string
+	color.New(color.FgGreen).Println("==> " + desc)
 	bash = append([]string{"bash", "-c"}, strings.Join(cmd, " "))
 	command := exec.Command(bash[0], bash[1:]...)
-	command.Env = os.Environ()
+	command.Env = append(os.Environ(), _envs...)
 	color.New(color.FgYellow).Println("cmd[shell]:", bash, "\n")
 	command.Stdout = os.Stdout
 	command.Stdin = os.Stdin
@@ -120,7 +117,7 @@ func CommandShell(cmd []string, desc string, wg *sync.WaitGroup, index int) {
 }
 
 //Command run a commad form string array with wait parameted and print description
-func Command(cmd []string, desc string, wg *sync.WaitGroup) {
+func Command(cmd []string, desc string, wg *sync.WaitGroup, _envs []string) {
 	color.New(color.FgGreen).Println("==> " + desc)
 
 	temp_cmds := strings.Join(cmd, " ")
@@ -130,7 +127,7 @@ func Command(cmd []string, desc string, wg *sync.WaitGroup) {
 	for _, onecmds := range cmds {
 		onecmd := strings.Split(onecmds, " ")
 		command := exec.Command(onecmd[0], onecmd[1:]...)
-		command.Env = os.Environ()
+		command.Env = append(os.Environ(), _envs...)
 		color.New(color.FgYellow).Println("cmd[exec]:", command, "\n")
 		command.Stdout = os.Stdout
 		command.Stdin = os.Stdin

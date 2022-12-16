@@ -1,4 +1,6 @@
 ---
+env:
+  - Test=bla
 cmd:
   - type: "conf"
     confdata: | 

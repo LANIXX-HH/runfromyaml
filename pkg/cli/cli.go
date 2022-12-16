@@ -10,17 +10,17 @@ import (
 	"sync"
 
 	"github.com/fatih/color"
+	"gopkg.in/yaml.v2"
 
 	"github.com/lanixx/runfromyaml/pkg/exec"
 	functions "github.com/lanixx/runfromyaml/pkg/functions"
-
-	"gopkg.in/yaml.v2"
 )
 
 var (
 	results  map[interface{}][]interface{}
 	types    map[interface{}]interface{}
 	values   string
+	envs     []string
 	cmds     []string
 	options  []string
 	desc     string
@@ -37,7 +37,7 @@ func printColor(ctype color.Attribute, cstring ...interface{}) {
 	mystring.Println(cstring)
 }
 
-func execCmd(types map[interface{}]interface{}) {
+func execCmd(types map[interface{}]interface{}, _envs []string) {
 	wg := new(sync.WaitGroup)
 	if !reflect.ValueOf(types["values"]).IsNil() {
 		values = fmt.Sprintf("%v", types["values"])
@@ -49,11 +49,11 @@ func execCmd(types map[interface{}]interface{}) {
 		desc = fmt.Sprintf("%v", types["desc"])
 	}
 	wg.Add(1)
-	go exec.Command(cmds, desc, wg)
+	go exec.Command(cmds, desc, wg, _envs)
 	wg.Wait()
 }
 
-func shellCmd(types map[interface{}]interface{}) {
+func shellCmd(types map[interface{}]interface{}, _envs []string) {
 	if !reflect.ValueOf(types["values"]).IsNil() {
 		values = fmt.Sprintf("%v", types["values"])
 		values = strings.TrimPrefix(values, "[")
@@ -69,12 +69,12 @@ func shellCmd(types map[interface{}]interface{}) {
 	for ind, shcmds := range cmds {
 		shcmd := strings.Split(shcmds, " ")
 		wg.Add(1)
-		go exec.CommandShell(shcmd, desc, wg, ind)
+		go exec.CommandShell(shcmd, desc, wg, ind, _envs)
 		wg.Wait()
 	}
 }
 
-func dockerCmd(types map[interface{}]interface{}) {
+func dockerCmd(types map[interface{}]interface{}, _envs []string) {
 	wg := new(sync.WaitGroup)
 	if !reflect.ValueOf(types["values"]).IsNil() {
 		values = fmt.Sprintf("%v", types["values"])
@@ -86,11 +86,11 @@ func dockerCmd(types map[interface{}]interface{}) {
 		desc = fmt.Sprintf("%v", types["desc"])
 	}
 	wg.Add(1)
-	go exec.CommandDockerRun(types["command"].(string), types["container"].(string), cmds, desc, wg)
+	go exec.CommandDockerRun(types["command"].(string), types["container"].(string), cmds, desc, _envs, wg)
 	wg.Wait()
 }
 
-func dockerComposeCmd(types map[interface{}]interface{}) {
+func dockerComposeCmd(types map[interface{}]interface{}, _envs []string) {
 	wg := new(sync.WaitGroup)
 	if !reflect.ValueOf(types["values"]).IsNil() {
 		values = fmt.Sprintf("%v", types["values"])
@@ -108,11 +108,11 @@ func dockerComposeCmd(types map[interface{}]interface{}) {
 		desc = fmt.Sprintf("%v", types["desc"])
 	}
 	wg.Add(1)
-	go exec.CommandDockerComposeExec(options, cmds, desc, wg)
+	go exec.CommandDockerComposeExec(options, cmds, desc, _envs, wg)
 	wg.Wait()
 }
 
-func sshCmd(types map[interface{}]interface{}) {
+func sshCmd(types map[interface{}]interface{}, _envs []string) {
 	wg := new(sync.WaitGroup)
 	if !reflect.ValueOf(types["values"]).IsNil() {
 		values = fmt.Sprintf("%v", types["values"])
@@ -130,7 +130,7 @@ func sshCmd(types map[interface{}]interface{}) {
 		desc = fmt.Sprintf("%v", types["desc"])
 	}
 	wg.Add(1)
-	go exec.CommandSSH(types["user"].(string), types["port"].(int), types["host"].(string), options, cmds, desc, wg)
+	go exec.CommandSSH(types["user"].(string), types["port"].(int), types["host"].(string), options, cmds, desc, _envs, wg)
 	wg.Wait()
 }
 
@@ -167,6 +167,16 @@ func Runfromyaml() {
 
 	yamlFile, err := ioutil.ReadFile(file)
 	yaml.Unmarshal(yamlFile, &results)
+
+	for key := range results["env"] {
+		if debug {
+			printColor(color.BgBlue, results["env"])
+			printColor(color.BgBlue, envs)
+			printColor(color.BgBlue, key)
+		}
+		envs = append(envs, results["env"][key].(string))
+	}
+
 	for key := range results["cmd"] {
 		if !reflect.ValueOf(results["cmd"][key].(map[interface{}]interface{})).IsNil() {
 			types = results["cmd"][key].(map[interface{}]interface{})
@@ -187,19 +197,19 @@ func Runfromyaml() {
 				fmt.Printf("\n")
 			}
 			if types["type"] == "exec" {
-				execCmd(types)
+				execCmd(types, envs)
 			}
 			if types["type"] == "shell" {
-				shellCmd(types)
+				shellCmd(types, envs)
 			}
 			if types["type"] == "docker" {
-				dockerCmd(types)
+				dockerCmd(types, envs)
 			}
 			if types["type"] == "docker-compose" {
-				dockerComposeCmd(types)
+				dockerComposeCmd(types, envs)
 			}
 			if types["type"] == "ssh" {
-				sshCmd(types)
+				sshCmd(types, envs)
 			}
 			if types["type"] == "conf" {
 				if debug {
