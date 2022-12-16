@@ -1,5 +1,15 @@
 ---
+env:
+  - TEST=bla
+  - BLA=TEST
 cmd:
+  - type: "shell"
+    name: "print envs"
+    desc: "print env variables"
+    values:
+      - env | grep TEST;
+      - echo $BLA;
+      - echo $TEST
   - type: "conf"
     confdata: | 
       test
