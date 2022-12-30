@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -51,19 +52,37 @@ func CommandDockerRun(dcommand string, container string, cmd []string, desc stri
 
 //CommandDockerComposeExec run a command in a docker container with wait parameter and print description to shell
 //docker-compose -p $PROJECT -f $_COMPOSE_FILE --project-directory $_PWD exec -u $_PHP_WEB_USER $DOCKER_EXEC_PARAM ${@:1:1} bash -c "${@:2}"
-func CommandDockerComposeExec(options []string, cmd []string, desc string, _envs []string, wg *sync.WaitGroup) {
+func CommandDockerComposeExec(command string, service string, cmdoptions []string, dcoptions []string, cmd []string, desc string, envs []string, wg *sync.WaitGroup) {
 	var compose []string
-	color.New(color.FgGreen).Println("==> " + desc)
-	compose = append(options, cmd...)
-	command := exec.Command("docker-compose", compose...)
-	command.Env = append(os.Environ(), _envs...)
-	color.New(color.FgYellow).Println("cmd[docker-compose]:", compose, "\n")
-	command.Stdout = os.Stdout
-	command.Stdin = os.Stdin
-	command.Stderr = os.Stderr
-	if err := command.Run(); err != nil {
+	color.New(color.FgGreen).Println("# " + desc)
+	if !reflect.ValueOf(dcoptions).IsNil() {
+		compose = append(compose, dcoptions...)
+	}
+	// command is required
+	compose = append(compose, command)
+	if !reflect.ValueOf(cmdoptions).IsNil() {
+		compose = append(compose, cmdoptions...)
+	}
+	if service != "" {
+		compose = append(compose, service)
+	}
+	if !reflect.ValueOf(cmd).IsNil() {
+		compose = append(compose, cmd...)
+	}
+	//compose = append(append(append(append(dcoptions, command), cmdoptions...), service), cmd...)
+	cmds := exec.Command("docker-compose", compose...)
+	cmds.Env = append(os.Environ(), envs...)
+	color.New(color.FgYellow).Println("docker-compose", strings.Trim(fmt.Sprint(compose), "[]"), "\n")
+	cmds.Stdout = os.Stdout
+	cmds.Stdin = os.Stdin
+	cmds.Stderr = os.Stderr
+	if err := cmds.Run(); err != nil {
 		color.New(color.FgRed).Println("Command: ", command)
-		color.New(color.FgRed).Println("Options: ", options)
+		color.New(color.FgRed).Println("Service: ", service)
+		color.New(color.FgRed).Println("Docker Compose Options: ", dcoptions)
+		color.New(color.FgRed).Println("Command Options: ", cmdoptions)
+		color.New(color.FgRed).Println("Values: ", cmd)
+		color.New(color.FgRed).Println("Full: ", compose)
 		color.New(color.FgRed).Println("Error: ", err)
 	}
 	wg.Done()

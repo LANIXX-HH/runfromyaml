@@ -17,19 +17,21 @@ import (
 )
 
 var (
-	results  map[interface{}][]interface{}
-	types    map[interface{}]interface{}
-	values   string
-	envs     []string
-	cmds     []string
-	options  []string
-	desc     string
-	confdata string
-	confdest string
-	confperm os.FileMode
-	file     string
-	help     bool
-	debug    bool
+	results    map[interface{}][]interface{}
+	types      map[interface{}]interface{}
+	values     string
+	envs       []string
+	cmds       []string
+	dcoptions  []string
+	cmdoptions []string
+	options    []string
+	desc       string
+	confdata   string
+	confdest   string
+	confperm   os.FileMode
+	file       string
+	help       bool
+	debug      bool
 )
 
 func printColor(ctype color.Attribute, cstring ...interface{}) {
@@ -91,6 +93,7 @@ func dockerCmd(types map[interface{}]interface{}, _envs []string) {
 }
 
 func dockerComposeCmd(types map[interface{}]interface{}, _envs []string) {
+	var service string
 	wg := new(sync.WaitGroup)
 	if !reflect.ValueOf(types["values"]).IsNil() {
 		values = fmt.Sprintf("%v", types["values"])
@@ -98,17 +101,24 @@ func dockerComposeCmd(types map[interface{}]interface{}, _envs []string) {
 		values = strings.TrimSuffix(values, "]")
 		cmds = strings.Fields(values)
 	}
-	if !reflect.ValueOf(types["options"]).IsNil() {
-		values = fmt.Sprintf("%v", types["options"])
-		values = strings.TrimPrefix(values, "[")
-		values = strings.TrimSuffix(values, "]")
-		options = strings.Fields(values)
+	if !reflect.ValueOf(types["dcoptions"]).IsNil() {
+		values = strings.Trim(fmt.Sprint(types["dcoptions"]), "[]")
+		values = os.ExpandEnv(values)
+		dcoptions = strings.Fields(values)
+	}
+	if !reflect.ValueOf(types["cmdoptions"]).IsNil() {
+		values = strings.Trim(fmt.Sprint(types["cmdoptions"]), "[]")
+		values = os.ExpandEnv(values)
+		cmdoptions = strings.Fields(values)
 	}
 	if string(types["desc"].(string)) != "" {
 		desc = fmt.Sprintf("%v", types["desc"])
 	}
+	if string(types["service"].(string)) != "" {
+		service = fmt.Sprintf("%v", types["service"])
+	}
 	wg.Add(1)
-	go exec.CommandDockerComposeExec(options, cmds, desc, _envs, wg)
+	go exec.CommandDockerComposeExec(types["command"].(string), service, cmdoptions, dcoptions, cmds, desc, _envs, wg)
 	wg.Wait()
 }
 

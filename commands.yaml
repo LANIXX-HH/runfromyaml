@@ -68,22 +68,24 @@ cmd:
         - -lisa ".";
         - cd /
   - type: "docker-compose"
-    name: "docker-compose-start"
-    desc: "start docker-compose command"
-    options:
-      - -p test
-      - -f docker-compose.yml
-    values:
-      - up -d
+    name: "build"
+    desc: "build tooling"
+    dcoptions:
+      - -f $HOME/.tmp/tooling/docker-compose.yaml
+      - --project-directory $HOME/.tmp/tooling
+    cmdoptions: []
+    command: build
+    service: ""
+    values: []
   - type: "docker-compose"
-    name: "docker-compose-run"
-    desc: "run docker-compose command"
-    options:
-      - -p test
-      - -f docker-compose.yml
-      - exec
-      - -u root
-      - container
+    name: "run"
+    desc: "run tooling"
+    dcoptions:
+      - -f $HOME/.tmp/tooling/docker-compose.yaml
+      - --project-directory $HOME/.tmp/tooling
+    command: run
+    service: tooling
+    cmdoptions: []
     values:
       - ls -lisa
   - type: "ssh"
