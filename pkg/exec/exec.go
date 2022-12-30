@@ -15,13 +15,14 @@ import (
 
 //CommandDockerRun run a command in a docker container with wait parameter and print description to shell
 func CommandDockerRun(dcommand string, container string, cmd []string, desc string, _envs []string, wg *sync.WaitGroup) {
-	color.New(color.FgGreen).Println("==> " + desc)
+	color.New(color.FgGreen).Println("# " + desc)
 	var docker []string
 
 	temp_cmds := strings.Join(cmd, " ")
 	cmds := strings.Split(temp_cmds, ";")
 
 	for _, str := range cmds {
+		str = os.ExpandEnv(str)
 		if dcommand == "run" {
 			docker = []string{"docker", dcommand, "-it", "--rm", container, "sh", "-c", string(str)}
 
@@ -33,7 +34,7 @@ func CommandDockerRun(dcommand string, container string, cmd []string, desc stri
 
 		command := exec.Command(docker[0], docker[1:]...)
 		command.Env = append(os.Environ(), _envs...)
-		color.New(color.FgYellow).Println("cmd[docker]:", docker, "\n")
+		color.New(color.FgYellow).Println(strings.Trim(fmt.Sprint(docker), "[]"), "\n")
 		command.Stdout = os.Stdout
 		command.Stdin = os.Stdin
 		command.Stderr = os.Stderr
@@ -91,18 +92,17 @@ func CommandDockerComposeExec(command string, service string, cmdoptions []strin
 //CommandSSH run a command in a shell with wait parameter and print description to shell
 func CommandSSH(user string, port int, host string, options []string, cmd []string, desc string, _envs []string, wg *sync.WaitGroup) {
 	var ssh []string
-	color.New(color.FgGreen).Println("==> " + desc)
+	color.New(color.FgGreen).Println("# " + desc)
 	temp_cmds := strings.Join(cmd, " ")
 	cmds := strings.Split(temp_cmds, ";")
 	for _, sshcmd := range cmds {
 		ssh = append(append([]string{"ssh", "-p", strconv.Itoa(port), "-l", user, host}, options...), sshcmd)
 		command := exec.Command(ssh[0], ssh[1:]...)
 		command.Env = append(os.Environ(), _envs...)
-		color.New(color.FgYellow).Println("cmd[ssh]:", ssh, "\n")
+		color.New(color.FgYellow).Println(strings.Trim(fmt.Sprint(ssh), "[]"), "\n")
 		command.Stdout = os.Stdout
 		command.Stdin = os.Stdin
 		command.Stderr = os.Stderr
-		fmt.Sprintln(ssh)
 
 		if err := command.Run(); err != nil {
 			color.New(color.FgRed).Println("Command: ", command)
@@ -118,15 +118,14 @@ func CommandSSH(user string, port int, host string, options []string, cmd []stri
 //CommandShell run a command in a shell with wait parameter and print description to shell
 func CommandShell(cmd []string, desc string, wg *sync.WaitGroup, index int, _envs []string) {
 	var bash []string
-	color.New(color.FgGreen).Println("==> " + desc)
+	color.New(color.FgGreen).Println("# " + desc)
 	bash = append([]string{"bash", "-c"}, strings.Join(cmd, " "))
 	command := exec.Command(bash[0], bash[1:]...)
 	command.Env = append(os.Environ(), _envs...)
-	color.New(color.FgYellow).Println("cmd[shell]:", bash, "\n")
+	color.New(color.FgYellow).Println(strings.Trim(fmt.Sprint(bash), "[]"), "\n")
 	command.Stdout = os.Stdout
 	command.Stdin = os.Stdin
 	command.Stderr = os.Stderr
-	fmt.Sprintln(bash)
 
 	if err := command.Run(); err != nil {
 		color.New(color.FgRed).Println("Command", command)
@@ -137,17 +136,16 @@ func CommandShell(cmd []string, desc string, wg *sync.WaitGroup, index int, _env
 
 //Command run a commad form string array with wait parameted and print description
 func Command(cmd []string, desc string, wg *sync.WaitGroup, _envs []string) {
-	color.New(color.FgGreen).Println("==> " + desc)
+	color.New(color.FgGreen).Println("# " + desc)
 
 	temp_cmds := strings.Join(cmd, " ")
 	cmds := strings.Split(temp_cmds, ";")
-	fmt.Println(cmds)
 
 	for _, onecmds := range cmds {
 		onecmd := strings.Split(onecmds, " ")
 		command := exec.Command(onecmd[0], onecmd[1:]...)
 		command.Env = append(os.Environ(), _envs...)
-		color.New(color.FgYellow).Println("cmd[exec]:", command, "\n")
+		color.New(color.FgYellow).Println("exec", strings.Trim(fmt.Sprint(command), "[]"), "\n")
 		command.Stdout = os.Stdout
 		command.Stdin = os.Stdin
 		command.Stderr = os.Stderr
@@ -177,8 +175,8 @@ func CommandTest(cmd []string, desc string, wg *sync.WaitGroup) {
 
 	// prepare output handler
 	p.OutputHandler = func(line string) string {
-		color.New(color.FgGreen).Println("==> " + desc)
-		color.New(color.FgYellow).Println("cmd: ", cmd)
+		color.New(color.FgGreen).Println("# " + desc)
+		color.New(color.FgYellow).Println("cmd: ", strings.Trim(fmt.Sprint(cmd), "[]"))
 		return line
 	}
 
@@ -192,8 +190,8 @@ func CommandTest(cmd []string, desc string, wg *sync.WaitGroup) {
 		return line
 	}
 
-	color.New(color.FgGreen).Println("==> " + desc)
-	color.New(color.FgYellow).Println("Command: ", cmd)
+	color.New(color.FgGreen).Println("# " + desc)
+	color.New(color.FgYellow).Println("Command: ", strings.Trim(fmt.Sprint(cmd), "[]"))
 
 	p.Run()
 	p.Wait()

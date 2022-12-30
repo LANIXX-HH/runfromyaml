@@ -42,9 +42,8 @@ func printColor(ctype color.Attribute, cstring ...interface{}) {
 func execCmd(types map[interface{}]interface{}, _envs []string) {
 	wg := new(sync.WaitGroup)
 	if !reflect.ValueOf(types["values"]).IsNil() {
-		values = fmt.Sprintf("%v", types["values"])
-		values = strings.TrimPrefix(values, "[")
-		values = strings.TrimSuffix(values, "]")
+		values = strings.Trim(fmt.Sprint(types["values"]), "[]")
+		values = os.ExpandEnv(values)
 		cmds = strings.Fields(values)
 	}
 	if string(types["desc"].(string)) != "" {
@@ -57,9 +56,8 @@ func execCmd(types map[interface{}]interface{}, _envs []string) {
 
 func shellCmd(types map[interface{}]interface{}, _envs []string) {
 	if !reflect.ValueOf(types["values"]).IsNil() {
-		values = fmt.Sprintf("%v", types["values"])
-		values = strings.TrimPrefix(values, "[")
-		values = strings.TrimSuffix(values, "]")
+		values = strings.Trim(fmt.Sprint(types["values"]), "[]")
+		values = os.ExpandEnv(values)
 		cmds = strings.Fields(values)
 	}
 	if string(types["desc"].(string)) != "" {
@@ -79,9 +77,8 @@ func shellCmd(types map[interface{}]interface{}, _envs []string) {
 func dockerCmd(types map[interface{}]interface{}, _envs []string) {
 	wg := new(sync.WaitGroup)
 	if !reflect.ValueOf(types["values"]).IsNil() {
-		values = fmt.Sprintf("%v", types["values"])
-		values = strings.TrimPrefix(values, "[")
-		values = strings.TrimSuffix(values, "]")
+		values = strings.Trim(fmt.Sprint(types["values"]), "[]")
+		values = os.ExpandEnv(values)
 		cmds = strings.Fields(values)
 	}
 	if string(types["desc"].(string)) != "" {
@@ -96,9 +93,8 @@ func dockerComposeCmd(types map[interface{}]interface{}, _envs []string) {
 	var service string
 	wg := new(sync.WaitGroup)
 	if !reflect.ValueOf(types["values"]).IsNil() {
-		values = fmt.Sprintf("%v", types["values"])
-		values = strings.TrimPrefix(values, "[")
-		values = strings.TrimSuffix(values, "]")
+		values = strings.Trim(fmt.Sprint(types["values"]), "[]")
+		values = os.ExpandEnv(values)
 		cmds = strings.Fields(values)
 	}
 	if !reflect.ValueOf(types["dcoptions"]).IsNil() {
@@ -125,15 +121,11 @@ func dockerComposeCmd(types map[interface{}]interface{}, _envs []string) {
 func sshCmd(types map[interface{}]interface{}, _envs []string) {
 	wg := new(sync.WaitGroup)
 	if !reflect.ValueOf(types["values"]).IsNil() {
-		values = fmt.Sprintf("%v", types["values"])
-		values = strings.TrimPrefix(values, "[")
-		values = strings.TrimSuffix(values, "]")
+		values = strings.Trim(fmt.Sprint(types["values"]), "[]")
 		cmds = strings.Fields(values)
 	}
 	if !reflect.ValueOf(types["options"]).IsNil() {
-		values = fmt.Sprintf("%v", types["options"])
-		values = strings.TrimPrefix(values, "[")
-		values = strings.TrimSuffix(values, "]")
+		values = strings.Trim(fmt.Sprint(types["options"]), "[]")
 		options = strings.Fields(values)
 	}
 	if string(types["desc"].(string)) != "" {
@@ -158,7 +150,7 @@ func conf(types map[interface{}]interface{}) {
 		functions.WriteFile(confdata, confdest, confperm)
 		//readFile(string(confdest))
 	}
-	fmt.Printf("\n")
+	color.New(color.FgGreen).Println("# create " + confdest)
 }
 
 func Runfromyaml() {

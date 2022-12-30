@@ -2,6 +2,7 @@
 env:
   - TEST=bla
   - BLA=TEST
+  - HOME=/tmp/tooling
 cmd:
   - type: "shell"
     name: "print envs"
@@ -87,6 +88,8 @@ cmd:
     service: tooling
     cmdoptions: []
     values:
+      - ls
+      - -lisa;
       - ls -lisa
   - type: "ssh"
     name: "ssh-run"
