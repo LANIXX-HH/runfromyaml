@@ -1,6 +1,7 @@
 ---
 cmd:
   - type: "shell"
+    expandenv: true
     name: "lsh"
     desc: "create tooling directory"
     values:
@@ -162,12 +163,14 @@ cmd:
     confdest: /tmp/tooling/docker-compose.yaml
     confperm: 0644
   - type: "shell"
+    expandenv: false
     name: "lsh"
     desc: "start tooling"
     values:
       - echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin;
       - docker pull --platform arm64 ghcr.io/lanixx-hh/tooling-base:latest-arm64
   - type: "docker-compose"
+    expandenv: true
     name: "build"
     desc: "build tooling"
     dcoptions:
@@ -178,6 +181,7 @@ cmd:
     service: ""
     values: []
   - type: "docker-compose"
+    expandenv: true
     name: "run"
     desc: "run tooling"
     dcoptions:

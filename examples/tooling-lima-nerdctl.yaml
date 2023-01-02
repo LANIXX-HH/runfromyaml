@@ -1,12 +1,16 @@
 ---
+env:
+  - PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/Users/anatolilichii/.local/bin:/opt/homebrew/bin
+  - LC_ALL=POSIX
 cmd:
   - type: "shell"
+    expandenv: true
     name: "lsh"
     desc: "create tooling directory"
     values:
-      - mkdir -p /home/user/.tmp/tooling
+      - mkdir -p $HOME/.tmp/tooling
   - type: "conf"
-    confdest: /home/user/.tmp/tooling/aws-mfa-login.sh
+    confdest: $HOME/.tmp/tooling/aws-mfa-login.sh
     confperm: 0755
     confdata: |
       #!/bin/bash
@@ -16,7 +20,7 @@ cmd:
       AWS_ACCOUNT_ID=$(aws sts get-caller-identity --output json --profile "$AWS_PROFILE_NAME" | jq -r '.Account')
       aws sts get-session-token --serial-number "arn:aws:iam::${AWS_ACCOUNT_ID}:mfa/${AWS_USER_NAME}" --token-code $AWS_MFA_TOKEN --profile "$AWS_PROFILE_NAME" | jq -r ' "export AWS_ACCESS_KEY_ID=" + .Credentials.AccessKeyId + "\n" + "export AWS_SECRET_ACCESS_KEY=" + .Credentials.SecretAccessKey + "\n" + "export AWS_SECURITY_TOKEN=" + .Credentials.SessionToken + "\n" + "export AWS_SESSION_TOKEN=" + .Credentials.SessionToken'
   - type: "conf"
-    confdest: /home/user/.tmp/tooling/aws-assume.sh
+    confdest: $HOME/.tmp/tooling/aws-assume.sh
     confperm: 0755
     confdata: |
       #!/bin/bash
@@ -25,7 +29,7 @@ cmd:
       : "${AWS_ACCOUNT_ID:?Please specify AWS_ACCOUNT_ID for the destination role}"
       aws sts assume-role --output json --role-arn "arn:aws:iam::${AWS_ACCOUNT_ID}:role/$ROLE" --role-session-name "$ROLE" --duration-seconds "$DURATION" | jq -r ' "export AWS_ACCESS_KEY_ID=" + .Credentials.AccessKeyId + "\n" + "export AWS_SECRET_ACCESS_KEY=" + .Credentials.SecretAccessKey + "\n" + "export AWS_SECURITY_TOKEN=" + .Credentials.SessionToken + "\n" + "export AWS_SESSION_TOKEN=" + .Credentials.SessionToken'
   - type: "conf"
-    confdest: /home/user/.tmp/tooling/aws-sso.sh
+    confdest: $HOME/.tmp/tooling/aws-sso.sh
     confperm: 0755
     confdata: |
       #!/bin/bash
@@ -226,7 +230,7 @@ cmd:
 
       rm -f "$STS_TMP_FILE"
   - type: "conf"
-    confdest: /home/user/.tmp/tooling/entrypoint.sh
+    confdest: $HOME/.tmp/tooling/entrypoint.sh
     confperm: 0755
     confdata: | 
       #!/bin/bash
@@ -335,7 +339,7 @@ cmd:
       RUN touch /home/${USER}/.zshrc
       
       ENTRYPOINT ["/entrypoint.sh"]
-    confdest: /home/user/.tmp/tooling/Dockerfile
+    confdest: $HOME/.tmp/tooling/Dockerfile
     confperm: 0644
   - type: "conf"
     confdata: | 
@@ -348,7 +352,7 @@ cmd:
             - ${HOME}/Projects:/home/${USER}/Projects
             - ${HOME}/Projects:${HOME}/Projects
             - /var/run/docker.sock:/var/run/docker.sock
-    confdest: /home/user/.tmp/tooling/volumes-mac.yaml
+    confdest: $HOME/.tmp/tooling/volumes-mac.yaml
     confperm: 0644
   - type: "conf"
     confdata: | 
@@ -375,19 +379,20 @@ cmd:
             KUBECONFIG: /home/${USER}/.kube/config
             SSH_PRIVATE_KEY_FILE: /home/${USER}/.ssh/id_rsa
             SSO_PROFILE: ${SSO_PROFILE:-}
-    confdest: /home/user/.tmp/tooling/docker-compose.yaml
+    confdest: $HOME/.tmp/tooling/docker-compose.yaml
     confperm: 0644
   - type: "shell"
+    expandenv: true
     name: "lsh"
     desc: "start tooling"
     values:
-      - env > /home/user/.tmp/.env;
-      - export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/home/user/.local/bin:/opt/homebrew/bin && USER=$USER
+      - env > $HOME/.tmp/.env;
+      - export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:$HOME/.local/bin:/opt/homebrew/bin && USER=$USER
       - lima nerdctl pull --platform arm64 ghcr.io/lanixx-hh/tooling-base:latest-arm64 &&
       - lima nerdctl compose
-      - -f /home/user/.tmp/tooling/docker-compose.yaml
-      - --project-directory /home/user/.tmp/tooling
-      - --env-file /home/user/.tmp/.env
+      - -f $HOME/.tmp/tooling/docker-compose.yaml
+      - --project-directory $HOME/.tmp/tooling
+      - --env-file $HOME/.tmp/.env
       - build;
       - lima nerdctl run -it --rm -v $HOME/:/home/$USER  tooling_tooling:latest zsh;
       - lima nerdctl kill $(lima nerdctl ps -q) > /dev/null 2>&1 || exit 0;

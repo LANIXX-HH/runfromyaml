@@ -2,15 +2,7 @@
 env:
   - TEST=bla
   - BLA=TEST
-  - HOME=/tmp/tooling
 cmd:
-  - type: "shell"
-    name: "print envs"
-    desc: "print env variables"
-    values:
-      - env | grep TEST;
-      - echo $BLA;
-      - echo $TEST
   - type: "conf"
     confdata: | 
       test
@@ -20,6 +12,7 @@ cmd:
     confdest: eins.conf
     confperm: 0644
   - type: "exec"
+    expandenv: false
     name: "list"
     desc: "liste auf"
     values:
@@ -33,6 +26,7 @@ cmd:
     confdest: zwei.conf
     confperm: 0644
   - type: "exec"
+    expandenv: false
     name: "conf"
     desc: "erstelle zwei.conf und gebe es aus"
     values:
@@ -41,6 +35,7 @@ cmd:
       - dir
       - zwei.conf
   - type: "exec"
+    expandenv: false
     name: "powershell"
     desc: "zeige das beispiel mit powershell"
     values:
