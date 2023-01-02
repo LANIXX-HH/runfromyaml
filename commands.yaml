@@ -5,6 +5,7 @@ env:
   - HOME=/tmp/tooling
 cmd:
   - type: "shell"
+    expandenv: false 
     name: "print envs"
     desc: "print env variables"
     values:
@@ -20,6 +21,7 @@ cmd:
     confdest: /tmp/eins.conf
     confperm: 0644
   - type: "exec"
+    expandenv: true
     name: "list"
     desc: "liste auf"
     values:
@@ -33,12 +35,14 @@ cmd:
     confdest: /tmp/zwei.conf
     confperm: 0644
   - type: "exec"
+    expandenv: true
     name: "conf"
     desc: "erstelle zwei.conf und gebe es aus"
     values:
       - cat
       - /tmp/zwei.conf
   - type: "exec"
+    expandenv: true
     name: "git"
     desc: "zeige das aktuelle status von git"
     values:
@@ -46,6 +50,7 @@ cmd:
       - status;
       - git branch
   - type: shell
+    expandenv: true
     desc: "print shell environment"
     name: "print-shell-env"
     values:
@@ -53,6 +58,7 @@ cmd:
       - ls 
       - -la
   - type: shell
+    expandenv: true
     desc: "print shell environment"
     name: "print-shell-env"
     values:
@@ -60,6 +66,7 @@ cmd:
       - $HOME;
       - echo "OK"
   - type: docker
+    expandenv: true
     desc: "run command from docker container"
     name: "docker-run"
     command: run
@@ -69,6 +76,7 @@ cmd:
         - -lisa ".";
         - cd /
   - type: "docker-compose"
+    expandenv: true
     name: "build"
     desc: "build tooling"
     dcoptions:
@@ -79,6 +87,7 @@ cmd:
     service: ""
     values: []
   - type: "docker-compose"
+    expandenv: true
     name: "run"
     desc: "run tooling"
     dcoptions:
@@ -92,6 +101,7 @@ cmd:
       - -lisa;
       - ls -lisa
   - type: "ssh"
+    expandenv: true
     name: "ssh-run"
     desc: "run ls command via ssh connection"
     user: user

@@ -32,9 +32,13 @@ var (
 
 func execCmd(types map[interface{}]interface{}, _envs []string) {
 	wg := new(sync.WaitGroup)
+
 	if !reflect.ValueOf(types["values"]).IsNil() {
 		values = strings.Trim(fmt.Sprint(types["values"]), "[]")
-		values = os.ExpandEnv(values)
+		if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
+			values = os.ExpandEnv(values)
+
+		}
 		cmds = strings.Fields(values)
 	}
 	if string(types["desc"].(string)) != "" {
@@ -48,7 +52,10 @@ func execCmd(types map[interface{}]interface{}, _envs []string) {
 func shellCmd(types map[interface{}]interface{}, _envs []string) {
 	if !reflect.ValueOf(types["values"]).IsNil() {
 		values = strings.Trim(fmt.Sprint(types["values"]), "[]")
-		values = os.ExpandEnv(values)
+		if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
+			values = os.ExpandEnv(values)
+
+		}
 		cmds = strings.Fields(values)
 	}
 	if string(types["desc"].(string)) != "" {
@@ -69,7 +76,10 @@ func dockerCmd(types map[interface{}]interface{}, _envs []string) {
 	wg := new(sync.WaitGroup)
 	if !reflect.ValueOf(types["values"]).IsNil() {
 		values = strings.Trim(fmt.Sprint(types["values"]), "[]")
-		values = os.ExpandEnv(values)
+		if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
+			values = os.ExpandEnv(values)
+
+		}
 		cmds = strings.Fields(values)
 	}
 	if string(types["desc"].(string)) != "" {
@@ -85,17 +95,26 @@ func dockerComposeCmd(types map[interface{}]interface{}, _envs []string) {
 	wg := new(sync.WaitGroup)
 	if !reflect.ValueOf(types["values"]).IsNil() {
 		values = strings.Trim(fmt.Sprint(types["values"]), "[]")
-		values = os.ExpandEnv(values)
+		if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
+			values = os.ExpandEnv(values)
+
+		}
 		cmds = strings.Fields(values)
 	}
 	if !reflect.ValueOf(types["dcoptions"]).IsNil() {
 		values = strings.Trim(fmt.Sprint(types["dcoptions"]), "[]")
-		values = os.ExpandEnv(values)
+		if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
+			values = os.ExpandEnv(values)
+
+		}
 		dcoptions = strings.Fields(values)
 	}
 	if !reflect.ValueOf(types["cmdoptions"]).IsNil() {
 		values = strings.Trim(fmt.Sprint(types["cmdoptions"]), "[]")
-		values = os.ExpandEnv(values)
+		if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
+			values = os.ExpandEnv(values)
+
+		}
 		cmdoptions = strings.Fields(values)
 	}
 	if string(types["desc"].(string)) != "" {
