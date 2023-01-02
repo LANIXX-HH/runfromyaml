@@ -72,15 +72,16 @@ func CommandDockerComposeExec(command string, service string, cmdoptions []strin
 	cmds := strings.Split(temp_cmds, ";")
 
 	for _, _cmd := range cmds {
+		var _compose []string
 		_cmd = os.ExpandEnv(_cmd)
 		onecmd := strings.Fields(_cmd)
-		if !reflect.ValueOf(cmd).IsNil() {
-			compose = append(compose, onecmd...)
+		if !reflect.ValueOf(onecmd).IsNil() {
+			_compose = append(compose, onecmd...)
 		}
 		//compose = append(append(append(append(dcoptions, command), cmdoptions...), service), cmd...)
-		cmds := exec.Command("docker-compose", compose...)
+		cmds := exec.Command("docker-compose", _compose...)
 		cmds.Env = append(os.Environ(), envs...)
-		color.New(color.FgYellow).Println("docker-compose", strings.Trim(fmt.Sprint(compose), "[]"), "\n")
+		color.New(color.FgYellow).Println("docker-compose", strings.Trim(fmt.Sprint(_compose), "[]"), "\n")
 		cmds.Stdout = os.Stdout
 		cmds.Stdin = os.Stdin
 		cmds.Stderr = os.Stderr
@@ -90,7 +91,7 @@ func CommandDockerComposeExec(command string, service string, cmdoptions []strin
 			color.New(color.FgRed).Println("Docker Compose Options: ", dcoptions)
 			color.New(color.FgRed).Println("Command Options: ", cmdoptions)
 			color.New(color.FgRed).Println("Values: ", onecmd)
-			color.New(color.FgRed).Println("Full: ", compose)
+			color.New(color.FgRed).Println("Full: ", _compose)
 			color.New(color.FgRed).Println("Error: ", err)
 		}
 	}
@@ -149,8 +150,8 @@ func Command(cmd []string, desc string, wg *sync.WaitGroup, _envs []string) {
 	temp_cmds := strings.Join(cmd, " ")
 	cmds := strings.Split(temp_cmds, ";")
 
-	for _, onecmds := range cmds {
-		onecmd := strings.Split(onecmds, " ")
+	for _, _cmd := range cmds {
+		onecmd := strings.Split(_cmd, " ")
 		command := exec.Command(onecmd[0], onecmd[1:]...)
 		command.Env = append(os.Environ(), _envs...)
 		color.New(color.FgYellow).Println("exec", strings.Trim(fmt.Sprint(command), "[]"), "\n")
