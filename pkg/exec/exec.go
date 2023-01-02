@@ -67,24 +67,32 @@ func CommandDockerComposeExec(command string, service string, cmdoptions []strin
 	if service != "" {
 		compose = append(compose, service)
 	}
-	if !reflect.ValueOf(cmd).IsNil() {
-		compose = append(compose, cmd...)
-	}
-	//compose = append(append(append(append(dcoptions, command), cmdoptions...), service), cmd...)
-	cmds := exec.Command("docker-compose", compose...)
-	cmds.Env = append(os.Environ(), envs...)
-	color.New(color.FgYellow).Println("docker-compose", strings.Trim(fmt.Sprint(compose), "[]"), "\n")
-	cmds.Stdout = os.Stdout
-	cmds.Stdin = os.Stdin
-	cmds.Stderr = os.Stderr
-	if err := cmds.Run(); err != nil {
-		color.New(color.FgRed).Println("Command: ", command)
-		color.New(color.FgRed).Println("Service: ", service)
-		color.New(color.FgRed).Println("Docker Compose Options: ", dcoptions)
-		color.New(color.FgRed).Println("Command Options: ", cmdoptions)
-		color.New(color.FgRed).Println("Values: ", cmd)
-		color.New(color.FgRed).Println("Full: ", compose)
-		color.New(color.FgRed).Println("Error: ", err)
+
+	temp_cmds := strings.Join(cmd, " ")
+	cmds := strings.Split(temp_cmds, ";")
+
+	for _, _cmd := range cmds {
+		_cmd = os.ExpandEnv(_cmd)
+		onecmd := strings.Fields(_cmd)
+		if !reflect.ValueOf(cmd).IsNil() {
+			compose = append(compose, onecmd...)
+		}
+		//compose = append(append(append(append(dcoptions, command), cmdoptions...), service), cmd...)
+		cmds := exec.Command("docker-compose", compose...)
+		cmds.Env = append(os.Environ(), envs...)
+		color.New(color.FgYellow).Println("docker-compose", strings.Trim(fmt.Sprint(compose), "[]"), "\n")
+		cmds.Stdout = os.Stdout
+		cmds.Stdin = os.Stdin
+		cmds.Stderr = os.Stderr
+		if err := cmds.Run(); err != nil {
+			color.New(color.FgRed).Println("Command: ", command)
+			color.New(color.FgRed).Println("Service: ", service)
+			color.New(color.FgRed).Println("Docker Compose Options: ", dcoptions)
+			color.New(color.FgRed).Println("Command Options: ", cmdoptions)
+			color.New(color.FgRed).Println("Values: ", onecmd)
+			color.New(color.FgRed).Println("Full: ", compose)
+			color.New(color.FgRed).Println("Error: ", err)
+		}
 	}
 	wg.Done()
 }
