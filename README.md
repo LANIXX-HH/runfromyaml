@@ -9,9 +9,7 @@ My goal was to rewrite an existing bash tool in go. An essential part was a coll
 # HowTo build
 
 ~~~shell
-go mod download
-go build
-go install runfromyaml
+make clean && make
 ~~~
 
 # How To get the binary
