@@ -64,6 +64,7 @@ cmd:
     confdata: |
       ### A Multi-Stage-Dockerfile to create a container which is provisioned with
       ### all the tooling necessary to provision the infrastructure
+
       ### build final image
       ARG USER=${USER:-user}
       ARG UID=${UID:-1000}
@@ -72,38 +73,51 @@ cmd:
       #ARG HELM_VERSION=${HELM_VERSION:-3.1.1}
       #ARG TERRAGRUNT_VERSION=${TERRAGRUNT_VERSION:-0.25.3}
       #ARG TERRAFORM_VERSION=${TERRAFORM_VERSION:-'[0.12.29]'}
+
       FROM $IMAGE:$TAG
+
       ARG USER
       ARG UID
       #ARG TERRAFORM_VERSION
       #ARG TERRAGRUNT_VERSION
       #ARG HELM_VERSION
+
       USER root
+
       ### create runner user and group
-      RUN addgroup ${USER:-user}
-      RUN adduser \
-          --disabled-password \
-          --gecos "" \
-          --home "/home/${USER}" \
-          --ingroup "${USER}" \
+      RUN useradd \
+          --home-dir "/home/${USER}" \
           --uid "${UID}" \
           ${USER}
+
       ### add sudo
       RUN echo "${USER} ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/user && chmod 0440 /etc/sudoers.d/user
+
       ### make user 'user' as default and set home dir as workdir
       #RUN addgroup docker && addgroup ${USER:-user} docker
       WORKDIR /home/${USER:-user}
-      RUN rm /bin/sh && ln -s /bin/bash /bin/sh && rm /bin/ash && ln -s /bin/bash /bin/ash && usermod -s /bin/zsh ${USER}
+
+      RUN rm -f /bin/sh && ln -s /bin/bash /bin/sh && rm -f /bin/ash && ln -s /bin/bash /bin/ash && usermod -s /bin/zsh ${USER}
+
       RUN chown -R ${USER} /oh-my-zsh
+
       RUN if [ "$HELM_VERSION" != "" ]; then for version in $HELM_VERSION; do ( echo "---"; echo "install HELM version $version ..."; sudo helmenv install "$version"; sudo helmenv local "$version"; ) >> /tmp/boot.log 2>&1; done; fi
+
       RUN if  [ "$TERRAFORM_VERSION" != "" ]; then for version in $TERRAFORM_VERSION; do ( echo "---"; echo "install TERRAFORM version $version ..."; sudo tfenv install "$version"; sudo tfenv use "$version";) >> /tmp/boot.log 2>&1; done; fi
+
       RUN if [ "$TERRAGRUNT_VERSION" != "" ]; then for version in $TERRAGRUNT_VERSION; do ( echo "---"; echo "install TERRAGRUNT version $version ..."; sudo tgenv install "$version"; sudo tgenv use "$version") >> /tmp/boot.log 2>&1; done; fi
+
+
       COPY entrypoint.sh /entrypoint.sh
       COPY aws-assume.sh /usr/local/bin/aws-assume.sh
+      COPY aws-mfa-login.sh /usr/local/bin/aws-mfa-login.sh
+
       ### set user
       USER ${USER:-user}
+
       ### apply helmenv 3.1.1 and install helmdiff
-      RUN touch ~/.zshrc
+      #RUN touch /home/${USER}/.zshrc
+
       ENTRYPOINT ["/entrypoint.sh"]
     confdest: /tmp/tooling/Dockerfile
     confperm: 0644
@@ -134,7 +148,7 @@ cmd:
             context: .
             args:
               IMAGE: ghcr.io/lanixx-hh/tooling-base
-              TAG: latest
+              TAG: latest-arm64
               USER: ${USER:-user}
               UID: ${UID:-1000}
               TERRAFORM_VERSION: '0.11.14 0.12.30'
@@ -151,16 +165,26 @@ cmd:
     name: "lsh"
     desc: "start tooling"
     values:
-      - export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/Users/anatolilichii/.local/bin &&
-      - ( export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/Users/anatolilichii/.local/bin &&
-      - docker pull ghcr.io/lanixx-hh/tooling-base:latest &&
-      - docker-compose
+      - echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin;
+      - docker pull --platform arm64 ghcr.io/lanixx-hh/tooling-base:latest-arm64
+  - type: "docker-compose"
+    name: "build"
+    desc: "build tooling"
+    dcoptions:
       - -f /tmp/tooling/docker-compose.yaml
       - --project-directory /tmp/tooling
-      - build tooling) ;
-      - export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/Users/anatolilichii/.local/bin &&
-      - docker-compose
-      - -f /tmp/tooling/volumes-mac.yaml
+    cmdoptions: []
+    command: build
+    service: ""
+    values: []
+  - type: "docker-compose"
+    name: "run"
+    desc: "run tooling"
+    dcoptions:
       - -f /tmp/tooling/docker-compose.yaml
       - --project-directory /tmp/tooling
-      - run tooling
+    command: run
+    service: tooling
+    cmdoptions: []
+    values:
+      - zsh

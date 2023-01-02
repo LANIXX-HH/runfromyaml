@@ -1,9 +1,7 @@
 package cli
 
 import (
-	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
@@ -29,15 +27,8 @@ var (
 	confdata   string
 	confdest   string
 	confperm   os.FileMode
-	file       string
-	help       bool
 	debug      bool
 )
-
-func printColor(ctype color.Attribute, cstring ...interface{}) {
-	mystring := color.New(ctype)
-	mystring.Println(cstring)
-}
 
 func execCmd(types map[interface{}]interface{}, _envs []string) {
 	wg := new(sync.WaitGroup)
@@ -153,28 +144,15 @@ func conf(types map[interface{}]interface{}) {
 	color.New(color.FgGreen).Println("# create " + confdest)
 }
 
-func Runfromyaml() {
+func Runfromyaml(yamlFile []byte) {
 
-	programm := os.Args
-
-	// parse flags
-	flag.StringVar(&file, "file", "commands.yaml", "input config filename")
-	flag.BoolVar(&help, "help", false, "Display this help")
-	flag.BoolVar(&debug, "debug", false, "Debug Mode")
-	flag.Parse()
-
-	if debug {
-		printColor(color.FgRed, "\n", programm)
-	}
-
-	yamlFile, err := ioutil.ReadFile(file)
 	yaml.Unmarshal(yamlFile, &results)
 
 	for key := range results["env"] {
 		if debug {
-			printColor(color.BgBlue, results["env"])
-			printColor(color.BgBlue, envs)
-			printColor(color.BgBlue, key)
+			functions.PrintColor(color.BgBlue, results["env"])
+			functions.PrintColor(color.BgBlue, envs)
+			functions.PrintColor(color.BgBlue, key)
 		}
 		envs = append(envs, results["env"][key].(string))
 	}
@@ -183,18 +161,18 @@ func Runfromyaml() {
 		if !reflect.ValueOf(results["cmd"][key].(map[interface{}]interface{})).IsNil() {
 			types = results["cmd"][key].(map[interface{}]interface{})
 			if debug {
-				printColor(color.FgHiCyan, "\n\n%+v\n\n", types)
-				printColor(color.FgBlue, "Name: %+v\n", types["name"])
-				printColor(color.FgBlue, "Beschreibung: %+v\n", types["desc"])
-				printColor(color.FgBlue, "Key: %+v\n", key)
-				printColor(color.FgBlue, "Command: %+v\n", values)
-				printColor(color.FgBlue, "Data:\n---\n%+v\n---\n", types["confdata"])
-				printColor(color.FgBlue, "Destination: %+v\n", types["confdest"])
-				printColor(color.FgBlue, "Permissions: %+v\n", types["confperm"])
-				printColor(color.FgHiWhite, "Key: %+v\n", key)
-				printColor(color.FgGreen, "Name: %+v\n", types["name"])
-				printColor(color.FgGreen, "Beschreibung: %+v\n", types["desc"])
-				printColor(color.FgYellow, "Command: %+v\n", values)
+				functions.PrintColor(color.FgHiCyan, "\n\n%+v\n\n", types)
+				functions.PrintColor(color.FgBlue, "Name: %+v\n", types["name"])
+				functions.PrintColor(color.FgBlue, "Beschreibung: %+v\n", types["desc"])
+				functions.PrintColor(color.FgBlue, "Key: %+v\n", key)
+				functions.PrintColor(color.FgBlue, "Command: %+v\n", values)
+				functions.PrintColor(color.FgBlue, "Data:\n---\n%+v\n---\n", types["confdata"])
+				functions.PrintColor(color.FgBlue, "Destination: %+v\n", types["confdest"])
+				functions.PrintColor(color.FgBlue, "Permissions: %+v\n", types["confperm"])
+				functions.PrintColor(color.FgHiWhite, "Key: %+v\n", key)
+				functions.PrintColor(color.FgGreen, "Name: %+v\n", types["name"])
+				functions.PrintColor(color.FgGreen, "Beschreibung: %+v\n", types["desc"])
+				functions.PrintColor(color.FgYellow, "Command: %+v\n", values)
 				fmt.Printf("\n")
 				fmt.Printf("\n")
 			}
@@ -215,14 +193,13 @@ func Runfromyaml() {
 			}
 			if types["type"] == "conf" {
 				if debug {
-					printColor(color.FgYellow, "Config: %+v\n", types["confdata"])
-					printColor(color.FgYellow, "Config: %+v\n", types["confdest"])
-					printColor(color.FgYellow, "Config: %+v\n", types["confperm"])
+					functions.PrintColor(color.FgYellow, "Config: %+v\n", types["confdata"])
+					functions.PrintColor(color.FgYellow, "Config: %+v\n", types["confdest"])
+					functions.PrintColor(color.FgYellow, "Config: %+v\n", types["confperm"])
 					fmt.Printf("\n")
 				}
 				conf(types)
 			}
 		}
 	}
-	functions.Check(err)
 }
