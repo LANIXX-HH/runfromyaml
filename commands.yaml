@@ -100,15 +100,27 @@ cmd:
       - ls
       - -lisa;
       - ls -lisa
+  - type: shell
+    expandenv: true
+    desc: "create ssh key for localhost"
+    name: "create-ssh-key"
+    values:
+      - ls $HOME/.ssh/id_rsa-localhost || ssh-keygen -t rsa -b 4096 -N '' -f $HOME/.ssh/id_rsa-localhost
+  - type: shell
+    expandenv: true
+    desc: "use ssh key for localhost"
+    name: "use-ssh-key"
+    values:
+      - grep -f $HOME/.ssh/id_rsa-localhost.pub $HOME/.ssh/authorized_keys || cat $HOME/.ssh/id_rsa-localhost.pub >> $HOME/.ssh/authorized_keys
   - type: "ssh"
     expandenv: true
     name: "ssh-run"
     desc: "run ls command via ssh connection"
-    user: user
-    host: example.com
+    user: $USER
+    host: localhost
     port: 22
     options:
-      - -i ~/.ssh/id_rsa-example
+      - -i $HOME/.ssh/id_rsa-localhost
     values:
       - ls 
       - -lisa;

@@ -129,20 +129,42 @@ func dockerComposeCmd(types map[interface{}]interface{}, _envs []string) {
 }
 
 func sshCmd(types map[interface{}]interface{}, _envs []string) {
+	var user string
+	var host string
 	wg := new(sync.WaitGroup)
 	if !reflect.ValueOf(types["values"]).IsNil() {
 		values = strings.Trim(fmt.Sprint(types["values"]), "[]")
+		if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
+			values = os.ExpandEnv(values)
+
+		}
 		cmds = strings.Fields(values)
 	}
 	if !reflect.ValueOf(types["options"]).IsNil() {
 		values = strings.Trim(fmt.Sprint(types["options"]), "[]")
+		if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
+			values = os.ExpandEnv(values)
+
+		}
 		options = strings.Fields(values)
 	}
 	if string(types["desc"].(string)) != "" {
 		desc = fmt.Sprintf("%v", types["desc"])
 	}
+	if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
+		user = os.ExpandEnv(types["user"].(string))
+
+	} else {
+		user = types["user"].(string)
+	}
+	if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
+		host = os.ExpandEnv(types["host"].(string))
+
+	} else {
+		host = types["host"].(string)
+	}
 	wg.Add(1)
-	go exec.CommandSSH(types["user"].(string), types["port"].(int), types["host"].(string), options, cmds, desc, _envs, wg)
+	go exec.CommandSSH(user, types["port"].(int), host, options, cmds, desc, _envs, wg)
 	wg.Wait()
 }
 
