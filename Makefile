@@ -12,6 +12,10 @@ deps:
 	go get -v ./...
 	go mod download
 
+# update to latest
+update: 
+	go get -u ./...
+
 # clean the project
 clean:
 	rm -rf runfromyaml
