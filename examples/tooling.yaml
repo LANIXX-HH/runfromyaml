@@ -211,6 +211,6 @@ cmd:
     command: exec
     service: tooling
     cmdoptions:
-      - -it
+      - -iT
     values:
       - zsh
