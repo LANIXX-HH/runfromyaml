@@ -43,6 +43,20 @@ jobs:
         goversion: 1.17
         binary_name: runfromyaml
         asset_name: runfromyaml-Linux-armvXl
+  release-linux-aarch4:
+    name: "release linux/aarch64"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: compile and release
+      uses: wangyoucao577/go-release-action@v1.20
+      with:
+        github_token: ${{ secrets.MY_GITHUB_TOKEN }}
+        goos: linux
+        goarch: arm64
+        goversion: 1.17
+        binary_name: runfromyaml
+        asset_name: runfromyaml-Linux-aarch64
   release-linux-arm64:
     name: "release linux/arm64"
     runs-on: ubuntu-latest
