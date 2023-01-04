@@ -164,7 +164,6 @@ cmd:
               TERRAGRUNT_VERSION: '0.25.5 0.25.3'
               HELM_VERSION: '3.5.0'
           environment:
-            SLEEP: 86400
             SHELL: /bin/zsh
             KUBECONFIG: /home/${USER}/.kube/config
             SSH_PRIVATE_KEY_FILE: /home/${USER}/.ssh/id_rsa
@@ -196,21 +195,8 @@ cmd:
     dcoptions:
       - -f $HOME/tooling/docker-compose.yaml
       - --project-directory $HOME/tooling
-    command: up
+    command: run
     service: tooling
-    cmdoptions:
-      - -d
-    values: []
-  - type: "docker-compose"
-    expandenv: true
-    name: "exec"
-    desc: "run tooling"
-    dcoptions:
-      - -f $HOME/tooling/docker-compose.yaml
-      - --project-directory $HOME/tooling
-    command: exec
-    service: tooling
-    cmdoptions:
-      - -iT
+    cmdoptions: []
     values:
       - zsh
