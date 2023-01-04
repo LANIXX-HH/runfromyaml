@@ -1,4 +1,8 @@
 ---
+env:
+  - CR_PAT=abc
+  - PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+  - LC_ALL=POSIX
 cmd:
   - type: "shell"
     expandenv: true
@@ -55,6 +59,10 @@ cmd:
         export KUBECONFIG=$KUBECONFIG
       fi
       export ENVIRONMENT=ae-${AWS_PROFILE:-test}
+      if ( test "$SLEEP" != "" ); then
+        echo "run in sleep with $SLEEP seconds ..."
+        sleep $SLEEP
+      fi
       ### run command
       if [ "x$*" = "x" ]; then
         exec "$SHELL"
@@ -156,6 +164,7 @@ cmd:
               TERRAGRUNT_VERSION: '0.25.5 0.25.3'
               HELM_VERSION: '3.5.0'
           environment:
+            SLEEP: 86400
             SHELL: /bin/zsh
             KUBECONFIG: /home/${USER}/.kube/config
             SSH_PRIVATE_KEY_FILE: /home/${USER}/.ssh/id_rsa
@@ -187,8 +196,21 @@ cmd:
     dcoptions:
       - -f $HOME/tooling/docker-compose.yaml
       - --project-directory $HOME/tooling
-    command: run
+    command: up
     service: tooling
-    cmdoptions: []
+    cmdoptions:
+      - -d
+    values: []
+  - type: "docker-compose"
+    expandenv: true
+    name: "exec"
+    desc: "run tooling"
+    dcoptions:
+      - -f $HOME/tooling/docker-compose.yaml
+      - --project-directory $HOME/tooling
+    command: exec
+    service: tooling
+    cmdoptions:
+      - -it
     values:
       - zsh
