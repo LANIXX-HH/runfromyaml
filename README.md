@@ -42,4 +42,5 @@ runfromyaml -file=my-collection.yaml -debug
 
 ~~~shell
 curl --silent --location https://raw.githubusercontent.com/LANIXX-HH/runfromyaml/master/examples/tooling.sh | sh
+./runfromyaml -file tooling.yaml
 ~~~
