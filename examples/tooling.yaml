@@ -5,9 +5,9 @@ cmd:
     name: "lsh"
     desc: "create tooling directory"
     values:
-      - mkdir -p /tmp/tooling
+      - mkdir -p $HOME/tooling
   - type: "conf"
-    confdest: /tmp/tooling/aws-mfa-login.sh
+    confdest: $HOME/tooling/aws-mfa-login.sh
     confperm: 0755
     confdata: |
       #!/bin/bash
@@ -17,7 +17,7 @@ cmd:
       AWS_ACCOUNT_ID=$(aws sts get-caller-identity --output json --profile "$AWS_PROFILE_NAME" | jq -r '.Account')
       aws sts get-session-token --serial-number "arn:aws:iam::${AWS_ACCOUNT_ID}:mfa/${AWS_USER_NAME}" --token-code $AWS_MFA_TOKEN --profile "$AWS_PROFILE_NAME" | jq -r ' "export AWS_ACCESS_KEY_ID=" + .Credentials.AccessKeyId + "\n" + "export AWS_SECRET_ACCESS_KEY=" + .Credentials.SecretAccessKey + "\n" + "export AWS_SECURITY_TOKEN=" + .Credentials.SessionToken + "\n" + "export AWS_SESSION_TOKEN=" + .Credentials.SessionToken'
   - type: "conf"
-    confdest: /tmp/tooling/aws-assume.sh
+    confdest: $HOME/tooling/aws-assume.sh
     confperm: 0755
     confdata: |
       #!/bin/bash
@@ -26,7 +26,7 @@ cmd:
       : "${AWS_ACCOUNT_ID:?Please specify AWS_ACCOUNT_ID for the destination role}"
       aws sts assume-role --output json --role-arn "arn:aws:iam::${AWS_ACCOUNT_ID}:role/${ROLE}" --role-session-name "${ROLE}" --duration-seconds "$DURATION" | jq -r ' "export AWS_ACCESS_KEY_ID=" + .Credentials.AccessKeyId + "\n" + "export AWS_SECRET_ACCESS_KEY=" + .Credentials.SecretAccessKey + "\n" + "export AWS_SECURITY_TOKEN=" + .Credentials.SessionToken + "\n" + "export AWS_SESSION_TOKEN=" + .Credentials.SessionToken'
   - type: "conf"
-    confdest: /tmp/tooling/entrypoint.sh
+    confdest: $HOME/tooling/entrypoint.sh
     confperm: 0755
     confdata: |
       #!/bin/bash
@@ -120,7 +120,7 @@ cmd:
       #RUN touch /home/${USER}/.zshrc
 
       ENTRYPOINT ["/entrypoint.sh"]
-    confdest: /tmp/tooling/Dockerfile
+    confdest: $HOME/tooling/Dockerfile
     confperm: 0644
   - type: "conf"
     confdata: |
@@ -133,7 +133,7 @@ cmd:
             - ${HOME}/Projects:/home/${USER}/Projects
             - ${HOME}/Projects:${HOME}/Projects
             - /var/run/docker.sock:/var/run/docker.sock
-    confdest: /tmp/tooling/volumes-mac.yaml
+    confdest: $HOME/tooling/volumes-mac.yaml
     confperm: 0644
   - type: "conf"
     confdata: |
@@ -160,7 +160,7 @@ cmd:
             KUBECONFIG: /home/${USER}/.kube/config
             SSH_PRIVATE_KEY_FILE: /home/${USER}/.ssh/id_rsa
             SSO_PROFILE: ${SSO_PROFILE:-}
-    confdest: /tmp/tooling/docker-compose.yaml
+    confdest: $HOME/tooling/docker-compose.yaml
     confperm: 0644
   - type: "shell"
     expandenv: false
@@ -174,8 +174,8 @@ cmd:
     name: "build"
     desc: "build tooling"
     dcoptions:
-      - -f /tmp/tooling/docker-compose.yaml
-      - --project-directory /tmp/tooling
+      - -f $HOME/tooling/docker-compose.yaml
+      - --project-directory $HOME/tooling
     cmdoptions: []
     command: build
     service: ""
@@ -185,8 +185,8 @@ cmd:
     name: "run"
     desc: "run tooling"
     dcoptions:
-      - -f /tmp/tooling/docker-compose.yaml
-      - --project-directory /tmp/tooling
+      - -f $HOME/tooling/docker-compose.yaml
+      - --project-directory $HOME/tooling
     command: run
     service: tooling
     cmdoptions: []
