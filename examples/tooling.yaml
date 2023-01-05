@@ -1,8 +1,11 @@
 ---
 env:
-  - CR_PAT=abc
-  - PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
-  - LC_ALL=POSIX
+  - key: CR_PAT
+    value: "abc"
+  - key: "PATH"
+    value: "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin"
+  - key: LC_ALL
+    value: POSIX
 cmd:
   - type: "shell"
     expandenv: true

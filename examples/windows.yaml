@@ -1,7 +1,9 @@
 ---
 env:
-  - TEST=bla
-  - BLA=TEST
+  - key: "TEST"
+    value: "bla"
+  - key: "BLA"
+    value: "TEST"
 cmd:
   - type: "conf"
     confdata: | 

@@ -1,7 +1,9 @@
 ---
 env:
-  - PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/Users/anatolilichii/.local/bin:/opt/homebrew/bin
-  - LC_ALL=POSIX
+  - key: PATH
+    value: /usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/Users/anatolilichii/.local/bin:/opt/homebrew/bin
+  - key: LC_ALL
+    value: POSIX
 cmd:
   - type: "shell"
     expandenv: true
