@@ -1,8 +1,9 @@
 ---
 env:
-  - TEST=bla
-  - BLA=TEST
-  - HOME=/tmp/tooling
+  - key: "TEST"
+    value: "foo"
+  - key: "BLA"
+    value: "TEST"
 cmd:
   - type: "shell"
     expandenv: false 
@@ -25,8 +26,8 @@ cmd:
     name: "list"
     desc: "liste auf"
     values:
-      - ls 
-      - -lisa 
+      - uname 
+      - -a 
   - type: "conf"
     confdata: | 
       test
@@ -54,9 +55,9 @@ cmd:
     desc: "print shell environment"
     name: "print-shell-env"
     values:
-      - ls -lisa;
-      - ls 
-      - -la
+      - pwd;
+      - uname 
+      - -a
   - type: shell
     expandenv: true
     desc: "print shell environment"
@@ -72,9 +73,9 @@ cmd:
     command: run
     container: alpine
     values: 
-        - ls
-        - -lisa ".";
-        - cd /
+        - uname
+        - -a;
+        - pwd
   - type: "docker-compose"
     expandenv: true
     name: "build"
@@ -97,9 +98,9 @@ cmd:
     service: tooling
     cmdoptions: []
     values:
-      - ls
-      - -lisa;
-      - ls -lisa
+      - uname
+      - -a;
+      - pwd
   - type: shell
     expandenv: true
     desc: "create ssh key for localhost"
@@ -122,6 +123,6 @@ cmd:
     options:
       - -i $HOME/.ssh/id_rsa-localhost
     values:
-      - ls 
-      - -lisa;
-      - ls -lisa
+      - uname 
+      - -a ;
+      - pwd
