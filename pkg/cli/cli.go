@@ -37,7 +37,7 @@ func execCmd(yblock map[interface{}]interface{}, _envs []string) {
 		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
 		if reflect.ValueOf(yblock["expandenv"]).Bool() && yblock["expandenv"].(bool) {
 			values = os.ExpandEnv(values)
-
+			color.New(color.FgHiBlack).Println("# environment variables are expanded")
 		}
 		cmds = strings.Fields(values)
 	}
@@ -54,7 +54,7 @@ func shellCmd(yblock map[interface{}]interface{}, _envs []string) {
 		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
 		if reflect.ValueOf(yblock["expandenv"]).Bool() && yblock["expandenv"].(bool) {
 			values = os.ExpandEnv(values)
-
+			color.New(color.FgHiBlack).Println("# environment variables are expanded")
 		}
 		cmds = strings.Fields(values)
 	}
