@@ -37,7 +37,9 @@ func execCmd(yblock map[interface{}]interface{}, _envs []string) {
 		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
 		if reflect.ValueOf(yblock["expandenv"]).Bool() && yblock["expandenv"].(bool) {
 			values = os.ExpandEnv(values)
-			color.New(color.FgHiBlack).Println("# environment variables are expanded")
+			if debug {
+				color.New(color.FgHiBlack).Println("# environment variables are expanded")
+			}
 		}
 		cmds = strings.Fields(values)
 	}
@@ -54,7 +56,9 @@ func shellCmd(yblock map[interface{}]interface{}, _envs []string) {
 		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
 		if reflect.ValueOf(yblock["expandenv"]).Bool() && yblock["expandenv"].(bool) {
 			values = os.ExpandEnv(values)
-			color.New(color.FgHiBlack).Println("# environment variables are expanded")
+			if debug {
+				color.New(color.FgHiBlack).Println("# environment variables are expanded")
+			}
 		}
 		cmds = strings.Fields(values)
 	}
@@ -78,7 +82,9 @@ func dockerCmd(yblock map[interface{}]interface{}, _envs []string) {
 		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
 		if reflect.ValueOf(yblock["expandenv"]).Bool() && yblock["expandenv"].(bool) {
 			values = os.ExpandEnv(values)
-			color.New(color.FgHiBlack).Println("# environment variables are expanded")
+			if debug {
+				color.New(color.FgHiBlack).Println("# environment variables are expanded")
+			}
 		}
 		cmds = strings.Fields(values)
 	}
@@ -97,7 +103,9 @@ func dockerComposeCmd(yblock map[interface{}]interface{}, _envs []string) {
 		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
 		if reflect.ValueOf(yblock["expandenv"]).Bool() && yblock["expandenv"].(bool) {
 			values = os.ExpandEnv(values)
-			color.New(color.FgHiBlack).Println("# environment variables are expanded")
+			if debug {
+				color.New(color.FgHiBlack).Println("# environment variables are expanded")
+			}
 		}
 		cmds = strings.Fields(values)
 	}
@@ -134,7 +142,9 @@ func sshCmd(yblock map[interface{}]interface{}, _envs []string) {
 		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
 		if reflect.ValueOf(yblock["expandenv"]).Bool() && yblock["expandenv"].(bool) {
 			values = os.ExpandEnv(values)
-			color.New(color.FgHiBlack).Println("# environment variables are expanded")
+			if debug {
+				color.New(color.FgHiBlack).Println("# environment variables are expanded")
+			}
 		}
 		cmds = strings.Fields(values)
 	}
@@ -198,7 +208,11 @@ func Runfromyaml(yamlFile []byte) {
 	}
 
 	for key := range ydoc["cmd"] {
-		color.New(color.FgBlue).Println("\n" + "# " + fmt.Sprint(key+1))
+
+		if debug {
+			color.New(color.FgBlue).Println("\n" + "# " + fmt.Sprint(key+1))
+		}
+
 		if !reflect.ValueOf(ydoc["cmd"][key].(map[interface{}]interface{})).IsNil() {
 			yblock = ydoc["cmd"][key].(map[interface{}]interface{})
 			if debug {
@@ -219,7 +233,7 @@ func Runfromyaml(yamlFile []byte) {
 			}
 
 			if reflect.ValueOf(yblock["desc"]).IsValid() {
-				color.New(color.FgGreen).Println("# " + yblock["desc"].(string))
+				color.New(color.FgGreen).Println("\n" + "# " + yblock["desc"].(string))
 			}
 
 			if yblock["type"] == "exec" {

@@ -32,7 +32,7 @@ func CommandDockerRun(dcommand string, container string, cmd []string, desc stri
 
 		command := exec.Command(docker[0], docker[1:]...)
 		command.Env = append(os.Environ(), _envs...)
-		color.New(color.FgYellow).Println(strings.Trim(fmt.Sprint(docker), "[]"), "\n")
+		color.New(color.FgYellow).Print(strings.Trim(fmt.Sprint(docker), "[]"), "\n")
 		command.Stdout = os.Stdout
 		command.Stdin = os.Stdin
 		command.Stderr = os.Stderr
@@ -78,7 +78,7 @@ func CommandDockerComposeExec(command string, service string, cmdoptions []strin
 		//compose = append(append(append(append(dcoptions, command), cmdoptions...), service), cmd...)
 		cmds := exec.Command("docker-compose", _compose...)
 		cmds.Env = append(os.Environ(), envs...)
-		color.New(color.FgYellow).Println("docker-compose", strings.Trim(fmt.Sprint(_compose), "[]"), "\n")
+		color.New(color.FgYellow).Print("docker-compose", strings.Trim(fmt.Sprint(_compose), "[]"), "\n")
 		cmds.Stdout = os.Stdout
 		cmds.Stdin = os.Stdin
 		cmds.Stderr = os.Stderr
@@ -104,7 +104,7 @@ func CommandSSH(user string, port int, host string, options []string, cmd []stri
 		ssh = append(append([]string{"ssh", "-p", strconv.Itoa(port), "-l", user, host}, options...), sshcmd)
 		command := exec.Command(ssh[0], ssh[1:]...)
 		command.Env = append(os.Environ(), _envs...)
-		color.New(color.FgYellow).Println(strings.Trim(fmt.Sprint(ssh), "[]"), "\n")
+		color.New(color.FgYellow).Print(strings.Trim(fmt.Sprint(ssh), "[]"), "\n")
 		command.Stdout = os.Stdout
 		command.Stdin = os.Stdin
 		command.Stderr = os.Stderr
@@ -126,7 +126,7 @@ func CommandShell(cmd []string, desc string, wg *sync.WaitGroup, index int, _env
 	bash = append([]string{"bash", "-c"}, strings.Join(cmd, " "))
 	command := exec.Command(bash[0], bash[1:]...)
 	command.Env = append(os.Environ(), _envs...)
-	color.New(color.FgYellow).Println(strings.Trim(fmt.Sprint(bash), "[]"), "\n")
+	color.New(color.FgYellow).Print(strings.Trim(fmt.Sprint(bash), "[]"), "\n")
 	command.Stdout = os.Stdout
 	command.Stdin = os.Stdin
 	command.Stderr = os.Stderr
@@ -147,7 +147,7 @@ func Command(cmd []string, desc string, wg *sync.WaitGroup, _envs []string) {
 		onecmd := strings.Split(_cmd, " ")
 		command := exec.Command(onecmd[0], onecmd[1:]...)
 		command.Env = append(os.Environ(), _envs...)
-		color.New(color.FgYellow).Println("exec", strings.Trim(fmt.Sprint(command), "[]"), "\n")
+		color.New(color.FgYellow).Print("exec", strings.Trim(fmt.Sprint(command), "[]"), "\n")
 		command.Stdout = os.Stdout
 		command.Stdin = os.Stdin
 		command.Stderr = os.Stderr
