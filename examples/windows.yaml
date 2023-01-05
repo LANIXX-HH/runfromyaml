@@ -14,12 +14,13 @@ cmd:
     confdest: eins.conf
     confperm: 0644
   - type: "exec"
-    expandenv: false
-    name: "list"
-    desc: "liste auf"
+    expandenv: true
+    name: "envprint"
+    desc: "zeige Inhalt von TEST an"
     values:
-      - ls 
-      - -lisa 
+      - cmd
+      - /C
+      - echo %TEST%
   - type: "conf"
     confdata: | 
       test
