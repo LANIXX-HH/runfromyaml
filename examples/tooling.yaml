@@ -1,7 +1,5 @@
 ---
 env:
-  - key: CR_PAT
-    value: "abc"
   - key: "PATH"
     value: "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin"
   - key: LC_ALL
@@ -178,7 +176,6 @@ cmd:
     name: "lsh"
     desc: "start tooling"
     values:
-      - echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin;
       - docker pull --platform arm64 ghcr.io/lanixx-hh/tooling-base:latest-arm64
   - type: "docker-compose"
     expandenv: true
