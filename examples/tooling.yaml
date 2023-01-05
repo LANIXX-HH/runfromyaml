@@ -1,7 +1,5 @@
 ---
 env:
-  - key: "PATH"
-    value: "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin"
   - key: LC_ALL
     value: POSIX
 cmd:
