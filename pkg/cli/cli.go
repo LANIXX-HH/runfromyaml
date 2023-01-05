@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	results    map[interface{}][]interface{}
-	types      map[interface{}]interface{}
+	ydoc       map[interface{}][]interface{}
+	yblock     map[interface{}]interface{}
 	values     string
 	envs       []string
 	cmds       []string
@@ -30,36 +30,36 @@ var (
 	debug      bool
 )
 
-func execCmd(types map[interface{}]interface{}, _envs []string) {
+func execCmd(yblock map[interface{}]interface{}, _envs []string) {
 	wg := new(sync.WaitGroup)
 
-	if !reflect.ValueOf(types["values"]).IsNil() {
-		values = strings.Trim(fmt.Sprint(types["values"]), "[]")
-		if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
+	if !reflect.ValueOf(yblock["values"]).IsNil() {
+		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
+		if reflect.ValueOf(yblock["expandenv"]).Bool() && yblock["expandenv"].(bool) {
 			values = os.ExpandEnv(values)
 
 		}
 		cmds = strings.Fields(values)
 	}
-	if string(types["desc"].(string)) != "" {
-		desc = fmt.Sprintf("%v", types["desc"])
+	if string(yblock["desc"].(string)) != "" {
+		desc = fmt.Sprintf("%v", yblock["desc"])
 	}
 	wg.Add(1)
 	go exec.Command(cmds, desc, wg, _envs)
 	wg.Wait()
 }
 
-func shellCmd(types map[interface{}]interface{}, _envs []string) {
-	if !reflect.ValueOf(types["values"]).IsNil() {
-		values = strings.Trim(fmt.Sprint(types["values"]), "[]")
-		if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
+func shellCmd(yblock map[interface{}]interface{}, _envs []string) {
+	if !reflect.ValueOf(yblock["values"]).IsNil() {
+		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
+		if reflect.ValueOf(yblock["expandenv"]).Bool() && yblock["expandenv"].(bool) {
 			values = os.ExpandEnv(values)
 
 		}
 		cmds = strings.Fields(values)
 	}
-	if string(types["desc"].(string)) != "" {
-		desc = fmt.Sprintf("%v", types["desc"])
+	if string(yblock["desc"].(string)) != "" {
+		desc = fmt.Sprintf("%v", yblock["desc"])
 	}
 	temp_cmds := strings.Join(cmds, " ")
 	cmds := strings.Split(temp_cmds, ";")
@@ -72,111 +72,106 @@ func shellCmd(types map[interface{}]interface{}, _envs []string) {
 	}
 }
 
-func dockerCmd(types map[interface{}]interface{}, _envs []string) {
+func dockerCmd(yblock map[interface{}]interface{}, _envs []string) {
 	wg := new(sync.WaitGroup)
-	if !reflect.ValueOf(types["values"]).IsNil() {
-		values = strings.Trim(fmt.Sprint(types["values"]), "[]")
-		if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
+	if !reflect.ValueOf(yblock["values"]).IsNil() {
+		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
+		if reflect.ValueOf(yblock["expandenv"]).Bool() && yblock["expandenv"].(bool) {
 			values = os.ExpandEnv(values)
-
+			color.New(color.FgHiBlack).Println("# environment variables are expanded")
 		}
 		cmds = strings.Fields(values)
 	}
-	if string(types["desc"].(string)) != "" {
-		desc = fmt.Sprintf("%v", types["desc"])
+	if string(yblock["desc"].(string)) != "" {
+		desc = fmt.Sprintf("%v", yblock["desc"])
 	}
 	wg.Add(1)
-	go exec.CommandDockerRun(types["command"].(string), types["container"].(string), cmds, desc, _envs, wg)
+	go exec.CommandDockerRun(yblock["command"].(string), yblock["container"].(string), cmds, desc, _envs, wg)
 	wg.Wait()
 }
 
-func dockerComposeCmd(types map[interface{}]interface{}, _envs []string) {
+func dockerComposeCmd(yblock map[interface{}]interface{}, _envs []string) {
 	var service string
 	wg := new(sync.WaitGroup)
-	if !reflect.ValueOf(types["values"]).IsNil() {
-		values = strings.Trim(fmt.Sprint(types["values"]), "[]")
-		if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
+	if !reflect.ValueOf(yblock["values"]).IsNil() {
+		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
+		if reflect.ValueOf(yblock["expandenv"]).Bool() && yblock["expandenv"].(bool) {
 			values = os.ExpandEnv(values)
-
+			color.New(color.FgHiBlack).Println("# environment variables are expanded")
 		}
 		cmds = strings.Fields(values)
 	}
-	if !reflect.ValueOf(types["dcoptions"]).IsNil() {
-		values = strings.Trim(fmt.Sprint(types["dcoptions"]), "[]")
-		if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
+	if !reflect.ValueOf(yblock["dcoptions"]).IsNil() {
+		values = strings.Trim(fmt.Sprint(yblock["dcoptions"]), "[]")
+		if reflect.ValueOf(yblock["expandenv"]).Bool() && yblock["expandenv"].(bool) {
 			values = os.ExpandEnv(values)
-
 		}
 		dcoptions = strings.Fields(values)
 	}
-	if !reflect.ValueOf(types["cmdoptions"]).IsNil() {
-		values = strings.Trim(fmt.Sprint(types["cmdoptions"]), "[]")
-		if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
+	if !reflect.ValueOf(yblock["cmdoptions"]).IsNil() {
+		values = strings.Trim(fmt.Sprint(yblock["cmdoptions"]), "[]")
+		if reflect.ValueOf(yblock["expandenv"]).Bool() && yblock["expandenv"].(bool) {
 			values = os.ExpandEnv(values)
-
 		}
 		cmdoptions = strings.Fields(values)
 	}
-	if string(types["desc"].(string)) != "" {
-		desc = fmt.Sprintf("%v", types["desc"])
+	if string(yblock["desc"].(string)) != "" {
+		desc = fmt.Sprintf("%v", yblock["desc"])
 	}
-	if string(types["service"].(string)) != "" {
-		service = fmt.Sprintf("%v", types["service"])
+	if string(yblock["service"].(string)) != "" {
+		service = fmt.Sprintf("%v", yblock["service"])
 	}
 	wg.Add(1)
-	go exec.CommandDockerComposeExec(types["command"].(string), service, cmdoptions, dcoptions, cmds, desc, _envs, wg)
+	go exec.CommandDockerComposeExec(yblock["command"].(string), service, cmdoptions, dcoptions, cmds, desc, _envs, wg)
 	wg.Wait()
 }
 
-func sshCmd(types map[interface{}]interface{}, _envs []string) {
+func sshCmd(yblock map[interface{}]interface{}, _envs []string) {
 	var user string
 	var host string
 	wg := new(sync.WaitGroup)
-	if !reflect.ValueOf(types["values"]).IsNil() {
-		values = strings.Trim(fmt.Sprint(types["values"]), "[]")
-		if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
+	if !reflect.ValueOf(yblock["values"]).IsNil() {
+		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
+		if reflect.ValueOf(yblock["expandenv"]).Bool() && yblock["expandenv"].(bool) {
 			values = os.ExpandEnv(values)
-
+			color.New(color.FgHiBlack).Println("# environment variables are expanded")
 		}
 		cmds = strings.Fields(values)
 	}
-	if !reflect.ValueOf(types["options"]).IsNil() {
-		values = strings.Trim(fmt.Sprint(types["options"]), "[]")
-		if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
+	if !reflect.ValueOf(yblock["options"]).IsNil() {
+		values = strings.Trim(fmt.Sprint(yblock["options"]), "[]")
+		if reflect.ValueOf(yblock["expandenv"]).Bool() && yblock["expandenv"].(bool) {
 			values = os.ExpandEnv(values)
-
 		}
 		options = strings.Fields(values)
 	}
-	if string(types["desc"].(string)) != "" {
-		desc = fmt.Sprintf("%v", types["desc"])
+	if string(yblock["desc"].(string)) != "" {
+		desc = fmt.Sprintf("%v", yblock["desc"])
 	}
-	if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
-		user = os.ExpandEnv(types["user"].(string))
-
+	if reflect.ValueOf(yblock["expandenv"]).Bool() && yblock["expandenv"].(bool) {
+		user = os.ExpandEnv(yblock["user"].(string))
 	} else {
-		user = types["user"].(string)
+		user = yblock["user"].(string)
 	}
-	if reflect.ValueOf(types["expandenv"]).Bool() && types["expandenv"].(bool) {
-		host = os.ExpandEnv(types["host"].(string))
-
+	if reflect.ValueOf(yblock["expandenv"]).Bool() && yblock["expandenv"].(bool) {
+		host = os.ExpandEnv(yblock["host"].(string))
 	} else {
-		host = types["host"].(string)
+		host = yblock["host"].(string)
 	}
 	wg.Add(1)
-	go exec.CommandSSH(user, types["port"].(int), host, options, cmds, desc, _envs, wg)
+	go exec.CommandSSH(user, yblock["port"].(int), host, options, cmds, desc, _envs, wg)
 	wg.Wait()
 }
 
-func conf(types map[interface{}]interface{}) {
-	if reflect.ValueOf(types["confdata"].(string)).String() != "" {
-		confdata = types["confdata"].(string)
+func conf(yblock map[interface{}]interface{}) {
+	if reflect.ValueOf(yblock["confdata"].(string)).String() != "" {
+		confdata = yblock["confdata"].(string)
 	}
-	if reflect.ValueOf(types["confdest"].(string)).String() != "" {
-		confdest = types["confdest"].(string)
+	if reflect.ValueOf(yblock["confdest"].(string)).String() != "" {
+		confdest = yblock["confdest"].(string)
 	}
-	if reflect.ValueOf(types["confperm"].(int)).Int() != 0 {
-		confperm = os.FileMode(int(types["confperm"].(int)))
+	if reflect.ValueOf(yblock["confperm"].(int)).Int() != 0 {
+		confperm = os.FileMode(int(yblock["confperm"].(int)))
 	}
 	if confdata != "" && confdest != "" && string(rune(confperm)) != "" {
 		functions.WriteFile(confdata, confdest, confperm)
@@ -187,59 +182,69 @@ func conf(types map[interface{}]interface{}) {
 
 func Runfromyaml(yamlFile []byte) {
 
-	yaml.Unmarshal(yamlFile, &results)
+	yaml.Unmarshal(yamlFile, &ydoc)
 
-	for key := range results["env"] {
-		if debug {
-			functions.PrintColor(color.BgBlue, results["env"])
-			functions.PrintColor(color.BgBlue, envs)
-			functions.PrintColor(color.BgBlue, key)
-		}
-		envs = append(envs, results["env"][key].(string))
+	if debug {
+		functions.PrintColor(color.BgCyan, ydoc["env"])
 	}
 
-	for key := range results["cmd"] {
-		if !reflect.ValueOf(results["cmd"][key].(map[interface{}]interface{})).IsNil() {
-			types = results["cmd"][key].(map[interface{}]interface{})
+	for key := range ydoc["env"] {
+		_env := ydoc["env"][key].(map[interface{}]interface{})
+		os.Setenv(_env["key"].(string), _env["value"].(string))
+		envs = append(envs, _env["key"].(string)+"="+_env["value"].(string))
+		if debug {
+			functions.PrintColor(color.FgCyan, _env["key"].(string)+"="+_env["value"].(string))
+		}
+	}
+
+	for key := range ydoc["cmd"] {
+		color.New(color.FgBlue).Println("\n" + "# " + fmt.Sprint(key+1))
+		if !reflect.ValueOf(ydoc["cmd"][key].(map[interface{}]interface{})).IsNil() {
+			yblock = ydoc["cmd"][key].(map[interface{}]interface{})
 			if debug {
-				functions.PrintColor(color.FgHiCyan, "\n\n%+v\n\n", types)
-				functions.PrintColor(color.FgBlue, "Name: %+v\n", types["name"])
-				functions.PrintColor(color.FgBlue, "Beschreibung: %+v\n", types["desc"])
+				functions.PrintColor(color.FgHiCyan, "\n\n%+v\n\n", yblock)
+				functions.PrintColor(color.FgBlue, "Name: %+v\n", yblock["name"])
+				functions.PrintColor(color.FgBlue, "Beschreibung: %+v\n", yblock["desc"])
 				functions.PrintColor(color.FgBlue, "Key: %+v\n", key)
 				functions.PrintColor(color.FgBlue, "Command: %+v\n", values)
-				functions.PrintColor(color.FgBlue, "Data:\n---\n%+v\n---\n", types["confdata"])
-				functions.PrintColor(color.FgBlue, "Destination: %+v\n", types["confdest"])
-				functions.PrintColor(color.FgBlue, "Permissions: %+v\n", types["confperm"])
+				functions.PrintColor(color.FgBlue, "Data:\n---\n%+v\n---\n", yblock["confdata"])
+				functions.PrintColor(color.FgBlue, "Destination: %+v\n", yblock["confdest"])
+				functions.PrintColor(color.FgBlue, "Permissions: %+v\n", yblock["confperm"])
 				functions.PrintColor(color.FgHiWhite, "Key: %+v\n", key)
-				functions.PrintColor(color.FgGreen, "Name: %+v\n", types["name"])
-				functions.PrintColor(color.FgGreen, "Beschreibung: %+v\n", types["desc"])
+				functions.PrintColor(color.FgGreen, "Name: %+v\n", yblock["name"])
+				functions.PrintColor(color.FgGreen, "Beschreibung: %+v\n", yblock["desc"])
 				functions.PrintColor(color.FgYellow, "Command: %+v\n", values)
 				fmt.Printf("\n")
 				fmt.Printf("\n")
 			}
-			if types["type"] == "exec" {
-				execCmd(types, envs)
+
+			if reflect.ValueOf(yblock["desc"]).IsValid() {
+				color.New(color.FgGreen).Println("# " + yblock["desc"].(string))
 			}
-			if types["type"] == "shell" {
-				shellCmd(types, envs)
+
+			if yblock["type"] == "exec" {
+				execCmd(yblock, envs)
 			}
-			if types["type"] == "docker" {
-				dockerCmd(types, envs)
+			if yblock["type"] == "shell" {
+				shellCmd(yblock, envs)
 			}
-			if types["type"] == "docker-compose" {
-				dockerComposeCmd(types, envs)
+			if yblock["type"] == "docker" {
+				dockerCmd(yblock, envs)
 			}
-			if types["type"] == "ssh" {
-				sshCmd(types, envs)
+			if yblock["type"] == "docker-compose" {
+				dockerComposeCmd(yblock, envs)
 			}
-			if types["type"] == "conf" {
+			if yblock["type"] == "ssh" {
+				sshCmd(yblock, envs)
+			}
+			if yblock["type"] == "conf" {
 				if debug {
-					functions.PrintColor(color.FgYellow, "Config: %+v\n", types["confdata"])
-					functions.PrintColor(color.FgYellow, "Config: %+v\n", types["confdest"])
-					functions.PrintColor(color.FgYellow, "Config: %+v\n", types["confperm"])
+					functions.PrintColor(color.FgYellow, "Config: %+v\n", yblock["confdata"])
+					functions.PrintColor(color.FgYellow, "Config: %+v\n", yblock["confdest"])
+					functions.PrintColor(color.FgYellow, "Config: %+v\n", yblock["confperm"])
 					fmt.Printf("\n")
 				}
-				conf(types)
+				conf(yblock)
 			}
 		}
 	}
