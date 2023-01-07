@@ -1,4 +1,7 @@
 ---
+logging:
+  - level: info
+  - output: file
 env:
   - key: "TEST"
     value: "foo"

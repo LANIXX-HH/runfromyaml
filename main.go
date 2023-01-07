@@ -30,7 +30,7 @@ func main() {
 	flag.Parse()
 
 	if debug {
-		functions.PrintColor(color.FgRed, "\n", programm)
+		functions.PrintColor(color.FgRed, "debug", "stdout", "\n", programm)
 	}
 
 	yamlFile, err := ioutil.ReadFile(file)
