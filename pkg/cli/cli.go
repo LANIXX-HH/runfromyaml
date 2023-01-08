@@ -37,9 +37,11 @@ func execCmd(yblock map[interface{}]interface{}, _envs []string, _level string, 
 	if reflect.ValueOf(yblock["values"]).IsValid() {
 		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
 		if reflect.ValueOf(yblock["expandenv"]).IsValid() {
-			values = os.ExpandEnv(values)
-			if debug {
-				functions.PrintColor(color.FgHiBlack, "debug", _output, "# environment variables are expanded")
+			if yblock["expandenv"].(bool) {
+				values = os.ExpandEnv(values)
+				if debug {
+					functions.PrintColor(color.FgHiBlack, "debug", _output, "# environment variables are expanded")
+				}
 			}
 		}
 		cmds = strings.Fields(values)
@@ -56,9 +58,11 @@ func shellCmd(yblock map[interface{}]interface{}, _envs []string, _level string,
 	if reflect.ValueOf(yblock["values"]).IsValid() {
 		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
 		if reflect.ValueOf(yblock["expandenv"]).IsValid() {
-			values = os.ExpandEnv(values)
-			if debug {
-				functions.PrintColor(color.FgHiBlack, "debug", _output, "# environment variables are expanded")
+			if yblock["expandenv"].(bool) {
+				values = os.ExpandEnv(values)
+				if debug {
+					functions.PrintColor(color.FgHiBlack, "debug", _output, "# environment variables are expanded")
+				}
 			}
 		}
 		cmds = strings.Fields(values)
@@ -83,9 +87,11 @@ func dockerCmd(yblock map[interface{}]interface{}, _envs []string, _level string
 	if reflect.ValueOf(yblock["values"]).IsValid() {
 		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
 		if reflect.ValueOf(yblock["expandenv"]).IsValid() {
-			values = os.ExpandEnv(values)
-			if debug {
-				functions.PrintColor(color.FgHiBlack, "debug", _output, "# environment variables are expanded")
+			if yblock["expandenv"].(bool) {
+				values = os.ExpandEnv(values)
+				if debug {
+					functions.PrintColor(color.FgHiBlack, "debug", _output, "# environment variables are expanded")
+				}
 			}
 		}
 		cmds = strings.Fields(values)
@@ -105,9 +111,11 @@ func dockerComposeCmd(yblock map[interface{}]interface{}, _envs []string, _level
 	if reflect.ValueOf(yblock["values"]).IsValid() {
 		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
 		if reflect.ValueOf(yblock["expandenv"]).IsValid() {
-			values = os.ExpandEnv(values)
-			if debug {
-				functions.PrintColor(color.FgHiBlack, "debug", _output, "# environment variables are expanded")
+			if yblock["expandenv"].(bool) {
+				values = os.ExpandEnv(values)
+				if debug {
+					functions.PrintColor(color.FgHiBlack, "debug", _output, "# environment variables are expanded")
+				}
 			}
 		}
 		cmds = strings.Fields(values)
@@ -115,14 +123,18 @@ func dockerComposeCmd(yblock map[interface{}]interface{}, _envs []string, _level
 	if reflect.ValueOf(yblock["dcoptions"]).IsValid() {
 		values = strings.Trim(fmt.Sprint(yblock["dcoptions"]), "[]")
 		if reflect.ValueOf(yblock["expandenv"]).IsValid() {
-			values = os.ExpandEnv(values)
+			if yblock["expandenv"].(bool) {
+				values = os.ExpandEnv(values)
+			}
 		}
 		dcoptions = strings.Fields(values)
 	}
 	if reflect.ValueOf(yblock["cmdoptions"]).IsValid() {
 		values = strings.Trim(fmt.Sprint(yblock["cmdoptions"]), "[]")
 		if reflect.ValueOf(yblock["expandenv"]).IsValid() {
-			values = os.ExpandEnv(values)
+			if yblock["expandenv"].(bool) {
+				values = os.ExpandEnv(values)
+			}
 		}
 		cmdoptions = strings.Fields(values)
 	}
@@ -146,9 +158,11 @@ func sshCmd(yblock map[interface{}]interface{}, _envs []string, _level string, _
 	if reflect.ValueOf(yblock["values"]).IsValid() {
 		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
 		if reflect.ValueOf(yblock["expandenv"]).IsValid() {
-			values = os.ExpandEnv(values)
-			if debug {
-				functions.PrintColor(color.FgHiBlack, "debug", _output, "# environment variables are expanded")
+			if yblock["expandenv"].(bool) {
+				values = os.ExpandEnv(values)
+				if debug {
+					functions.PrintColor(color.FgHiBlack, "debug", _output, "# environment variables are expanded")
+				}
 			}
 		}
 		cmds = strings.Fields(values)
@@ -156,7 +170,9 @@ func sshCmd(yblock map[interface{}]interface{}, _envs []string, _level string, _
 	if reflect.ValueOf(yblock["options"]).IsValid() {
 		values = strings.Trim(fmt.Sprint(yblock["options"]), "[]")
 		if reflect.ValueOf(yblock["expandenv"]).IsValid() {
-			values = os.ExpandEnv(values)
+			if yblock["expandenv"].(bool) {
+				values = os.ExpandEnv(values)
+			}
 		}
 		options = strings.Fields(values)
 	}
@@ -167,12 +183,16 @@ func sshCmd(yblock map[interface{}]interface{}, _envs []string, _level string, _
 
 	user = yblock["user"].(string)
 	if reflect.ValueOf(yblock["expandenv"]).IsValid() {
-		user = os.ExpandEnv(user)
+		if yblock["expandenv"].(bool) {
+			user = os.ExpandEnv(user)
+		}
 	}
 
 	host = yblock["host"].(string)
 	if reflect.ValueOf(yblock["expandenv"]).IsValid() {
-		host = os.ExpandEnv(host)
+		if yblock["expandenv"].(bool) {
+			host = os.ExpandEnv(host)
+		}
 	}
 
 	wg.Add(1)
