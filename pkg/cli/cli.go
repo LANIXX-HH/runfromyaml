@@ -36,7 +36,7 @@ func execCmd(yblock map[interface{}]interface{}, _envs []string, _level string, 
 
 	if reflect.ValueOf(yblock["values"]).IsValid() {
 		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
-		if reflect.ValueOf(yblock["expandenv"]).Bool() && yblock["expandenv"].(bool) {
+		if reflect.ValueOf(yblock["expandenv"]).IsValid() {
 			values = os.ExpandEnv(values)
 			if debug {
 				functions.PrintColor(color.FgHiBlack, _level, _output, "# environment variables are expanded")
@@ -63,7 +63,8 @@ func shellCmd(yblock map[interface{}]interface{}, _envs []string, _level string,
 		}
 		cmds = strings.Fields(values)
 	}
-	if string(yblock["desc"].(string)) != "" {
+	desc = "<no description>"
+	if reflect.ValueOf(yblock["desc"]).IsValid() {
 		desc = fmt.Sprintf("%v", yblock["desc"])
 	}
 	temp_cmds := strings.Join(cmds, " ")
@@ -89,7 +90,8 @@ func dockerCmd(yblock map[interface{}]interface{}, _envs []string, _level string
 		}
 		cmds = strings.Fields(values)
 	}
-	if string(yblock["desc"].(string)) != "" {
+	desc = "<no description>"
+	if reflect.ValueOf(yblock["desc"]).IsValid() {
 		desc = fmt.Sprintf("%v", yblock["desc"])
 	}
 	wg.Add(1)
@@ -124,10 +126,12 @@ func dockerComposeCmd(yblock map[interface{}]interface{}, _envs []string, _level
 		}
 		cmdoptions = strings.Fields(values)
 	}
-	if string(yblock["desc"].(string)) != "" {
+	desc = "<no description>"
+	if reflect.ValueOf(yblock["desc"]).IsValid() {
 		desc = fmt.Sprintf("%v", yblock["desc"])
 	}
-	if string(yblock["service"].(string)) != "" {
+	service = "no-service"
+	if reflect.ValueOf(yblock["service"]).IsValid() {
 		service = fmt.Sprintf("%v", yblock["service"])
 	}
 	wg.Add(1)
@@ -156,7 +160,8 @@ func sshCmd(yblock map[interface{}]interface{}, _envs []string, _level string, _
 		}
 		options = strings.Fields(values)
 	}
-	if string(yblock["desc"].(string)) != "" {
+	desc = "<no description>"
+	if reflect.ValueOf(yblock["desc"]).IsValid() {
 		desc = fmt.Sprintf("%v", yblock["desc"])
 	}
 
@@ -187,9 +192,8 @@ func conf(yblock map[interface{}]interface{}, _level string, _output string) {
 	}
 	if confdata != "" && confdest != "" && string(rune(confperm)) != "" {
 		functions.WriteFile(confdata, confdest, confperm)
-		//readFile(string(confdest))
 	}
-	functions.PrintColor(color.FgYellow, _level, _output, "# create ", confdest)
+	functions.PrintColor(color.FgGreen, _level, _output, "# create ", confdest)
 }
 
 func Runfromyaml(yamlFile []byte) {
