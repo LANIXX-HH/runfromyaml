@@ -47,21 +47,12 @@ func Config() {
 
 func PrintColor(ctype color.Attribute, _level string, _output string, cstring ...interface{}) {
 
-	log := logrus.New()
-
 	switch _output {
 	case "stdout":
-		// stdout
-		log.Formatter = new(logrus.TextFormatter)
-		log.Formatter.(*logrus.TextFormatter).DisableLevelTruncation = true
-		log.Formatter.(*logrus.TextFormatter).DisableTimestamp = false
-		log.Formatter.(*logrus.TextFormatter).ForceColors = true
-		log.Formatter.(*logrus.TextFormatter).EnvironmentOverrideColors = true
-
-		log.Out = os.Stdout
 		mystring := color.New(ctype)
 		mystring.Println(cstring...)
 	case "file":
+		log := logrus.New()
 		// file
 		log.Formatter = new(logrus.JSONFormatter)                      //default
 		log.Formatter.(*logrus.JSONFormatter).PrettyPrint = true       // pretty print

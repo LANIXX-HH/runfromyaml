@@ -35,11 +35,24 @@ func CommandDockerRun(dcommand string, container string, cmd []string, desc stri
 		command.Env = append(os.Environ(), _envs...)
 		functions.PrintColor(color.FgYellow, _level, _output, strings.Trim(fmt.Sprint(docker), "[]"), "\n")
 		command.Stdin = os.Stdin
-		out, err := command.CombinedOutput()
-		if err != nil {
-			functions.PrintColor(color.FgRed, "error", _output, err)
+		if _output == "file" {
+			out, err := command.CombinedOutput()
+			if err != nil {
+				functions.PrintColor(color.FgRed, "error", _output, "Error: ", err, string(out))
+			}
+			functions.PrintColor(color.FgWhite, _level, _output, string(out))
 		}
-		functions.PrintColor(color.FgWhite, _level, _output, string(out))
+
+		if _output == "stdout" {
+			command.Stdout = os.Stdout
+			command.Stdin = os.Stdin
+			command.Stderr = os.Stderr
+
+			if err := command.Run(); err != nil {
+				functions.PrintColor(color.FgRed, "error", _output, "Command: ", command)
+				functions.PrintColor(color.FgRed, "error", _output, "Error: ", err)
+			}
+		}
 
 	}
 	wg.Done()
@@ -72,15 +85,28 @@ func CommandDockerComposeExec(command string, service string, cmdoptions []strin
 			_compose = append(compose, onecmd...)
 		}
 		//compose = append(append(append(append(dcoptions, command), cmdoptions...), service), cmd...)
-		cmds := exec.Command("docker-compose", _compose...)
-		cmds.Env = append(os.Environ(), envs...)
+		command := exec.Command("docker-compose", _compose...)
+		command.Env = append(os.Environ(), envs...)
 		functions.PrintColor(color.FgYellow, _level, _output, "docker-compose", strings.Trim(fmt.Sprint(_compose), "[]"), "\n")
-		cmds.Stdin = os.Stdin
-		out, err := cmds.CombinedOutput()
-		if err != nil {
-			functions.PrintColor(color.FgRed, "error", _output, err)
+		command.Stdin = os.Stdin
+		if _output == "file" {
+			out, err := command.CombinedOutput()
+			if err != nil {
+				functions.PrintColor(color.FgRed, "error", _output, "Error: ", err, string(out))
+			}
+			functions.PrintColor(color.FgWhite, _level, _output, string(out))
 		}
-		functions.PrintColor(color.FgWhite, _level, _output, string(out))
+
+		if _output == "stdout" {
+			command.Stdout = os.Stdout
+			command.Stdin = os.Stdin
+			command.Stderr = os.Stderr
+
+			if err := command.Run(); err != nil {
+				functions.PrintColor(color.FgRed, "error", _output, "Command: ", command)
+				functions.PrintColor(color.FgRed, "error", _output, "Error: ", err)
+			}
+		}
 	}
 	wg.Done()
 }
@@ -96,11 +122,24 @@ func CommandSSH(user string, port int, host string, options []string, cmd []stri
 		command.Env = append(os.Environ(), _envs...)
 		functions.PrintColor(color.FgYellow, _level, _output, strings.Trim(fmt.Sprint(ssh), "[]"), "\n")
 		command.Stdin = os.Stdin
-		out, err := command.CombinedOutput()
-		if err != nil {
-			functions.PrintColor(color.FgRed, "error", _output, err)
+		if _output == "file" {
+			out, err := command.CombinedOutput()
+			if err != nil {
+				functions.PrintColor(color.FgRed, "error", _output, "Error: ", err, string(out))
+			}
+			functions.PrintColor(color.FgWhite, _level, _output, string(out))
 		}
-		functions.PrintColor(color.FgWhite, _level, _output, string(out))
+
+		if _output == "stdout" {
+			command.Stdout = os.Stdout
+			command.Stdin = os.Stdin
+			command.Stderr = os.Stderr
+
+			if err := command.Run(); err != nil {
+				functions.PrintColor(color.FgRed, "error", _output, "Command: ", command)
+				functions.PrintColor(color.FgRed, "error", _output, "Error: ", err)
+			}
+		}
 	}
 	wg.Done()
 }
@@ -113,11 +152,24 @@ func CommandShell(cmd []string, desc string, wg *sync.WaitGroup, index int, _env
 	command.Env = append(os.Environ(), _envs...)
 	functions.PrintColor(color.FgYellow, _level, _output, strings.Trim(fmt.Sprint(bash), "[]"), "\n")
 	command.Stdin = os.Stdin
-	out, err := command.CombinedOutput()
-	if err != nil {
-		functions.PrintColor(color.FgRed, "error", _output, err)
+	if _output == "file" {
+		out, err := command.CombinedOutput()
+		if err != nil {
+			functions.PrintColor(color.FgRed, "error", _output, "Error: ", err, string(out))
+		}
+		functions.PrintColor(color.FgWhite, _level, _output, string(out))
 	}
-	functions.PrintColor(color.FgWhite, _level, _output, string(out))
+
+	if _output == "stdout" {
+		command.Stdout = os.Stdout
+		command.Stdin = os.Stdin
+		command.Stderr = os.Stderr
+
+		if err := command.Run(); err != nil {
+			functions.PrintColor(color.FgRed, "error", _output, "Command: ", command)
+			functions.PrintColor(color.FgRed, "error", _output, "Error: ", err)
+		}
+	}
 	wg.Done()
 }
 
@@ -132,11 +184,24 @@ func Command(cmd []string, desc string, wg *sync.WaitGroup, _envs []string, _lev
 		command.Env = append(os.Environ(), _envs...)
 		functions.PrintColor(color.FgYellow, _level, _output, "exec", strings.Trim(fmt.Sprint(command), "[]"), "\n")
 		command.Stdin = os.Stdin
-		out, err := command.CombinedOutput()
-		if err != nil {
-			functions.PrintColor(color.FgRed, "error", _output, err)
+		if _output == "file" {
+			out, err := command.CombinedOutput()
+			if err != nil {
+				functions.PrintColor(color.FgRed, "error", _output, "Error: ", err, string(out))
+			}
+			functions.PrintColor(color.FgWhite, _level, _output, string(out))
 		}
-		functions.PrintColor(color.FgWhite, _level, _output, string(out))
+
+		if _output == "stdout" {
+			command.Stdout = os.Stdout
+			command.Stdin = os.Stdin
+			command.Stderr = os.Stderr
+
+			if err := command.Run(); err != nil {
+				functions.PrintColor(color.FgRed, "error", _output, "Command: ", command)
+				functions.PrintColor(color.FgRed, "error", _output, "Error: ", err)
+			}
+		}
 	}
 	wg.Done()
 }
