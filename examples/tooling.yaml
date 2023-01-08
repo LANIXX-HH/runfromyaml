@@ -1,7 +1,7 @@
 ---
 logging:
   - level: info
-  - output: file
+  - output: stdout
 env:
   - key: LC_ALL
     value: POSIX

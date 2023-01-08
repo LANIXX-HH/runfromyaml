@@ -24,9 +24,9 @@ func main() {
 	programm := os.Args
 
 	// parse flags
-	flag.StringVar(&file, "file", "commands.yaml", "input config filename")
-	flag.BoolVar(&help, "help", false, "Display this help")
-	flag.BoolVar(&debug, "debug", false, "Debug Mode")
+	flag.StringVar(&file, "f", "commands.yaml", "input config filename")
+	flag.BoolVar(&debug, "d", false, "Debug Mode")
+
 	flag.Parse()
 
 	if debug {
@@ -34,7 +34,7 @@ func main() {
 	}
 
 	yamlFile, err := ioutil.ReadFile(file)
-	cli.Runfromyaml(yamlFile)
+	cli.Runfromyaml(yamlFile, debug)
 	functions.Check(err)
 
 }
