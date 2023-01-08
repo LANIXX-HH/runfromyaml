@@ -65,7 +65,6 @@ func PrintColor(ctype color.Attribute, _level string, _output string, cstring ..
 			log.Info("Failed to log to file, using default stderr")
 		}
 
-		log.Info(cstring...)
 		switch _level {
 		case "info":
 			log.Info(cstring...)
