@@ -1,0 +1,27 @@
+#!/Users/anatolilichii/bin/runfromyaml -f aws.yaml
+logging:
+  - output: stdout
+cmd:
+  - type: conf
+    confdest: $HOME/.aws/config
+    confperm: 0644
+    confdata: |
+      [default]
+      sso_start_url = https://mycompany.awsapps.com/start#/
+      sso_region = eu-central-1
+      sso_account_id = 123456789000
+      sso_role_name = MyPowerRole
+      output = json
+      region = eu-central-1
+  - type: exec
+    expandenv: true
+    name: first
+    desc: first command
+    values:
+      - /bin/cat $HOME/.aws/config
+  - type: shell
+    name: aws
+    desc: show s3 buckets
+    values:
+      - aws sso login;
+      - aws s3 ls
