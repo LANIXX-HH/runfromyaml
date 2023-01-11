@@ -1,4 +1,4 @@
-#!/Users/anatolilichii/bin/runfromyaml -f aws.yaml
+#!/home/user/bin/runfromyaml -f aws.yaml
 logging:
   - output: stdout
 cmd:
