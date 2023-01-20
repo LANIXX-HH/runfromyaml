@@ -18,9 +18,9 @@ At the moment I am testing this on my android phone, on my windows machine, on m
 
 ## TODO's
 
-[] write tests !!
-[] implement connection between blocks (artifacts or other way. i don't know)
-[] implement dependency between blocks
+- [ ] write tests !!
+- [ ] implement connection between blocks (artifacts or other way. i don't know)
+- [ ] implement dependency between blocks
 
 ## HowTo build
 
