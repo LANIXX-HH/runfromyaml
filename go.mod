@@ -10,11 +10,13 @@ require (
 
 require (
 	github.com/Microsoft/go-winio v0.6.0 // indirect
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.5.6 // indirect
+	github.com/gorilla/mux v1.8.0
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/moby/term v0.0.0-20221205130635-1aeaba878587 // indirect

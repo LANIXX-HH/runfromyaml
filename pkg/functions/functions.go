@@ -2,7 +2,6 @@ package functions
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"time"
@@ -11,23 +10,18 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//Check error
-func Check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
 // WriteFile write a file
 func WriteFile(file string, path string, perm os.FileMode) {
 	bytefile := []byte(file)
-	err := ioutil.WriteFile(os.ExpandEnv(path), bytefile, perm)
-	Check(err)
+	err := os.WriteFile(os.ExpandEnv(path), bytefile, perm)
+	if err != nil {
+		panic(err)
+	}
 }
 
 //ReadFile read file
 func ReadFile(file string) {
-	content, err := ioutil.ReadFile(os.ExpandEnv(file))
+	content, err := os.ReadFile(os.ExpandEnv(file))
 	if err != nil {
 		log.Fatal(err)
 	}

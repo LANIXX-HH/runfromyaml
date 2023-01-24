@@ -16,22 +16,15 @@ import (
 )
 
 var (
-	ydoc       map[interface{}][]interface{}
-	yblock     map[interface{}]interface{}
-	values     string
-	envs       []string
-	cmds       []string
-	dcoptions  []string
-	cmdoptions []string
-	options    []string
-	desc       string
-	confdata   string
-	confdest   string
-	confperm   os.FileMode
-	debug      bool
+	debug bool
 )
 
 func execCmd(yblock map[interface{}]interface{}, _envs []string, _level string, _output string) {
+	var (
+		values string
+		cmds   []string
+		desc   string
+	)
 	wg := new(sync.WaitGroup)
 
 	if reflect.ValueOf(yblock["values"]).IsValid() {
@@ -46,7 +39,7 @@ func execCmd(yblock map[interface{}]interface{}, _envs []string, _level string, 
 		}
 		cmds = strings.Fields(values)
 	}
-	if string(yblock["desc"].(string)) != "" {
+	if reflect.ValueOf(yblock["desc"]).IsValid() {
 		desc = fmt.Sprintf("%v", yblock["desc"])
 	}
 	wg.Add(1)
@@ -55,6 +48,11 @@ func execCmd(yblock map[interface{}]interface{}, _envs []string, _level string, 
 }
 
 func shellCmd(yblock map[interface{}]interface{}, _envs []string, _level string, _output string) {
+	var (
+		values string
+		cmds   []string
+		desc   string
+	)
 	if reflect.ValueOf(yblock["values"]).IsValid() {
 		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
 		if reflect.ValueOf(yblock["expandenv"]).IsValid() {
@@ -72,7 +70,7 @@ func shellCmd(yblock map[interface{}]interface{}, _envs []string, _level string,
 		desc = fmt.Sprintf("%v", yblock["desc"])
 	}
 	temp_cmds := strings.Join(cmds, " ")
-	cmds := strings.Split(temp_cmds, ";")
+	cmds = strings.Split(temp_cmds, ";")
 	wg := new(sync.WaitGroup)
 	for ind, shcmds := range cmds {
 		shcmd := strings.Split(shcmds, " ")
@@ -83,6 +81,11 @@ func shellCmd(yblock map[interface{}]interface{}, _envs []string, _level string,
 }
 
 func dockerCmd(yblock map[interface{}]interface{}, _envs []string, _level string, _output string) {
+	var (
+		values string
+		cmds   []string
+		desc   string
+	)
 	wg := new(sync.WaitGroup)
 	if reflect.ValueOf(yblock["values"]).IsValid() {
 		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
@@ -106,7 +109,14 @@ func dockerCmd(yblock map[interface{}]interface{}, _envs []string, _level string
 }
 
 func dockerComposeCmd(yblock map[interface{}]interface{}, _envs []string, _level string, _output string) {
-	var service string
+	var (
+		values     string
+		cmds       []string
+		dcoptions  []string
+		cmdoptions []string
+		desc       string
+		service    string
+	)
 	wg := new(sync.WaitGroup)
 	if reflect.ValueOf(yblock["values"]).IsValid() {
 		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
@@ -152,6 +162,12 @@ func dockerComposeCmd(yblock map[interface{}]interface{}, _envs []string, _level
 }
 
 func sshCmd(yblock map[interface{}]interface{}, _envs []string, _level string, _output string) {
+	var (
+		values  string
+		cmds    []string
+		options []string
+		desc    string
+	)
 	var user string
 	var host string
 	wg := new(sync.WaitGroup)
@@ -201,6 +217,11 @@ func sshCmd(yblock map[interface{}]interface{}, _envs []string, _level string, _
 }
 
 func conf(yblock map[interface{}]interface{}, _level string, _output string) {
+	var (
+		confdata string
+		confdest string
+		confperm os.FileMode
+	)
 	if reflect.ValueOf(yblock["confdata"].(string)).String() != "" {
 		confdata = yblock["confdata"].(string)
 	}
@@ -222,8 +243,13 @@ func conf(yblock map[interface{}]interface{}, _level string, _output string) {
 }
 
 func Runfromyaml(yamlFile []byte, debug bool) {
-	var _output string
-	var _level string
+	var (
+		_output string
+		_level  string
+		ydoc    map[interface{}][]interface{}
+		yblock  map[interface{}]interface{}
+		envs    []string
+	)
 
 	yaml.Unmarshal(yamlFile, &ydoc)
 
