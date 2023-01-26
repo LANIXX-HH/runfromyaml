@@ -14,6 +14,7 @@ import (
 var (
 	TempPass string
 	TempUser string
+	RestAuth bool
 )
 
 func HashPassword() string {
@@ -33,10 +34,13 @@ func Secret(user, realm string) string {
 }
 
 func RestApi(port int, host string) {
-	authenticator := auth.NewBasicAuthenticator("", Secret)
-
 	addr := strings.Join([]string{host, strconv.Itoa(port)}, ":")
-	http.HandleFunc("/", authenticator.Wrap(handleCommand))
+	if RestAuth {
+		authenticator := auth.NewBasicAuthenticator("", Secret)
+		http.HandleFunc("/", authenticator.Wrap(handleCommandAuth))
+	} else {
+		http.HandleFunc("/", handleCommand)
+	}
 	server := &http.Server{
 		Addr:    addr,
 		Handler: nil,
@@ -55,7 +59,19 @@ func RestApi(port int, host string) {
 	server.ListenAndServe()
 }
 
-func handleCommand(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
+func handleCommand(w http.ResponseWriter, r *http.Request) {
+	var err error
+	var body []byte
+
+	defer r.Body.Close()
+	body, err = io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+	}
+	cli.Runfromyaml(body, false)
+}
+
+func handleCommandAuth(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 	var err error
 	var body []byte
 
