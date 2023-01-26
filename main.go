@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/dchest/uniuri"
 	"github.com/fatih/color"
 	"github.com/lanixx/runfromyaml/pkg/cli"
 	"github.com/lanixx/runfromyaml/pkg/functions"
@@ -22,6 +23,7 @@ func main() {
 		rest  bool
 		port  int
 		host  string
+		user  string
 	)
 
 	programm := os.Args
@@ -32,6 +34,7 @@ func main() {
 	flag.BoolVar(&rest, "r", false, "restapi - start this instance in background mode in rest api mode")
 	flag.IntVar(&port, "p", 8080, "port - set http port for rest api mode (default http port is 8080)")
 	flag.StringVar(&host, "h", "localhost", "host - set host for rest api mode (default host is localhost)")
+	flag.StringVar(&user, "u", "rest", "user - set username for rest api authentication (default username is rest) ")
 
 	flag.Parse()
 
@@ -42,7 +45,10 @@ func main() {
 	yamlFile, err := os.ReadFile(file)
 
 	if rest {
+		restapi.TempPass = uniuri.New()
+		restapi.TempUser = user
 		fmt.Println("start command in rest api mode on", host, "host", port, "port")
+		fmt.Println("temporary password for rest api connection with user", restapi.TempUser, "is", restapi.TempPass)
 		restapi.RestApi(port, host)
 	} else {
 		if err != nil {

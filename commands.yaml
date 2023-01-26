@@ -9,6 +9,9 @@ env:
     value: "TEST"
 cmd:
   - type: "shell"
+    values:
+      - mkdir -p $HOME/.tmp
+  - type: "shell"
     expandenv: false 
     name: "print envs"
     desc: "print env variables"
@@ -22,7 +25,7 @@ cmd:
         test
           test
       test
-    confdest: /tmp/eins.conf
+    confdest: $HOME/.tmp/eins.conf
     confperm: 0644
   - type: "exec"
     expandenv: true
@@ -36,7 +39,7 @@ cmd:
       test
       test
       test
-    confdest: /tmp/zwei.conf
+    confdest: $HOME/.tmp/zwei.conf
     confperm: 0644
   - type: "exec"
     expandenv: true
@@ -44,7 +47,7 @@ cmd:
     desc: "erstelle zwei.conf und gebe es aus"
     values:
       - cat
-      - /tmp/zwei.conf
+      - $HOME/.tmp/zwei.conf
   - type: "exec"
     expandenv: true
     name: "git"

@@ -6,12 +6,37 @@ import (
 	"strconv"
 	"strings"
 
+	auth "github.com/abbot/go-http-auth"
 	"github.com/lanixx/runfromyaml/pkg/cli"
+	"golang.org/x/crypto/bcrypt"
 )
 
+var (
+	TempPass string
+	TempUser string
+)
+
+func HashPassword() string {
+	pass := []byte(TempPass)
+	hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
+	if err != nil {
+		panic(err)
+	}
+	return string(hash)
+}
+
+func Secret(user, realm string) string {
+	if user == TempUser {
+		return HashPassword()
+	}
+	return ""
+}
+
 func RestApi(port int, host string) {
+	authenticator := auth.NewBasicAuthenticator("", Secret)
+
 	addr := strings.Join([]string{host, strconv.Itoa(port)}, ":")
-	http.HandleFunc("/", handleCommand)
+	http.HandleFunc("/", authenticator.Wrap(handleCommand))
 	server := &http.Server{
 		Addr:    addr,
 		Handler: nil,
@@ -30,7 +55,7 @@ func RestApi(port int, host string) {
 	server.ListenAndServe()
 }
 
-func handleCommand(w http.ResponseWriter, r *http.Request) {
+func handleCommand(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 	var err error
 	var body []byte
 
