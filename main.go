@@ -18,12 +18,13 @@ func init() {
 
 func main() {
 	var (
-		file  string
-		debug bool
-		rest  bool
-		port  int
-		host  string
-		user  string
+		file     string
+		debug    bool
+		rest     bool
+		port     int
+		host     string
+		user     string
+		restauth bool
 	)
 
 	programm := os.Args
@@ -35,6 +36,7 @@ func main() {
 	flag.IntVar(&port, "p", 8080, "port - set http port for rest api mode (default http port is 8080)")
 	flag.StringVar(&host, "h", "localhost", "host - set host for rest api mode (default host is localhost)")
 	flag.StringVar(&user, "u", "rest", "user - set username for rest api authentication (default username is rest) ")
+	flag.BoolVar(&restauth, "n", false, "no-auth - disable rest auth")
 
 	flag.Parse()
 
@@ -45,10 +47,16 @@ func main() {
 	yamlFile, err := os.ReadFile(file)
 
 	if rest {
-		restapi.TempPass = uniuri.New()
-		restapi.TempUser = user
 		fmt.Println("start command in rest api mode on", host, "host", port, "port")
-		fmt.Println("temporary password for rest api connection with user", restapi.TempUser, "is", restapi.TempPass)
+
+		if !restauth {
+			restapi.RestAuth = true
+			restapi.TempPass = uniuri.New()
+			restapi.TempUser = user
+			fmt.Println("temporary password for rest api connection with user", restapi.TempUser, "is", restapi.TempPass)
+		} else {
+			restapi.RestAuth = false
+		}
 		restapi.RestApi(port, host)
 	} else {
 		if err != nil {
