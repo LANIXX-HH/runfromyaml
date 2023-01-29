@@ -98,7 +98,6 @@ func CommandDockerComposeExec(command string, service string, cmdoptions []strin
 		functions.PrintSwitch(color.FgYellow, _level, _output, "docker-compose", strings.Trim(fmt.Sprint(_compose), "[]"), "\n")
 		command.Stdin = os.Stdin
 		if _output == "rest" {
-			command.StdoutPipe()
 			out, err := command.CombinedOutput()
 			if err != nil {
 				functions.PrintRest(color.FgRed, "error", "Error: ", err, string(out))
