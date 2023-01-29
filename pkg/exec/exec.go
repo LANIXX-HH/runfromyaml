@@ -33,14 +33,22 @@ func CommandDockerRun(dcommand string, container string, cmd []string, desc stri
 
 		command := exec.Command(docker[0], docker[1:]...)
 		command.Env = append(os.Environ(), _envs...)
-		functions.PrintColor(color.FgYellow, _level, _output, strings.Trim(fmt.Sprint(docker), "[]"), "\n")
+		functions.PrintSwitch(color.FgYellow, _level, _output, strings.Trim(fmt.Sprint(docker), "[]"), "\n")
 		command.Stdin = os.Stdin
+		if _output == "rest" {
+			out, err := command.CombinedOutput()
+			if err != nil {
+				functions.PrintRest(color.FgRed, "error", "Error: ", err, string(out))
+			}
+			functions.PrintRest(color.FgHiWhite, _level, string(out))
+		}
+
 		if _output == "file" {
 			out, err := command.CombinedOutput()
 			if err != nil {
-				functions.PrintColor(color.FgRed, "error", _output, "Error: ", err, string(out))
+				functions.PrintFile("error", "Error: ", err, string(out))
 			}
-			functions.PrintColor(color.FgWhite, _level, _output, string(out))
+			functions.PrintFile(_level, string(out))
 		}
 
 		if _output == "stdout" {
@@ -49,8 +57,8 @@ func CommandDockerRun(dcommand string, container string, cmd []string, desc stri
 			command.Stderr = os.Stderr
 
 			if err := command.Run(); err != nil {
-				functions.PrintColor(color.FgRed, "error", _output, "Command: ", command)
-				functions.PrintColor(color.FgRed, "error", _output, "Error: ", err)
+				functions.PrintColor(color.FgRed, "error", "Command: ", command)
+				functions.PrintColor(color.FgRed, "error", "Error: ", err)
 			}
 		}
 
@@ -87,14 +95,23 @@ func CommandDockerComposeExec(command string, service string, cmdoptions []strin
 		//compose = append(append(append(append(dcoptions, command), cmdoptions...), service), cmd...)
 		command := exec.Command("docker-compose", _compose...)
 		command.Env = append(os.Environ(), envs...)
-		functions.PrintColor(color.FgYellow, _level, _output, "docker-compose", strings.Trim(fmt.Sprint(_compose), "[]"), "\n")
+		functions.PrintSwitch(color.FgYellow, _level, _output, "docker-compose", strings.Trim(fmt.Sprint(_compose), "[]"), "\n")
 		command.Stdin = os.Stdin
+		if _output == "rest" {
+			command.StdoutPipe()
+			out, err := command.CombinedOutput()
+			if err != nil {
+				functions.PrintRest(color.FgRed, "error", "Error: ", err, string(out))
+			}
+			functions.PrintRest(color.FgHiWhite, _level, string(out))
+		}
+
 		if _output == "file" {
 			out, err := command.CombinedOutput()
 			if err != nil {
-				functions.PrintColor(color.FgRed, "error", _output, "Error: ", err, string(out))
+				functions.PrintFile("error", "Error: ", err, string(out))
 			}
-			functions.PrintColor(color.FgWhite, _level, _output, string(out))
+			functions.PrintFile(_level, string(out))
 		}
 
 		if _output == "stdout" {
@@ -103,8 +120,8 @@ func CommandDockerComposeExec(command string, service string, cmdoptions []strin
 			command.Stderr = os.Stderr
 
 			if err := command.Run(); err != nil {
-				functions.PrintColor(color.FgRed, "error", _output, "Command: ", command)
-				functions.PrintColor(color.FgRed, "error", _output, "Error: ", err)
+				functions.PrintColor(color.FgRed, "error", "Command: ", command)
+				functions.PrintColor(color.FgRed, "error", "Error: ", err)
 			}
 		}
 	}
@@ -113,21 +130,28 @@ func CommandDockerComposeExec(command string, service string, cmdoptions []strin
 
 //CommandSSH run a command in a shell with wait parameter and print description to shell
 func CommandSSH(user string, port int, host string, options []string, cmd []string, desc string, _envs []string, wg *sync.WaitGroup, _level string, _output string) {
-	var ssh []string
 	temp_cmds := strings.Join(cmd, " ")
 	cmds := strings.Split(temp_cmds, ";")
 	for _, sshcmd := range cmds {
-		ssh = append(append([]string{"ssh", "-p", strconv.Itoa(port), "-l", user, host}, options...), sshcmd)
+		ssh := append(append([]string{"ssh", "-p", strconv.Itoa(port), "-l", user, host}, options...), sshcmd)
 		command := exec.Command(ssh[0], ssh[1:]...)
 		command.Env = append(os.Environ(), _envs...)
-		functions.PrintColor(color.FgYellow, _level, _output, strings.Trim(fmt.Sprint(ssh), "[]"), "\n")
+		functions.PrintSwitch(color.FgYellow, _level, _output, strings.Trim(fmt.Sprint(ssh), "[]"), "\n")
 		command.Stdin = os.Stdin
+		if _output == "rest" {
+			out, err := command.CombinedOutput()
+			if err != nil {
+				functions.PrintRest(color.FgRed, "error", "Error: ", err, string(out))
+			}
+			functions.PrintRest(color.FgHiWhite, _level, string(out))
+		}
+
 		if _output == "file" {
 			out, err := command.CombinedOutput()
 			if err != nil {
-				functions.PrintColor(color.FgRed, "error", _output, "Error: ", err, string(out))
+				functions.PrintFile("error", "Error: ", err, string(out))
 			}
-			functions.PrintColor(color.FgWhite, _level, _output, string(out))
+			functions.PrintFile(_level, string(out))
 		}
 
 		if _output == "stdout" {
@@ -136,8 +160,8 @@ func CommandSSH(user string, port int, host string, options []string, cmd []stri
 			command.Stderr = os.Stderr
 
 			if err := command.Run(); err != nil {
-				functions.PrintColor(color.FgRed, "error", _output, "Command: ", command)
-				functions.PrintColor(color.FgRed, "error", _output, "Error: ", err)
+				functions.PrintColor(color.FgRed, "error", "Command: ", command)
+				functions.PrintColor(color.FgRed, "error", "Error: ", err)
 			}
 		}
 	}
@@ -146,18 +170,25 @@ func CommandSSH(user string, port int, host string, options []string, cmd []stri
 
 //CommandShell run a command in a shell with wait parameter and print description to shell
 func CommandShell(cmd []string, desc string, wg *sync.WaitGroup, index int, _envs []string, _level string, _output string) {
-	var bash []string
-	bash = append([]string{"bash", "-c"}, strings.Join(cmd, " "))
+	bash := append([]string{"bash", "-c"}, strings.Join(cmd, " "))
 	command := exec.Command(bash[0], bash[1:]...)
 	command.Env = append(os.Environ(), _envs...)
-	functions.PrintColor(color.FgYellow, _level, _output, strings.Trim(fmt.Sprint(bash), "[]"), "\n")
+	functions.PrintSwitch(color.FgYellow, _level, _output, strings.Trim(fmt.Sprint(bash), "[]"), "\n")
 	command.Stdin = os.Stdin
+	if _output == "rest" {
+		out, err := command.CombinedOutput()
+		if err != nil {
+			functions.PrintRest(color.FgRed, "error", "Error: ", err, string(out))
+		}
+		functions.PrintRest(color.FgHiWhite, _level, string(out))
+	}
+
 	if _output == "file" {
 		out, err := command.CombinedOutput()
 		if err != nil {
-			functions.PrintColor(color.FgRed, "error", _output, "Error: ", err, string(out))
+			functions.PrintFile("error", "Error: ", err, string(out))
 		}
-		functions.PrintColor(color.FgWhite, _level, _output, string(out))
+		functions.PrintFile(_level, string(out))
 	}
 
 	if _output == "stdout" {
@@ -166,8 +197,8 @@ func CommandShell(cmd []string, desc string, wg *sync.WaitGroup, index int, _env
 		command.Stderr = os.Stderr
 
 		if err := command.Run(); err != nil {
-			functions.PrintColor(color.FgRed, "error", _output, "Command: ", command)
-			functions.PrintColor(color.FgRed, "error", _output, "Error: ", err)
+			functions.PrintColor(color.FgRed, "error", "Command: ", command)
+			functions.PrintColor(color.FgRed, "error", "Error: ", err)
 		}
 	}
 	wg.Done()
@@ -182,14 +213,22 @@ func Command(cmd []string, desc string, wg *sync.WaitGroup, _envs []string, _lev
 		onecmd := strings.Split(_cmd, " ")
 		command := exec.Command(onecmd[0], onecmd[1:]...)
 		command.Env = append(os.Environ(), _envs...)
-		functions.PrintColor(color.FgYellow, _level, _output, "exec", strings.Trim(fmt.Sprint(command), "[]"), "\n")
+		functions.PrintSwitch(color.FgYellow, _level, _output, "exec", strings.Trim(fmt.Sprint(command), "[]"), "\n")
 		command.Stdin = os.Stdin
+		if _output == "rest" {
+			out, err := command.CombinedOutput()
+			if err != nil {
+				functions.PrintRest(color.FgRed, "error", "Error: ", err, string(out))
+			}
+			functions.PrintRest(color.FgHiWhite, _level, string(out))
+		}
+
 		if _output == "file" {
 			out, err := command.CombinedOutput()
 			if err != nil {
-				functions.PrintColor(color.FgRed, "error", _output, "Error: ", err, string(out))
+				functions.PrintFile("error", "Error: ", err, string(out))
 			}
-			functions.PrintColor(color.FgWhite, _level, _output, string(out))
+			functions.PrintFile(_level, string(out))
 		}
 
 		if _output == "stdout" {
@@ -198,8 +237,8 @@ func Command(cmd []string, desc string, wg *sync.WaitGroup, _envs []string, _lev
 			command.Stderr = os.Stderr
 
 			if err := command.Run(); err != nil {
-				functions.PrintColor(color.FgRed, "error", _output, "Command: ", command)
-				functions.PrintColor(color.FgRed, "error", _output, "Error: ", err)
+				functions.PrintColor(color.FgRed, "error", "Command: ", command)
+				functions.PrintColor(color.FgRed, "error", "Error: ", err)
 			}
 		}
 	}
