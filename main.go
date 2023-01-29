@@ -25,6 +25,8 @@ func main() {
 		host     string
 		user     string
 		restauth bool
+		restout  bool
+		yamlFile []byte
 	)
 
 	programm := os.Args
@@ -37,17 +39,22 @@ func main() {
 	flag.StringVar(&host, "h", "localhost", "host - set host for rest api mode (default host is localhost)")
 	flag.StringVar(&user, "u", "rest", "user - set username for rest api authentication (default username is rest) ")
 	flag.BoolVar(&restauth, "n", false, "no-auth - disable rest auth")
+	flag.BoolVar(&restout, "o", false, "rest output - activate output to http response")
 
 	flag.Parse()
 
 	if debug {
-		functions.PrintColor(color.FgRed, "debug", "stdout", "\n", programm)
+		functions.PrintColor(color.FgRed, "debug", "\n", programm)
 	}
 
 	yamlFile, err := os.ReadFile(file)
 
 	if rest {
 		fmt.Println("start command in rest api mode on", host, "host", port, "port")
+
+		if restout {
+			restapi.RestOut = restout
+		}
 
 		if !restauth {
 			restapi.RestAuth = true
