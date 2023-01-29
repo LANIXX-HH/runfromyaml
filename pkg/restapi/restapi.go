@@ -3,18 +3,22 @@ package restapi
 import (
 	"io"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 
 	auth "github.com/abbot/go-http-auth"
 	"github.com/lanixx/runfromyaml/pkg/cli"
+	"github.com/lanixx/runfromyaml/pkg/functions"
 	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/yaml.v2"
 )
 
 var (
 	TempPass string
 	TempUser string
 	RestAuth bool
+	RestOut  bool
 )
 
 func HashPassword() string {
@@ -62,11 +66,25 @@ func RestApi(port int, host string) {
 func handleCommand(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var body []byte
+	var ydoc map[interface{}][]interface{}
 
 	defer r.Body.Close()
 	body, err = io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+	}
+	functions.RestOut = w
+	functions.ReqOut = r
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/text")
+	if RestOut {
+		yaml.Unmarshal(body, &ydoc)
+		for key := range ydoc["logging"] {
+			if reflect.ValueOf(ydoc["logging"][key].(map[interface{}]interface{})["output"]).IsValid() {
+				ydoc["logging"][key].(map[interface{}]interface{})["output"] = "rest"
+			}
+		}
+		body, _ = yaml.Marshal(ydoc)
 	}
 	cli.Runfromyaml(body, false)
 }
@@ -74,11 +92,25 @@ func handleCommand(w http.ResponseWriter, r *http.Request) {
 func handleCommandAuth(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 	var err error
 	var body []byte
+	var ydoc map[interface{}][]interface{}
 
 	defer r.Body.Close()
 	body, err = io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+	}
+	functions.RestOut = w
+	functions.ReqOut = &r.Request
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/text")
+	if RestOut {
+		yaml.Unmarshal(body, &ydoc)
+		for key := range ydoc["logging"] {
+			if reflect.ValueOf(ydoc["logging"][key].(map[interface{}]interface{})["output"]).IsValid() {
+				ydoc["logging"][key].(map[interface{}]interface{})["output"] = "rest"
+			}
+		}
+		body, _ = yaml.Marshal(ydoc)
 	}
 	cli.Runfromyaml(body, false)
 }
