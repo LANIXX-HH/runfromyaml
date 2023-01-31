@@ -32,14 +32,14 @@ func main() {
 	programm := os.Args
 
 	// parse flags
-	flag.StringVar(&file, "f", "commands.yaml", "file - file with all defined commands, descriptions and configuration blocks in yaml fromat")
-	flag.BoolVar(&debug, "d", false, "debug - activate debug mode to print more informations")
-	flag.BoolVar(&rest, "r", false, "restapi - start this instance in background mode in rest api mode")
-	flag.IntVar(&port, "p", 8080, "port - set http port for rest api mode (default http port is 8080)")
-	flag.StringVar(&host, "h", "localhost", "host - set host for rest api mode (default host is localhost)")
-	flag.StringVar(&user, "u", "rest", "user - set username for rest api authentication (default username is rest) ")
-	flag.BoolVar(&restauth, "n", false, "no-auth - disable rest auth")
-	flag.BoolVar(&restout, "o", false, "rest output - activate output to http response")
+	flag.StringVar(&file, "file", "commands.yaml", "file - file with all defined commands, descriptions and configuration blocks in yaml fromat")
+	flag.BoolVar(&debug, "debug", false, "debug - activate debug mode to print more informations")
+	flag.BoolVar(&rest, "rest", false, "restapi - start this instance in background mode in rest api mode")
+	flag.IntVar(&port, "port", 8080, "port - set http port for rest api mode (default http port is 8080)")
+	flag.StringVar(&host, "host", "localhost", "host - set host for rest api mode (default host is localhost)")
+	flag.StringVar(&user, "user", "rest", "user - set username for rest api authentication (default username is rest) ")
+	flag.BoolVar(&restauth, "no-auth", false, "no-auth - disable rest auth")
+	flag.BoolVar(&restout, "restout", false, "rest output - activate output to http response")
 
 	flag.Parse()
 
