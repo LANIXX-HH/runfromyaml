@@ -65,18 +65,22 @@ curl --silent --location https://raw.githubusercontent.com/LANIXX-HH/runfromyaml
 
 ```
 Usage of ./runfromyaml:
-  -d	debug - activate debug mode to print more informations
-  -f string
+  --debug
+    	debug - activate debug mode to print more informations
+  --file string
     	file - file with all defined commands, descriptions and configuration blocks in yaml fromat (default "commands.yaml")
-  -h string
-    	host - set host for rest api mode (default "localhost")
-  -n	no-auth - disable rest auth
-  -o	rest output - activate output to http response
-  -p int
-    	port - set http port for rest api mode (default 8080)
-  -r	restapi - start this instance in background mode in rest api mode
-  -u string
-    	user - set username for rest api authentication (default "rest")     
+  --host string
+    	host - set host for rest api mode (default host is localhost) (default "localhost")
+  --no-auth
+    	no-auth - disable rest auth
+  --port int
+    	port - set http port for rest api mode (default http port is 8080) (default 8080)
+  --rest
+    	restapi - start this instance in background mode in rest api mode
+  --restout
+    	rest output - activate output to http response
+  --user string
+    	user - set username for rest api authentication (default username is rest)  (default "rest")  
 ```
 
 ### Examples
@@ -84,19 +88,19 @@ Usage of ./runfromyaml:
 * REST API Mode
 
 ```
-runfromyaml -r
+runfromyaml --rest
 ```
 
 * REST API Mode without Authentication ( !!! CAUTION: Do not use it in public networks !!! )
 
 ```
-runfromyaml -r -n
+runfromyaml --rest --no-auth
 ```
 
 * REST API Mode with redirected output to http response
 
 ```
-runfromyaml -r -o
+runfromyaml --rest --restout
 ```
 
 * Example CURL Call for REST API Mode
