@@ -45,20 +45,20 @@ runfromyaml
 you can select different yaml command collection with -file=_myfile.yaml_
 
 ~~~shell
-runfromyaml -f ./other/path/my-collection.yaml
+runfromyaml --file ./other/path/my-collection.yaml
 ~~~
 
 with more debug output
 
 ~~~shell
-runfromyaml -f my-collection.yaml -debug
+runfromyaml --file my-collection.yaml -debug
 ~~~
 
 ## Full example based on tooling image setup
 
 ~~~shell
 curl --silent --location https://raw.githubusercontent.com/LANIXX-HH/runfromyaml/master/examples/tooling.sh | sh
-./runfromyaml -f tooling.yaml
+./runfromyaml --file tooling.yaml
 ~~~
 
 ## Options
