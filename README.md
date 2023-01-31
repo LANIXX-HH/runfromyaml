@@ -148,6 +148,7 @@ every section should begin with `-`
 * `name` - this is the name of the section
 * `desc` - long description of this section. should contain the really necessary information, what happens in this section.
 * `values` - this section generally contains all the steps that should be executed to implement the described workflow. Multiple commands should be separated by `;`.
+* `expandenv` - this is an optional switch setting used to enable or disable the environment variable resolution in the corresponding block. default value is disabled
 
 ## Examples
 
