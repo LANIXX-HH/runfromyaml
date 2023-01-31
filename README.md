@@ -63,7 +63,7 @@ curl --silent --location https://raw.githubusercontent.com/LANIXX-HH/runfromyaml
 
 ## Options
 
-```
+~~~bash
 Usage of ./runfromyaml:
   --debug
     	debug - activate debug mode to print more informations
@@ -81,34 +81,40 @@ Usage of ./runfromyaml:
     	rest output - activate output to http response
   --user string
     	user - set username for rest api authentication (default username is rest)  (default "rest")  
-```
+~~~
 
 ### Examples
 
+* parse yaml file localy
+
+~~~bash
+
+~~~
+
 * REST API Mode
 
-```
+~~~bash
 runfromyaml --rest
-```
+~~~
 
 * REST API Mode without Authentication ( !!! CAUTION: Do not use it in public networks !!! )
 
-```
+~~~bash
 runfromyaml --rest --no-auth
-```
+~~~
 
 * REST API Mode with redirected output to http response
 
-```
+~~~bash
 runfromyaml --rest --restout
-```
+~~~
 
 * Example CURL Call for REST API Mode
 
-``` 
+~~~bash 
 PASS=<rest_api_generated_password>
 CURLOPT_TIMEOUT=30 curl -X POST -H "Content-Type: application/x-yaml" -u rest:$PASS --data-binary @examples/windows.yaml http://192.168.0.100:8000/
-``` 
+~~~
 
 ## Syntax
 
@@ -218,9 +224,9 @@ logging:
 
   * `level` - the following levels are possible: info, warn, debug, error, trace, fatal, panic
   * `output` - define how the output should happen
-    * <nil> - it nothing is defined, no output will be created :)
-    * stdout - should be default output
-    * file - all the output will be redirected to json logfile (implemented with logrus module) in the current temp directory. by start of this program the logging json file will be shown. 
+    * NIL (nothing was set. missing output option) - it nothing is defined, no output will be created :)
+    * `stdout` - should be default output
+    * `file` - all the output will be redirected to json logfile (implemented with logrus module) in the current temp directory. by start of this program the logging json file will be shown. 
     * rest - this payload should be delivered only via http post request as YAML. by default, if the programm is running in rest api mode, output will be overwritten to `rest`
 
 ### Define environment variables
