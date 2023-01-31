@@ -128,11 +128,12 @@ logging:
   - level: info
 ~~~
 
-* output - here you define how the output of the commands to be executed should happen: directly into the standard output or into a log file. without this option no output will be produced. possible values:
-  * stdout - direct output into current shell session in stdout
-  * file - JSON Output of all to temporary logfile. the logging file will be printed by selecting this option.
-
-* level - logging level: info, warn, error, debug, trace, fatal, panic
+  * `level` - the following levels are possible: info, warn, debug, error, trace, fatal, panic
+  * `output` - define how the output should happen
+    * NIL (nothing was set. missing output option) - it nothing is defined, no output will be created :)
+    * `stdout` - should be default output
+    * `file` - all the output will be redirected to json logfile (implemented with logrus module) in the current temp directory. by start of this program the logging json file will be shown. 
+    * `rest` - this payload should be delivered only via http post request as YAML. by default, if the programm is running in rest api mode, output will be overwritten to `rest`
 
 ### Environment Variables
 
@@ -192,7 +193,7 @@ every section should begin with `-`
       * `run` - start all commands in the new container
       * `exec` - execute the command in the currently running container
     * `values` - this section defines all the commands to be executed in a started or running container
-  * `docker-compose` - this section describes all things that should be executed with docker-compose. why do we need this? experience has shown that it is easier for developers to write a yaml file and specify the necessary options in a similar order than to remember the order of commands to execute. :)
+  * `docker-compose` - this section describes all things that should be executed with docker-compose. why do we need this? experience has shown that it is easier for developers to write a yaml file and specify the necessary options in a similar order than to remember the order of commands to execute. :) you can skip settings (global and command) with empty map like `[]` and set empty service name with `""`. to run a command inside of container, you should define values. for multiple command just separate it with semicolon (`;`)
   The required values for this section are:
     * `dcoptions` - global docker-compose options like path directory or docker-compose file(s).
     * `command` - docker-compose command like `run`, `up` or `down`.
@@ -221,13 +222,6 @@ logging:
   - level: info
   - output: stdout
 ~~~
-
-  * `level` - the following levels are possible: info, warn, debug, error, trace, fatal, panic
-  * `output` - define how the output should happen
-    * NIL (nothing was set. missing output option) - it nothing is defined, no output will be created :)
-    * `stdout` - should be default output
-    * `file` - all the output will be redirected to json logfile (implemented with logrus module) in the current temp directory. by start of this program the logging json file will be shown. 
-    * rest - this payload should be delivered only via http post request as YAML. by default, if the programm is running in rest api mode, output will be overwritten to `rest`
 
 ### Define environment variables
 
@@ -336,7 +330,7 @@ cmd:
       - zsh
 ~~~
   
-you can skip settings (global and command) with empty map like `[]` and set empty service name with `""`. to run a command inside of container, you should define values. for multiple command just separate it with semicolon (`;`)
+
   
 ### Call a Command inside a running Docker container or run it once.
 
