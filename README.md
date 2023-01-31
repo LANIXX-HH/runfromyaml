@@ -61,6 +61,13 @@ curl --silent --location https://raw.githubusercontent.com/LANIXX-HH/runfromyaml
 ./runfromyaml --file tooling.yaml
 ~~~
 
+## Full example based on pre-release runfromyaml binary & tooling image setup
+
+~~~shell
+curl --silent --location https://raw.githubusercontent.com/LANIXX-HH/runfromyaml/master/examples/tooling-pre.sh | sh
+./runfromyaml --file tooling.yaml
+~~~
+
 ## Options
 
 ~~~bash
