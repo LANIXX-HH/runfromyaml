@@ -61,6 +61,51 @@ curl --silent --location https://raw.githubusercontent.com/LANIXX-HH/runfromyaml
 ./runfromyaml -f tooling.yaml
 ~~~
 
+## Options
+
+```
+Usage of ./runfromyaml:
+  -d	debug - activate debug mode to print more informations
+  -f string
+    	file - file with all defined commands, descriptions and configuration blocks in yaml fromat (default "commands.yaml")
+  -h string
+    	host - set host for rest api mode (default "localhost")
+  -n	no-auth - disable rest auth
+  -o	rest output - activate output to http response
+  -p int
+    	port - set http port for rest api mode (default 8080)
+  -r	restapi - start this instance in background mode in rest api mode
+  -u string
+    	user - set username for rest api authentication (default "rest")     
+```
+
+### Examples
+
+* REST API Mode
+
+```
+runfromyaml -r
+```
+
+* REST API Mode without Authentication ( !!! CAUTION: Do not use it in public networks !!! )
+
+```
+runfromyaml -r -n
+```
+
+* REST API Mode with redirected output to http response
+
+```
+runfromyaml -r -o
+```
+
+* Example CURL Call for REST API Mode
+
+``` 
+PASS=<rest_api_generated_password>
+CURLOPT_TIMEOUT=30 curl -X POST -H "Content-Type: application/x-yaml" -u rest:$PASS --data-binary @examples/windows.yaml http://192.168.0.100:8000/
+``` 
+
 ## Syntax
 
 ### Logging Settings
@@ -144,7 +189,12 @@ every section should begin with `-`
     * `cmdoptions` - options needed for the selected command like `-i` or/and `-t`.
     * `service` - name of the service defined in the docker-compose yaml file
     * `values` - commands to be executed within the selected service (when starting the container or in the currently running container)
-  * `ssh` t.b.d.
+  * `ssh` - in this section you can run a remote command on specified host via SSH Connection
+    * `user` - username for SSH Connection
+    * `host` - hostname for SSH Connection
+    * `port` - ssh port for SSH Connection
+    * `options` - additional options for SSH Connection like `-i <path/to/ssh/public_key>`
+    * `values` - set of commands separated by semicolon (`;`) which should be executed on remote host via SSH Connection
 * `name` - this is the name of the section
 * `desc` - long description of this section. should contain the really necessary information, what happens in this section.
 * `values` - this section generally contains all the steps that should be executed to implement the described workflow. Multiple commands should be separated by `;`.
@@ -152,6 +202,35 @@ every section should begin with `-`
 
 ## Examples
 
+### Set logging options
+
+* logging - with this you can set how the output should happen and with which log level that should take place
+
+~~~yaml
+logging:
+  - level: info
+  - output: stdout
+~~~
+
+  * `level` - the following levels are possible: info, warn, debug, error, trace, fatal, panic
+  * `output` - define how the output should happen
+    * <nil> - it nothing is defined, no output will be created :)
+    * stdout - should be default output
+    * file - all the output will be redirected to json logfile (implemented with logrus module) in the current temp directory. by start of this program the logging json file will be shown. 
+    * rest - this payload should be delivered only via http post request as YAML. by default, if the programm is running in rest api mode, output will be overwritten to `rest`
+
+### Define environment variables
+
+* env - in this block variables are set, the other blocks both in the data area and in the setting in the respective block, such as path.
+
+~~~yaml
+env:
+  - key: LC_ALL
+    value: POSIX
+  - key: PATH
+    value: /usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin
+~~~
+  
 ### Create configuration file
 
 * confdata - here the content of the configuration file is written in.
@@ -167,4 +246,103 @@ cmd:
       test
     confdest: /etc/myconfig.conf
     confperm: 0644
+~~~
+
+### Call a OS Command with EXEC
+
+* exec - with this you can start an OS system call with exec 
+
+~~~yaml
+  - type: "exec"
+    expandenv: true
+    name: "envprint"
+    desc: "show the output of %COMSPEC% variable on windows system"
+    values:
+      - cmd
+      - /C
+      - echo %COMSPEC%
+~~~
+
+### Call a Shell Command
+
+* shell - This gives the possibility to call a command that is wrapped in bash. for example: `bash -c 'ls -lisa'`
+  
+~~~yaml
+  - type: "shell"
+    expandenv: true
+    name: "list"
+    desc: "list all files in current directory"
+    values:
+      - ls -lisa
+~~~
+
+### Run a Command via SSH connection on remote server
+  
+* ssh - in this section you can define a block with username, hostname, port and additional options to run a command set remotely via this SSH Connection
+
+~~~yaml
+  - type: "ssh"
+    expandenv: true
+    name: "ssh-run"
+    desc: "run ls command via ssh connection"
+    user: $USER
+    host: localhost
+    port: 22
+    options:
+      - -i $HOME/.ssh/id_rsa-localhost
+    values:
+      - uname
+      - -a ;
+      - pwd****
+~~~
+
+### Docker-Compose Block
+
+* docker-compose - Here you have the possibility to compose a complete docker-compose command as a YAML structure with global docker-compose options and specific command options and optionally execute there specific collection of commands separated by semicolon.
+
+~~~yaml
+  - type: "docker-compose"
+    expandenv: true
+    name: "build"
+    desc: "build tooling"
+    dcoptions:
+      - -f $HOME/.tmp/tooling/docker-compose.yaml
+      - --project-directory $HOME/.tmp/tooling
+    cmdoptions: []
+    command: build
+    service: ""
+    values: []
+  - type: "docker-compose"
+    expandenv: true
+    name: "run"
+    desc: "run tooling"
+    dcoptions:
+      - -f $HOME/.tmp/tooling/docker-compose.yaml
+      - --project-directory $HOME/.tmp/tooling
+    command: run
+    service: tooling
+    cmdoptions: []
+    values:
+      - zsh
+~~~
+  
+you can skip settings (global and command) with empty map like `[]` and set empty service name with `""`. to run a command inside of container, you should define values. for multiple command just separate it with semicolon (`;`)
+  
+### Call a Command inside a running Docker container or run it once.
+
+* docker - this section can be used to start some command or set of multiple command separated by semicolon in a running container or by starting new container and terminate it after run.
+
+attention: you can use only `run` or `exec` command
+
+~~~yaml
+  - type: docker
+    expandenv: true
+    desc: "run command from docker container"
+    name: "docker-run"
+    command: run
+    container: alpine
+    values:
+        - uname
+        - -a;
+        - pwd
 ~~~
