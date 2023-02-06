@@ -16,7 +16,8 @@ import (
 )
 
 var (
-	debug bool
+	debug     bool
+	envstruct map[string]string
 )
 
 func execCmd(yblock map[interface{}]interface{}, _envs []string, _level string, _output string) {
@@ -224,6 +225,11 @@ func conf(yblock map[interface{}]interface{}, _level string, _output string) {
 	)
 	if reflect.ValueOf(yblock["confdata"].(string)).String() != "" {
 		confdata = yblock["confdata"].(string)
+		if reflect.ValueOf(yblock["expandenv"]).IsValid() {
+			if yblock["expandenv"].(bool) {
+				confdata = functions.GoTemplate(envstruct, confdata)
+			}
+		}
 	}
 	if reflect.ValueOf(yblock["confdest"].(string)).String() != "" {
 		confdest = yblock["confdest"].(string)
@@ -269,14 +275,31 @@ func Runfromyaml(yamlFile []byte, debug bool) {
 		functions.PrintSwitch(color.FgRed, "debug", _output, ydoc["env"])
 	}
 
+	getenvironment := func(data []string, getkeyval func(item string) (key, val string)) map[string]string {
+		items := make(map[string]string)
+		for _, item := range data {
+			key, val := getkeyval(item)
+			items[key] = val
+		}
+		return items
+	}
+	environment := getenvironment(os.Environ(), func(item string) (key, val string) {
+		splits := strings.Split(item, "=")
+		key = splits[0]
+		val = splits[1]
+		return
+	})
+
 	for key := range ydoc["env"] {
 		_env := ydoc["env"][key].(map[interface{}]interface{})
 		os.Setenv(_env["key"].(string), _env["value"].(string))
 		envs = append(envs, _env["key"].(string)+"="+_env["value"].(string))
+		environment[_env["key"].(string)] = _env["value"].(string)
 		if debug {
 			functions.PrintSwitch(color.FgRed, "debug", _output, _env["key"].(string)+"="+_env["value"].(string))
 		}
 	}
+	envstruct = environment
 
 	for key := range ydoc["cmd"] {
 

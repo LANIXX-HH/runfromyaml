@@ -1,0 +1,38 @@
+---
+logging:
+  - level: info
+  - output: stdout
+env:
+  - key: "APP"
+    value: "runfromyaml"
+cmd:
+  - type: "shell"
+    expandenv: true
+    values:
+      - mkdir -p "$HOME/Applications/$APP.app";
+      - mkdir -p "$HOME/Applications/$APP.app/Contents/MacOS";
+      - cp -prv $PWD/runfromyaml "$HOME/Applications/$APP.app/Contents/MacOS/run";
+      - chmod +x "$HOME/Applications/$APP.app/Contents/MacOS/run"
+  - type: "conf"
+    expandenv: true
+    confdest: $HOME/Applications/$APP.app/Contents/MacOS/$APP
+    confperm: 0755
+    confdata: |
+      #!{{.HOME}}/Applications/{{.APP}}.app/Contents/MacOS/run --file {{.HOME}}/Applications/{{.APP}}.app/Contents/MacOS/{{.APP}}
+      ---
+      options:
+        - key: "rest"
+          value: true
+        - key: "no-auth"
+          value: true
+        - key: "host"
+          value: "0.0.0.0"
+        - key: "port"
+          value: 8000
+      logging:
+        - level: info
+        - output: stdout
+      cmd:
+        - type: "shell"
+          values:
+            - ./run --no-file

@@ -1,11 +1,17 @@
 package functions
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"text/template"
 
 	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
@@ -156,4 +162,66 @@ func PrintRest(ctype color.Attribute, _level string, cstring ...interface{}) {
 func PrintColor(ctype color.Attribute, _level string, cstring ...interface{}) {
 	mystring := color.New(ctype)
 	mystring.Println(cstring...)
+}
+
+func GoTemplate(mymap map[string]string, mytemplate string) string {
+	var writer bytes.Buffer
+	t, err := template.New("todos").Parse(mytemplate)
+
+	if err != nil {
+		panic(err)
+	}
+	err = t.Execute(&writer, mymap)
+	if err != nil {
+		panic(err)
+	}
+	return writer.String()
+}
+
+func openai(apiKey string, model string, prompt string) {
+	// Erstellen Sie eine neue Anfrage an die OpenAI API
+	req, err := http.NewRequest("POST", "https://api.openai.com/v1/engines/davinci/jobs", nil)
+	if err != nil {
+		fmt.Printf("Error creating API request: %s\n", err)
+		return
+	}
+
+	// Setzen Sie den API-Schlüssel und das Modell
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	// Stellen Sie die Anfrage an das Modell
+	reqBody := map[string]interface{}{
+		"prompt":      prompt,
+		"max_tokens":  1024,
+		"model":       model,
+		"temperature": 0.5,
+	}
+	jsonReq, err := json.Marshal(reqBody)
+	if err != nil {
+		fmt.Printf("Error encoding request body: %s\n", err)
+		return
+	}
+	req.Body = ioutil.NopCloser(bytes.NewBuffer(jsonReq))
+
+	// Senden Sie die Anfrage an die API
+	httpClient := &http.Client{}
+	res, err := httpClient.Do(req.WithContext(context.Background()))
+	if err != nil {
+		fmt.Printf("Error sending API request: %s\n", err)
+		return
+	}
+	defer res.Body.Close()
+
+	// Verarbeiten Sie die Antwort des Modells
+	resBody, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		fmt.Printf("Error reading API response: %s\n", err)
+		return
+	}
+	var response map[string]interface{}
+	if err := json.Unmarshal(resBody, &response); err != nil {
+		fmt.Printf("Error decoding API response: %s\n", err)
+		return
+	}
 }
