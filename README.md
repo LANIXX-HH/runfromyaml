@@ -304,7 +304,7 @@ cmd:
     values:
       - uname
       - -a ;
-      - pwd****
+      - pwd
 ~~~
 
 ### Docker-Compose Block
@@ -336,8 +336,6 @@ cmd:
     values:
       - zsh
 ~~~
-  
-
   
 ### Call a Command inside a running Docker container or run it once.
 
