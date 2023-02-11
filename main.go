@@ -32,10 +32,17 @@ func main() {
 	flags["no-auth"] = flag.Bool("no-auth", false, "no-auth - disable rest auth")
 	flags["restout"] = flag.Bool("restout", false, "rest output - activate output to http response")
 	flags["no-file"] = flag.Bool("no-file", false, "no-file - file option should be disabled")
+	flags["ai"] = flag.Bool("ai", false, "ai - interact with OpenAI")
+	flags["shell"] = flag.Bool("shell", false, "shell - interactive shell ")
 
 	flags["file"] = flag.String("file", "commands.yaml", "file - file with all defined commands, descriptions and configuration blocks in yaml fromat")
 	flags["host"] = flag.String("host", "localhost", "host - set host for rest api mode (default host is localhost)")
 	flags["user"] = flag.String("user", "rest", "user - set username for rest api authentication (default username is rest) ")
+	flags["ai-in"] = flag.String("ai-in", "Hi, OpenAI. You are cool.", "ai - interact with OpenAI")
+	flags["ai-key"] = flag.String("ai-key", "", "ai - OpenAI API Key")
+	flags["ai-model"] = flag.String("ai-model", "text-davinci-003", "ai-model - OpenAI Model for answer generation")
+	flags["ai-cmdtype"] = flag.String("ai-cmdtype", "shell", "ai-cmdtype - For which type of code should be examples generated")
+	flags["shell-type"] = flag.String("shell-type", "bash", "shell-type - which shell type should be used for recording all the commands to generate yaml structure")
 
 	flags["port"] = flag.Int("port", 8080, "port - set http port for rest api mode (default http port is 8080)")
 
@@ -87,5 +94,21 @@ func main() {
 			fmt.Println("temporary password for rest api connection with user", restapi.TempUser, "is", restapi.TempPass)
 		}
 		restapi.RestApi(*flags["port"].(*int), *flags["host"].(*string))
+	}
+	if *flags["ai"].(*bool) {
+		response := functions.OpenAI(*flags["ai-key"].(*string), *flags["ai-model"].(*string), *flags["ai-in"].(*string), *flags["ai-cmdtype"].(*string))
+		out := response["choices"][0].(map[string]interface{})
+		fmt.Println(string(out["text"].(string)))
+	}
+	if *flags["shell"].(*bool) {
+		fmt.Println("your input commands will be written to create a YAML structure")
+		fmt.Println("enter 'exit' + '\\n' to stop interactive recording")
+		commands := cli.InteractiveShell(*flags["shell-type"].(*string))
+		tempmap := functions.PrintShellCommandsAsYaml(commands)
+		tempyaml, err := yaml.Marshal(tempmap)
+		if err != nil {
+			fmt.Println("error by marshaling temporary map to yaml")
+		}
+		fmt.Println(string(tempyaml))
 	}
 }

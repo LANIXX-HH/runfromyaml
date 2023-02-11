@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	execute "os/exec"
 	"reflect"
 	"strings"
 	"sync"
