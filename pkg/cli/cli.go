@@ -345,3 +345,45 @@ func Runfromyaml(yamlFile []byte, debug bool) {
 		}
 	}
 }
+
+func InteractiveShell(shell string) []string {
+	bash := []string{shell, "--login"}
+	cmd := execute.Command(bash[0], bash[1:]...)
+	stdin, _ := cmd.StdinPipe()
+	stdout, _ := cmd.StdoutPipe()
+
+	var commands []string
+
+	go func() {
+		scanner := bufio.NewScanner(stdout)
+		for scanner.Scan() {
+			fmt.Println(scanner.Text())
+		}
+	}()
+
+	err := cmd.Start()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Print("your session will be recorded > ")
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		input := scanner.Text()
+		if input != "" && input != "exit" {
+			commands = append(commands, input)
+		}
+		_, err = stdin.Write([]byte(input + "\n"))
+		if err != nil {
+			break
+		}
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return commands
+
+}
