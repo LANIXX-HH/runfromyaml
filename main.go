@@ -1,15 +1,16 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
-	"reflect"
+	"strings"
 
 	"github.com/dchest/uniuri"
 	"github.com/fatih/color"
 	"github.com/lanixx/runfromyaml/pkg/cli"
+	"github.com/lanixx/runfromyaml/pkg/config"
 	"github.com/lanixx/runfromyaml/pkg/functions"
+	"github.com/lanixx/runfromyaml/pkg/openai"
 	"github.com/lanixx/runfromyaml/pkg/restapi"
 	"gopkg.in/yaml.v2"
 )
@@ -19,73 +20,125 @@ func init() {
 }
 
 func main() {
-	var (
-		ydoc map[interface{}][]interface{}
-	)
+	cfg := config.New()
+	cfg.ParseFlags()
 
-	programm := os.Args
-	flags := make(map[string]interface{})
+	if cfg.Debug {
+		functions.PrintColor(color.FgRed, "debug", "\n", os.Args)
+	}
 
-	// parse flags
-	flags["debug"] = flag.Bool("debug", false, "debug - activate debug mode to print more informations")
-	flags["rest"] = flag.Bool("rest", false, "restapi - start this instance in background mode in rest api mode")
-	flags["no-auth"] = flag.Bool("no-auth", false, "no-auth - disable rest auth")
-	flags["restout"] = flag.Bool("restout", false, "rest output - activate output to http response")
-	flags["no-file"] = flag.Bool("no-file", false, "no-file - file option should be disabled")
+	// Load YAML configuration if file exists
+	if !cfg.NoFile {
+		ydata, err := os.ReadFile(cfg.File)
+		if err == nil {
+			if err := cfg.LoadFromYAML(ydata); err != nil {
+				fmt.Printf("Warning: Failed to load YAML configuration: %v\n", err)
+			}
+		}
+	}
 
-	flags["file"] = flag.String("file", "commands.yaml", "file - file with all defined commands, descriptions and configuration blocks in yaml fromat")
-	flags["host"] = flag.String("host", "localhost", "host - set host for rest api mode (default host is localhost)")
-	flags["user"] = flag.String("user", "rest", "user - set username for rest api authentication (default username is rest) ")
+	// Handle AI mode
+	if cfg.AI {
+		handleAIMode(cfg)
+	}
 
-	flags["port"] = flag.Int("port", 8080, "port - set http port for rest api mode (default http port is 8080)")
+	// Handle file-based execution
+	if !cfg.NoFile {
+		handleFileExecution(cfg)
+	}
 
-	flag.Parse()
-	yamlFile, err := os.ReadFile(*flags["file"].(*string))
+	// Handle REST API mode
+	if cfg.Rest {
+		handleRestMode(cfg)
+	}
+
+	// Handle interactive shell mode
+	if cfg.Shell {
+		handleShellMode(cfg)
+	}
+}
+
+func handleAIMode(cfg *config.Config) {
+	if len(cfg.AIKey) > 0 {
+		openai.Key = cfg.AIKey
+		openai.IsAiEnabled = true
+	} else {
+		openai.IsAiEnabled = false
+	}
+
+	openai.Model = cfg.AIModel
+	openai.ShellType = cfg.AICmdType
+
+	if openai.IsAiEnabled {
+		if len(cfg.AIInput) > 0 {
+			for {
+				response, err := openai.OpenAI(openai.Key, openai.Model, cfg.AIInput, openai.ShellType)
+				if err == nil {
+					fmt.Println(openai.PrintAiResponse(response))
+					break
+				}
+			}
+		}
+	} else {
+		fmt.Println("OpenAI is not enabled. Probably OpenAI-Key is empty.")
+	}
+}
+
+func handleFileExecution(cfg *config.Config) {
+	ydata, err := os.ReadFile(cfg.File)
 	if err != nil {
-		fmt.Println("\n file option was set, but it was not possible to read input yaml file.")
+		fmt.Printf("\nfile option was set, but it was not possible to read this file:\n\t%s\n", cfg.File)
+		return
 	}
 
-	yaml.Unmarshal(yamlFile, &ydoc)
-
-	for key := range ydoc["options"] {
-		options := ydoc["options"][key].(map[interface{}]interface{})
-		if options["key"] == "file" || options["key"] == "host" || options["key"] == "user" {
-			*flags[options["key"].(string)].(*string) = options["value"].(string)
-		}
-		if options["key"] == "debug" || options["key"] == "rest" || options["key"] == "no-auth" || options["key"] == "restout" || options["key"] == "no-file" {
-			*flags[options["key"].(string)].(*bool) = options["value"].(bool)
-		}
-		if options["key"] == "port" {
-			*flags[options["key"].(string)].(*int) = options["value"].(int)
-		}
-
+	var ydoc map[interface{}][]interface{}
+	if err := yaml.Unmarshal(ydata, &ydoc); err != nil {
+		fmt.Printf("It was not possible to read yaml structure from this file %s with following error message:\n%s\n", cfg.File, err)
+		return
 	}
 
-	if *flags["debug"].(*bool) {
-		functions.PrintColor(color.FgRed, "debug", "\n", programm)
+	cli.Runfromyaml(ydata, cfg.Debug)
+}
+
+func handleRestMode(cfg *config.Config) {
+	fmt.Printf("start command in rest api mode on %s host %d port\n", cfg.Host, cfg.Port)
+
+	if cfg.RestOut {
+		restapi.RestOut = cfg.RestOut
+		fmt.Println("output should be redirected to rest http response")
 	}
 
-	_, filerr := os.Stat("commands.yaml")
-	if reflect.ValueOf(*flags["file"].(*string)).IsValid() && filerr == nil && !*flags["no-file"].(*bool) {
-		cli.Runfromyaml(yamlFile, *flags["debug"].(*bool))
+	if cfg.NoAuth {
+		restapi.RestAuth = false
+	} else {
+		restapi.RestAuth = true
+		restapi.TempPass = uniuri.New()
+		restapi.TempUser = cfg.User
+		fmt.Printf("temporary password for rest api connection with user %s is %s\n", restapi.TempUser, restapi.TempPass)
 	}
 
-	if *flags["rest"].(*bool) {
-		fmt.Println("start command in rest api mode on", *flags["host"].(*string), "host", *flags["port"].(*int), "port")
+	restapi.RestApi(cfg.Port, cfg.Host)
+}
 
-		if *flags["restout"].(*bool) {
-			restapi.RestOut = *flags["restout"].(*bool)
-			fmt.Println("output should be redirected to rest http response")
-		}
+func handleShellMode(cfg *config.Config) {
+	fmt.Println("your input commands will be written to create a YAML structure")
+	fmt.Println("enter 'exit' + '\\n' to stop interactive recording")
 
-		if *flags["no-auth"].(*bool) {
-			restapi.RestAuth = false
-		} else {
-			restapi.RestAuth = true
-			restapi.TempPass = uniuri.New()
-			restapi.TempUser = *flags["user"].(*string)
-			fmt.Println("temporary password for rest api connection with user", restapi.TempUser, "is", restapi.TempPass)
-		}
-		restapi.RestApi(*flags["port"].(*int), *flags["host"].(*string))
+	// Create a new environment instance
+	env := cli.NewEnvironment()
+
+	// Add current environment variables
+	for _, envVar := range os.Environ() {
+		parts := strings.SplitN(envVar, "=", 2)
+		env.Set(parts[0], parts[1])
 	}
+
+	commands := cli.InteractiveShell(cfg.ShellType)
+	tempmap := functions.PrintShellCommandsAsYaml(commands, env.GetVariables())
+	tempyaml, err := yaml.Marshal(tempmap)
+	if err != nil {
+		fmt.Println("error by marshaling temporary map to yaml")
+		return
+	}
+	fmt.Println(string(tempyaml))
 }

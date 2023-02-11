@@ -1,4 +1,22 @@
 ---
+### https://github.com/LANIXX-HH/runfromyaml/blob/master/main.go#L34-L49
+#options:
+#  - key: "rest"
+#    value: false
+#  - key: "no-auth"
+#    value: true
+#  - key: "host"
+#    value: "0.0.0.0"
+#  - key: "port"
+#    value: 8000
+#  - key: "ai"
+#    value: true
+#  - key: "ai-key"
+#    value: "sk-..."
+#  - key: "ai-model"
+#    value: "gpt-4-32k-0314"
+#  - key: "shell"
+#    value: false
 logging:
   - level: info
   - output: stdout
@@ -9,6 +27,7 @@ env:
     value: "TEST"
 cmd:
   - type: "shell"
+    desc: "erstelle auf jeden fall, egal ob es den gibt oder nicht, ein Ordner .tmp unter $HOME"
     values:
       - mkdir -p $HOME/.tmp
   - type: "shell"
@@ -20,6 +39,7 @@ cmd:
       - echo $BLA;
       - echo $TEST
   - type: "conf"
+    desc: "test content"
     confdata: | 
       test
         test
@@ -30,7 +50,7 @@ cmd:
   - type: "exec"
     expandenv: true
     name: "list"
-    desc: "liste auf"
+    desc: "zeige betriebsystem informationen in der shell"
     values:
       - uname 
       - -a 
@@ -44,21 +64,21 @@ cmd:
   - type: "exec"
     expandenv: true
     name: "conf"
-    desc: "erstelle zwei.conf und gebe es aus"
+    desc: "gebe die datei zwei.comn aus, die im ordner .tmp in user home sich befindet"
     values:
       - cat
       - $HOME/.tmp/zwei.conf
   - type: "exec"
     expandenv: true
     name: "git"
-    desc: "zeige das aktuelle status von git"
+    desc: "zeige das aktuelle status von git und danach den aktuellen branch"
     values:
       - git
       - status;
       - git branch
   - type: shell
     expandenv: true
-    desc: "print shell environment"
+    desc: "zeige den aktuellen ordner in der shell an und danach gebe betriebsystem infromationen in der shell aus"
     name: "print-shell-env"
     values:
       - pwd;
@@ -66,7 +86,7 @@ cmd:
       - -a
   - type: shell
     expandenv: true
-    desc: "print shell environment"
+    desc: "zeige Inhalt der Variable $HOME und danach printe OK"
     name: "print-shell-env"
     values:
       - echo 
@@ -74,7 +94,7 @@ cmd:
       - echo "OK"
   - type: docker
     expandenv: true
-    desc: "run command from docker container"
+    desc: "starte im neuen alpine docker container betriebsystem informationen und gebe den aktuellen ordner aus"
     name: "docker-run"
     command: run
     container: alpine
@@ -85,7 +105,7 @@ cmd:
   - type: "docker-compose"
     expandenv: true
     name: "build"
-    desc: "build tooling"
+    desc: "starte docker-compose befehl build im Projektordner X mit der docker-compose.yaml"
     dcoptions:
       - -f $HOME/.tmp/tooling/docker-compose.yaml
       - --project-directory $HOME/.tmp/tooling
@@ -96,7 +116,7 @@ cmd:
   - type: "docker-compose"
     expandenv: true
     name: "run"
-    desc: "run tooling"
+    desc: "starte docker-compose befehl run im Projektordner X mit der docker-compose.yaml"
     dcoptions:
       - -f $HOME/.tmp/tooling/docker-compose.yaml
       - --project-directory $HOME/.tmp/tooling
@@ -109,13 +129,13 @@ cmd:
       - pwd
   - type: shell
     expandenv: true
-    desc: "create ssh key for localhost"
+    desc: "zeuge aktuelle ir_rsa datei und wenn es die nicht gibt, erstelle eine. sie soll 4096 bits sein und kein passwort enthalten"
     name: "create-ssh-key"
     values:
       - ls $HOME/.ssh/id_rsa-localhost || ssh-keygen -t rsa -b 4096 -N '' -f $HOME/.ssh/id_rsa-localhost
   - type: shell
     expandenv: true
-    desc: "use ssh key for localhost"
+    desc: "zeige den inhalt des public keys für id_rsa und leite es ins authorized_keys datei um"
     name: "use-ssh-key"
     values:
       - grep -f $HOME/.ssh/id_rsa-localhost.pub $HOME/.ssh/authorized_keys || cat $HOME/.ssh/id_rsa-localhost.pub >> $HOME/.ssh/authorized_keys

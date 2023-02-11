@@ -2,13 +2,12 @@ package functions
 
 import (
 	"bytes"
-	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"reflect"
+	"strings"
 	"time"
 
 	"text/template"
@@ -113,50 +112,8 @@ func PrintRestHeader() {
 }
 
 func PrintRest(ctype color.Attribute, _level string, cstring ...interface{}) {
-
-	//fmt.Fprintln(RestOut, strings.Trim(fmt.Sprint(append(cstring, "")), "[]"))
-
 	mystring := color.New(ctype)
 	mystring.Fprintln(RestOut, cstring...)
-
-	//fmt.Fprintln(RestOut, cstring...)
-	//RestOut.Write([]byte("bla"))
-	// log := logrus.New()
-	// //file
-	// log.Formatter = new(logrus.JSONFormatter)                      //default
-	// log.Formatter.(*logrus.JSONFormatter).PrettyPrint = false      // pretty print
-	// log.Formatter.(*logrus.JSONFormatter).DisableTimestamp = true  // remove timestamp from test output
-	// log.Formatter.(*logrus.JSONFormatter).DisableHTMLEscape = true // remove timestamp from test output
-
-	// // log.Formatter = new(logrus.TextFormatter)
-	// // log.Formatter.(*logrus.TextFormatter).DisableColors = false
-	// // log.Formatter.(*logrus.TextFormatter).DisableTimestamp = true
-	// // log.Formatter.(*logrus.TextFormatter).EnvironmentOverrideColors = true
-
-	// // log.Formatter.(*logrus.TextFormatter).DisableLevelTruncation = false
-	// // log.Formatter.(*logrus.TextFormatter).DisableQuote = true
-	// // log.Formatter.(*logrus.TextFormatter).DisableSorting = true
-
-	// // log.Formatter.(*logrus.TextFormatter).ForceColors = true
-	// // log.Formatter.(*logrus.TextFormatter).ForceQuote = true
-
-	// log.Out = RestOut
-	// switch _level {
-	// case "info":
-	// 	log.Info(cstring...)
-	// case "warn":
-	// 	log.Warn(cstring...)
-	// case "error":
-	// 	log.Error(cstring...)
-	// case "debug":
-	// 	log.Debug(cstring...)
-	// case "trace":
-	// 	log.Trace(cstring...)
-	// case "fatal":
-	// 	log.Fatal(cstring...)
-	// case "panic":
-	// 	log.Panic(cstring...)
-	// }
 }
 
 func PrintColor(ctype color.Attribute, _level string, cstring ...interface{}) {
@@ -178,50 +135,86 @@ func GoTemplate(mymap map[string]string, mytemplate string) string {
 	return writer.String()
 }
 
-func openai(apiKey string, model string, prompt string) {
-	// Erstellen Sie eine neue Anfrage an die OpenAI API
-	req, err := http.NewRequest("POST", "https://api.openai.com/v1/engines/davinci/jobs", nil)
-	if err != nil {
-		fmt.Printf("Error creating API request: %s\n", err)
-		return
+// The function first checks if the key exists in the yblock map and if it does, it trims the value associated with the key and converts it to a string.
+// If the expandenv key exists in the yblock map and is set to true, the function then expands any environment variables in the string.
+// Finally, the function splits the string into an array of strings and returns it. If the key does not exist, then the function returns nil.
+
+func ExtractAndExpand(yblock map[interface{}]interface{}, key string) []string {
+	if reflect.ValueOf(yblock[key]).IsValid() {
+		values := strings.Trim(fmt.Sprint(yblock[key]), "[]")
+		if reflect.ValueOf(yblock["expandenv"]).IsValid() && yblock["expandenv"].(bool) {
+			values = os.ExpandEnv(values)
+		}
+		return strings.Fields(values)
+	}
+	return nil
+}
+
+func PrintShellCommandsAsYaml(commands []string, envs map[string]string) map[string]interface{} {
+
+	mymap := map[string]interface{}{
+		"logging": []map[string]interface{}{
+			{
+				"level": "info",
+			},
+			{
+				"output": "stdout",
+			},
+		},
+		// "env": []map[string]interface{}{
+		// 	{
+		// 		"key":   "TEST",
+		// 		"value": "foo",
+		// 	},
+		// 	{
+		// 		"key":   "BLA",
+		// 		"value": "TEST",
+		// 	},
+		// },
+		// "cmd": []map[string]interface{}{
+		// 	{
+		// 		"type": "shell",
+		// 		"values": []string{
+		// 			"ls",
+		// 		},
+		// 	},
+		// },
 	}
 
-	// Setzen Sie den API-Schlüssel und das Modell
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+apiKey)
+	if len(commands) > 0 {
 
-	// Stellen Sie die Anfrage an das Modell
-	reqBody := map[string]interface{}{
-		"prompt":      prompt,
-		"max_tokens":  1024,
-		"model":       model,
-		"temperature": 0.5,
+		mymap["cmd"] = []map[string]interface{}{}
+		for _, command := range commands {
+			mymap["cmd"] = append(mymap["cmd"].([]map[string]interface{}), map[string]interface{}{
+				"type": "shell",
+				"values": []string{
+					command,
+				},
+			})
+		}
 	}
-	jsonReq, err := json.Marshal(reqBody)
-	if err != nil {
-		fmt.Printf("Error encoding request body: %s\n", err)
-		return
-	}
-	req.Body = ioutil.NopCloser(bytes.NewBuffer(jsonReq))
 
-	// Senden Sie die Anfrage an die API
-	httpClient := &http.Client{}
-	res, err := httpClient.Do(req.WithContext(context.Background()))
-	if err != nil {
-		fmt.Printf("Error sending API request: %s\n", err)
-		return
-	}
-	defer res.Body.Close()
+	if len(envs) > 0 {
+		mymap["env"] = []map[string]interface{}{}
 
-	// Verarbeiten Sie die Antwort des Modells
-	resBody, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		fmt.Printf("Error reading API response: %s\n", err)
-		return
+		for key, value := range envs {
+			mymap["env"] = append(mymap["env"].([]map[string]interface{}), map[string]interface{}{
+				"key":   key,
+				"value": value,
+			})
+		}
 	}
-	var response map[string]interface{}
-	if err := json.Unmarshal(resBody, &response); err != nil {
-		fmt.Printf("Error decoding API response: %s\n", err)
-		return
+
+	return mymap
+}
+
+func EvaluateDescription(yamlBlock map[interface{}]interface{}, defaultDescription ...string) string {
+	var desc string
+	if len(defaultDescription) > 0 {
+		desc = defaultDescription[0]
 	}
+	if reflect.ValueOf(yamlBlock["desc"]).IsValid() {
+		desc = fmt.Sprintf("# %v", yamlBlock["desc"])
+	}
+	return desc
 }
