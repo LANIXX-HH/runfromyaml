@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	execute "os/exec"
 	"reflect"
 	"strings"
 	"sync"
@@ -16,30 +18,18 @@ import (
 )
 
 var (
-	debug     bool
 	envstruct map[string]string
 )
 
 func execCmd(yblock map[interface{}]interface{}, _envs []string, _level string, _output string) {
 	var (
-		values string
-		cmds   []string
-		desc   string
+		cmds []string
+		desc string
 	)
 	wg := new(sync.WaitGroup)
 
-	if reflect.ValueOf(yblock["values"]).IsValid() {
-		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
-		if reflect.ValueOf(yblock["expandenv"]).IsValid() {
-			if yblock["expandenv"].(bool) {
-				values = os.ExpandEnv(values)
-				if debug {
-					functions.PrintSwitch(color.FgHiBlack, "debug", _output, "# environment variables are expanded")
-				}
-			}
-		}
-		cmds = strings.Fields(values)
-	}
+	cmds = functions.ExtractAndExpand(yblock, "values")
+
 	if reflect.ValueOf(yblock["desc"]).IsValid() {
 		desc = fmt.Sprintf("%v", yblock["desc"])
 	}
@@ -50,22 +40,11 @@ func execCmd(yblock map[interface{}]interface{}, _envs []string, _level string, 
 
 func shellCmd(yblock map[interface{}]interface{}, _envs []string, _level string, _output string) {
 	var (
-		values string
-		cmds   []string
-		desc   string
+		cmds []string
+		desc string
 	)
-	if reflect.ValueOf(yblock["values"]).IsValid() {
-		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
-		if reflect.ValueOf(yblock["expandenv"]).IsValid() {
-			if yblock["expandenv"].(bool) {
-				values = os.ExpandEnv(values)
-				if debug {
-					functions.PrintSwitch(color.FgHiBlack, "debug", _output, "# environment variables are expanded")
-				}
-			}
-		}
-		cmds = strings.Fields(values)
-	}
+	cmds = functions.ExtractAndExpand(yblock, "values")
+
 	desc = "<no description>"
 	if reflect.ValueOf(yblock["desc"]).IsValid() {
 		desc = fmt.Sprintf("%v", yblock["desc"])
@@ -83,23 +62,12 @@ func shellCmd(yblock map[interface{}]interface{}, _envs []string, _level string,
 
 func dockerCmd(yblock map[interface{}]interface{}, _envs []string, _level string, _output string) {
 	var (
-		values string
-		cmds   []string
-		desc   string
+		cmds []string
+		desc string
 	)
 	wg := new(sync.WaitGroup)
-	if reflect.ValueOf(yblock["values"]).IsValid() {
-		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
-		if reflect.ValueOf(yblock["expandenv"]).IsValid() {
-			if yblock["expandenv"].(bool) {
-				values = os.ExpandEnv(values)
-				if debug {
-					functions.PrintSwitch(color.FgHiBlack, "debug", _output, "# environment variables are expanded")
-				}
-			}
-		}
-		cmds = strings.Fields(values)
-	}
+	cmds = functions.ExtractAndExpand(yblock, "values")
+
 	desc = "<no description>"
 	if reflect.ValueOf(yblock["desc"]).IsValid() {
 		desc = fmt.Sprintf("%v", yblock["desc"])
@@ -111,7 +79,6 @@ func dockerCmd(yblock map[interface{}]interface{}, _envs []string, _level string
 
 func dockerComposeCmd(yblock map[interface{}]interface{}, _envs []string, _level string, _output string) {
 	var (
-		values     string
 		cmds       []string
 		dcoptions  []string
 		cmdoptions []string
@@ -119,52 +86,25 @@ func dockerComposeCmd(yblock map[interface{}]interface{}, _envs []string, _level
 		service    string
 	)
 	wg := new(sync.WaitGroup)
-	if reflect.ValueOf(yblock["values"]).IsValid() {
-		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
-		if reflect.ValueOf(yblock["expandenv"]).IsValid() {
-			if yblock["expandenv"].(bool) {
-				values = os.ExpandEnv(values)
-				if debug {
-					functions.PrintSwitch(color.FgHiBlack, "debug", _output, "# environment variables are expanded")
-				}
-			}
-		}
-		cmds = strings.Fields(values)
-	}
-	if reflect.ValueOf(yblock["dcoptions"]).IsValid() {
-		values = strings.Trim(fmt.Sprint(yblock["dcoptions"]), "[]")
-		if reflect.ValueOf(yblock["expandenv"]).IsValid() {
-			if yblock["expandenv"].(bool) {
-				values = os.ExpandEnv(values)
-			}
-		}
-		dcoptions = strings.Fields(values)
-	}
-	if reflect.ValueOf(yblock["cmdoptions"]).IsValid() {
-		values = strings.Trim(fmt.Sprint(yblock["cmdoptions"]), "[]")
-		if reflect.ValueOf(yblock["expandenv"]).IsValid() {
-			if yblock["expandenv"].(bool) {
-				values = os.ExpandEnv(values)
-			}
-		}
-		cmdoptions = strings.Fields(values)
-	}
+	cmds = functions.ExtractAndExpand(yblock, "values")
+	dcoptions = functions.ExtractAndExpand(yblock, "dcoptions")
+	cmdoptions = functions.ExtractAndExpand(yblock, "cmdoptions")
+
 	desc = "<no description>"
 	if reflect.ValueOf(yblock["desc"]).IsValid() {
-		desc = fmt.Sprintf("%v", yblock["desc"])
+		desc = yblock["desc"].(string)
 	}
 	service = "no-service"
 	if reflect.ValueOf(yblock["service"]).IsValid() {
-		service = fmt.Sprintf("%v", yblock["service"])
+		service = yblock["service"].(string)
 	}
 	wg.Add(1)
-	go exec.CommandDockerComposeExec(yblock["command"].(string), service, cmdoptions, dcoptions, cmds, desc, _envs, wg, _level, _output)
+	go exec.CommandDockerComposeExecNew(yblock["command"].(string), service, cmdoptions, dcoptions, cmds, desc, _envs, wg, _level, _output)
 	wg.Wait()
 }
 
 func sshCmd(yblock map[interface{}]interface{}, _envs []string, _level string, _output string) {
 	var (
-		values  string
 		cmds    []string
 		options []string
 		desc    string
@@ -172,27 +112,9 @@ func sshCmd(yblock map[interface{}]interface{}, _envs []string, _level string, _
 	var user string
 	var host string
 	wg := new(sync.WaitGroup)
-	if reflect.ValueOf(yblock["values"]).IsValid() {
-		values = strings.Trim(fmt.Sprint(yblock["values"]), "[]")
-		if reflect.ValueOf(yblock["expandenv"]).IsValid() {
-			if yblock["expandenv"].(bool) {
-				values = os.ExpandEnv(values)
-				if debug {
-					functions.PrintSwitch(color.FgHiBlack, "debug", _output, "# environment variables are expanded")
-				}
-			}
-		}
-		cmds = strings.Fields(values)
-	}
-	if reflect.ValueOf(yblock["options"]).IsValid() {
-		values = strings.Trim(fmt.Sprint(yblock["options"]), "[]")
-		if reflect.ValueOf(yblock["expandenv"]).IsValid() {
-			if yblock["expandenv"].(bool) {
-				values = os.ExpandEnv(values)
-			}
-		}
-		options = strings.Fields(values)
-	}
+	cmds = functions.ExtractAndExpand(yblock, "values")
+	options = functions.ExtractAndExpand(yblock, "options")
+
 	desc = "<no description>"
 	if reflect.ValueOf(yblock["desc"]).IsValid() {
 		desc = fmt.Sprintf("%v", yblock["desc"])
@@ -255,24 +177,25 @@ func Runfromyaml(yamlFile []byte, debug bool) {
 		ydoc    map[interface{}][]interface{}
 		yblock  map[interface{}]interface{}
 		envs    []string
+		ok      bool
 	)
 
-	yaml.Unmarshal(yamlFile, &ydoc)
+	if err := yaml.Unmarshal(yamlFile, &ydoc); err != nil {
+		functions.PrintSwitch(color.FgHiWhite, "info", "stdout", "could not unmarshal YAML data ("+err.Error()+")")
+	}
 
 	for key := range ydoc["logging"] {
 		setting := ydoc["logging"][key].(map[interface{}]interface{})
 		if reflect.ValueOf(setting["output"]).IsValid() {
-			_output = fmt.Sprint(setting["output"])
+			_output = setting["output"].(string)
 		}
 		if reflect.ValueOf(setting["level"]).IsValid() {
-			_level = fmt.Sprint(setting["level"])
+			_level = setting["level"].(string)
 		}
 	}
+
 	if _output == "file" {
 		functions.PrintSwitch(color.FgHiWhite, "info", "stdout", "logfile temp file: "+os.TempDir()+"logrus-"+time.Now().Format("20060102")+".log")
-	}
-	if debug {
-		functions.PrintSwitch(color.FgRed, "debug", _output, ydoc["env"])
 	}
 
 	getenvironment := func(data []string, getkeyval func(item string) (key, val string)) map[string]string {
@@ -291,26 +214,30 @@ func Runfromyaml(yamlFile []byte, debug bool) {
 	})
 
 	for key := range ydoc["env"] {
-		_env := ydoc["env"][key].(map[interface{}]interface{})
-		os.Setenv(_env["key"].(string), _env["value"].(string))
-		envs = append(envs, _env["key"].(string)+"="+_env["value"].(string))
-		environment[_env["key"].(string)] = _env["value"].(string)
-		if debug {
-			functions.PrintSwitch(color.FgRed, "debug", _output, _env["key"].(string)+"="+_env["value"].(string))
+		_env, ok := ydoc["env"][key].(map[interface{}]interface{})
+		if !ok {
+			functions.PrintSwitch(color.FgRed, _level, _output, "it was not successfull to read ydoc['env'][key]")
 		}
+		envkey, ok := _env["key"].(string)
+		if !ok {
+			functions.PrintSwitch(color.FgRed, _level, _output, "it was not successfull to read _env['key'].(string)")
+		}
+		envvalue, ok := _env["value"].(string)
+		if !ok {
+			functions.PrintSwitch(color.FgRed, _level, _output, "it was not successfull to read _env['value'].(string)")
+		}
+		os.Setenv(envkey, envvalue)
+		envs = append(envs, envkey+"="+envvalue)
+		environment[envkey] = envvalue
 	}
 	envstruct = environment
 
 	for key := range ydoc["cmd"] {
 
-		if debug {
-			functions.PrintSwitch(color.FgHiBlue, "debug", _output, "\n"+"# "+fmt.Sprint(key+1))
-		}
-
 		if !reflect.ValueOf(ydoc["cmd"][key].(map[interface{}]interface{})).IsNil() {
-			yblock = ydoc["cmd"][key].(map[interface{}]interface{})
-			if debug {
-				functions.PrintSwitch(color.FgHiBlue, "debug", _output, "YAML Block: \n---\n", yblock, "\n---\n")
+			yblock, ok = ydoc["cmd"][key].(map[interface{}]interface{})
+			if !ok {
+				functions.PrintSwitch(color.FgRed, _level, _output, "it was not successfull to read ydoc['cmd'][key].(map[interface{}]interface{}))")
 			}
 
 			if reflect.ValueOf(yblock["desc"]).IsValid() {
@@ -342,4 +269,46 @@ func Runfromyaml(yamlFile []byte, debug bool) {
 			}
 		}
 	}
+}
+
+func InteractiveShell(shell string) []string {
+	bash := []string{shell, "--login"}
+	cmd := execute.Command(bash[0], bash[1:]...)
+	stdin, _ := cmd.StdinPipe()
+	stdout, _ := cmd.StdoutPipe()
+
+	var commands []string
+
+	go func() {
+		scanner := bufio.NewScanner(stdout)
+		for scanner.Scan() {
+			fmt.Println(scanner.Text())
+		}
+	}()
+
+	err := cmd.Start()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Print("your session will be recorded > ")
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		input := scanner.Text()
+		if input != "" && input != "exit" {
+			commands = append(commands, input)
+		}
+		_, err = stdin.Write([]byte(input + "\n"))
+		if err != nil {
+			break
+		}
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return commands
+
 }
