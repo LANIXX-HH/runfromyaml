@@ -243,3 +243,82 @@ func Command(cmd []string, desc string, wg *sync.WaitGroup, _envs []string, _lev
 	}
 	wg.Done()
 }
+
+func CommandDockerComposeExecNew(command string, service string, cmdoptions []string, dcoptions []string, cmd []string, desc string, envs []string, wg *sync.WaitGroup, _level string, _output string) {
+	compose := buildDockerComposeCommand(dcoptions, command, cmdoptions, service)
+	cmds := splitCommands(cmd)
+
+	for _, _cmd := range cmds {
+		_compose := buildOneCommand(compose, _cmd)
+		runCommand(envs, _compose, _level, _output)
+	}
+
+	wg.Done()
+}
+
+func buildDockerComposeCommand(dcoptions []string, command string, cmdoptions []string, service string) []string {
+	var compose []string
+	if !reflect.ValueOf(dcoptions).IsNil() {
+		compose = append(compose, dcoptions...)
+	}
+
+	compose = append(compose, command)
+
+	if !reflect.ValueOf(cmdoptions).IsNil() {
+		compose = append(compose, cmdoptions...)
+	}
+
+	if service != "" {
+		compose = append(compose, service)
+	}
+
+	return compose
+}
+
+func splitCommands(cmd []string) []string {
+	temp_cmds := strings.Join(cmd, " ")
+	cmds := strings.Split(temp_cmds, ";")
+	return cmds
+}
+
+func buildOneCommand(compose []string, _cmd string) []string {
+	_cmd = os.ExpandEnv(_cmd)
+	onecmd := strings.Fields(_cmd)
+	if !reflect.ValueOf(onecmd).IsNil() {
+		_compose := append(compose, onecmd...)
+		return _compose
+	}
+	return compose
+}
+
+func runCommand(envs []string, _compose []string, _level string, _output string) {
+	command := exec.Command("docker-compose", _compose...)
+	command.Env = append(os.Environ(), envs...)
+	functions.PrintSwitch(color.FgYellow, _level, _output, "docker-compose", strings.Trim(fmt.Sprint(_compose), "[]"), "\n")
+
+	if _output == "rest" {
+		out, err := command.CombinedOutput()
+		if err != nil {
+			functions.PrintRest(color.FgRed, "error", "Error: ", err, string(out))
+		}
+		functions.PrintRest(color.FgHiWhite, _level, string(out))
+	}
+
+	if _output == "file" {
+		out, err := command.CombinedOutput()
+		if err != nil {
+			functions.PrintFile("error", "Error: ", err, string(out))
+		}
+		functions.PrintFile(_level, string(out))
+	}
+
+	if _output == "stdout" {
+		command.Stdout = os.Stdout
+		command.Stdin = os.Stdin
+		command.Stderr = os.Stderr
+		err := command.Run()
+		if err != nil {
+			functions.PrintColor(color.FgRed, "error", "Error: ", err)
+		}
+	}
+}
