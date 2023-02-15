@@ -10,6 +10,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/lanixx/runfromyaml/pkg/cli"
 	"github.com/lanixx/runfromyaml/pkg/functions"
+	"github.com/lanixx/runfromyaml/pkg/openai"
 	"github.com/lanixx/runfromyaml/pkg/restapi"
 	"gopkg.in/yaml.v2"
 )
@@ -38,7 +39,7 @@ func main() {
 	flags["file"] = flag.String("file", "commands.yaml", "file - file with all defined commands, descriptions and configuration blocks in yaml fromat")
 	flags["host"] = flag.String("host", "localhost", "host - set host for rest api mode (default host is localhost)")
 	flags["user"] = flag.String("user", "rest", "user - set username for rest api authentication (default username is rest) ")
-	flags["ai-in"] = flag.String("ai-in", "Hi, OpenAI. You are cool.", "ai - interact with OpenAI")
+	flags["ai-in"] = flag.String("ai-in", "", "ai - interact with OpenAI")
 	flags["ai-key"] = flag.String("ai-key", "", "ai - OpenAI API Key")
 	flags["ai-model"] = flag.String("ai-model", "text-davinci-003", "ai-model - OpenAI Model for answer generation")
 	flags["ai-cmdtype"] = flag.String("ai-cmdtype", "shell", "ai-cmdtype - For which type of code should be examples generated")
@@ -56,10 +57,10 @@ func main() {
 
 	for key := range ydoc["options"] {
 		options := ydoc["options"][key].(map[interface{}]interface{})
-		if options["key"] == "file" || options["key"] == "host" || options["key"] == "user" {
+		if options["key"] == "file" || options["key"] == "host" || options["key"] == "user" || options["key"] == "ai-key" || options["key"] == "ai-model" || options["key"] == "ai-cmdtype" {
 			*flags[options["key"].(string)].(*string) = options["value"].(string)
 		}
-		if options["key"] == "debug" || options["key"] == "rest" || options["key"] == "no-auth" || options["key"] == "restout" || options["key"] == "no-file" {
+		if options["key"] == "debug" || options["key"] == "rest" || options["key"] == "no-auth" || options["key"] == "restout" || options["key"] == "no-file" || options["key"] == "ai" {
 			*flags[options["key"].(string)].(*bool) = options["value"].(bool)
 		}
 		if options["key"] == "port" {
@@ -70,6 +71,34 @@ func main() {
 
 	if *flags["debug"].(*bool) {
 		functions.PrintColor(color.FgRed, "debug", "\n", programm)
+	}
+	if *flags["ai"].(*bool) {
+
+		var response map[string][]interface{}
+
+		if len(*flags["ai-key"].(*string)) > 0 {
+			openai.Key = *flags["ai-key"].(*string)
+			openai.IsAiEnabled = true
+		} else {
+			openai.IsAiEnabled = false
+		}
+
+		openai.Model = *flags["ai-model"].(*string)
+		openai.ShellType = *flags["ai-cmdtype"].(*string)
+
+		if openai.IsAiEnabled {
+			if len(*flags["ai-in"].(*string)) > 0 {
+				for {
+					response, err = openai.OpenAI(openai.Key, openai.Model, *flags["ai-in"].(*string), openai.ShellType)
+					if err == nil {
+						fmt.Println(openai.PrintAiResponse(response))
+						break
+					}
+				}
+			}
+		} else {
+			fmt.Println("OpenAI is not enabled. Probably OpenAI-Key is empty.")
+		}
 	}
 
 	_, filerr := os.Stat("commands.yaml")
@@ -95,16 +124,11 @@ func main() {
 		}
 		restapi.RestApi(*flags["port"].(*int), *flags["host"].(*string))
 	}
-	if *flags["ai"].(*bool) {
-		response := functions.OpenAI(*flags["ai-key"].(*string), *flags["ai-model"].(*string), *flags["ai-in"].(*string), *flags["ai-cmdtype"].(*string))
-		out := response["choices"][0].(map[string]interface{})
-		fmt.Println(string(out["text"].(string)))
-	}
 	if *flags["shell"].(*bool) {
 		fmt.Println("your input commands will be written to create a YAML structure")
 		fmt.Println("enter 'exit' + '\\n' to stop interactive recording")
 		commands := cli.InteractiveShell(*flags["shell-type"].(*string))
-		tempmap := functions.PrintShellCommandsAsYaml(commands)
+		tempmap := functions.PrintShellCommandsAsYaml(commands, cli.EnvironmentVariables)
 		tempyaml, err := yaml.Marshal(tempmap)
 		if err != nil {
 			fmt.Println("error by marshaling temporary map to yaml")
