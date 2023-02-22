@@ -208,10 +208,13 @@ func PrintShellCommandsAsYaml(commands []string, envs map[string]string) map[str
 	return mymap
 }
 
-func EvaluateDescription(yamlBlock map[interface{}]interface{}) string {
-	desc := "<no description>"
+func EvaluateDescription(yamlBlock map[interface{}]interface{}, defaultDescription ...string) string {
+	var desc string
+	if len(defaultDescription) > 0 {
+		desc = defaultDescription[0]
+	}
 	if reflect.ValueOf(yamlBlock["desc"]).IsValid() {
-		desc = fmt.Sprintf("%v", yamlBlock["desc"])
+		desc = fmt.Sprintf("# %v", yamlBlock["desc"])
 	}
 	return desc
 }

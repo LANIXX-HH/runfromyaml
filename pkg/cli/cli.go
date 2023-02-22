@@ -132,7 +132,7 @@ func conf(yamlBlock map[interface{}]interface{}, _level string, _output string) 
 	}
 
 	desc = functions.EvaluateDescription(yamlBlock)
-	confdata = "# " + desc + "\n" + confdata
+	confdata = desc + confdata
 
 	if reflect.ValueOf(yamlBlock["confdest"].(string)).String() != "" {
 		confdest = yamlBlock["confdest"].(string)
@@ -151,6 +151,30 @@ func conf(yamlBlock map[interface{}]interface{}, _level string, _output string) 
 	functions.PrintSwitch(color.FgGreen, _level, _output, "# create ", confdest)
 }
 
+func ExecFunctionsMap(map[interface{}]interface{}, []string, string, string) map[string]func(map[interface{}]interface{}, []string, string, string) {
+	execFunctions := map[string]func(map[interface{}]interface{}, []string, string, string){
+		"exec": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
+			execCmd(yamlBlock, _envvars, _level, _output)
+		},
+		"shell": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
+			shellCmd(yamlBlock, _envvars, _level, _output)
+		},
+		"docker": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
+			dockerCmd(yamlBlock, _envvars, _level, _output)
+		},
+		"docker-compose": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
+			dockerComposeCmd(yamlBlock, _envvars, _level, _output)
+		},
+		"ssh": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
+			sshCmd(yamlBlock, _envvars, _level, _output)
+		},
+		"conf": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
+			conf(yamlBlock, _level, _output)
+		},
+	}
+	return execFunctions
+}
+
 func Runfromyaml(yamlFile []byte, debug bool) {
 	var (
 		_output                   string
@@ -160,6 +184,29 @@ func Runfromyaml(yamlFile []byte, debug bool) {
 		environmentVariablesShell []string
 		ok                        bool
 	)
+
+	// define functions map
+	execFunctions := ExecFunctionsMap(yamlBlock, environmentVariablesShell, _level, _output)
+	// execFunctions := map[string]func(map[interface{}]interface{}, []string, string, string){
+	// 	"exec": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
+	// 		execCmd(yamlBlock, environmentVariablesShell, _level, _output)
+	// 	},
+	// 	"shell": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
+	// 		shellCmd(yamlBlock, environmentVariablesShell, _level, _output)
+	// 	},
+	// 	"docker": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
+	// 		dockerCmd(yamlBlock, environmentVariablesShell, _level, _output)
+	// 	},
+	// 	"docker-compose": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
+	// 		dockerComposeCmd(yamlBlock, environmentVariablesShell, _level, _output)
+	// 	},
+	// 	"ssh": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
+	// 		sshCmd(yamlBlock, environmentVariablesShell, _level, _output)
+	// 	},
+	// 	"conf": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
+	// 		conf(yamlBlock, _level, _output)
+	// 	},
+	// }
 
 	if err := yaml.Unmarshal(yamlFile, &yamlDocument); err != nil {
 		functions.PrintSwitch(color.FgHiWhite, "info", "stdout", "could not unmarshal YAML data ("+err.Error()+")")
@@ -176,7 +223,9 @@ func Runfromyaml(yamlFile []byte, debug bool) {
 	}
 
 	if _output == "file" {
-		functions.PrintSwitch(color.FgHiWhite, "info", "stdout", "logfile temp file: "+os.TempDir()+"logrus-"+time.Now().Format("20060102")+".log")
+		if debug {
+			functions.PrintSwitch(color.FgHiWhite, "info", "stdout", "logfile temp file: "+os.TempDir()+"logrus-"+time.Now().Format("20060102")+".log")
+		}
 	}
 
 	getEnvironmentVariables := func(data []string, getkeyval func(item string) (key, val string)) map[string]string {
@@ -227,37 +276,16 @@ func Runfromyaml(yamlFile []byte, debug bool) {
 					for {
 						response, err := openai.OpenAI(openai.Key, openai.Model, functions.EvaluateDescription(yamlBlock), openai.ShellType)
 						if err == nil {
-							aidesc = "\n" + "# example: " + openai.PrintAiResponse(response)
+							aidesc = "# example: " + openai.PrintAiResponse(response) + "\n"
 							break
 						}
 					}
 				}
-				functions.PrintSwitch(color.FgGreen, _level, _output, "\n"+"# "+functions.EvaluateDescription(yamlBlock)+aidesc)
+				functions.PrintSwitch(color.FgGreen, _level, _output, "\n"+functions.EvaluateDescription(yamlBlock))
+				functions.PrintSwitch(color.FgHiCyan, _level, _output, aidesc)
 			}
 
-			if yamlBlock["type"] == "exec" {
-				execCmd(yamlBlock, environmentVariablesShell, _level, _output)
-			}
-			if yamlBlock["type"] == "shell" {
-				shellCmd(yamlBlock, environmentVariablesShell, _level, _output)
-			}
-			if yamlBlock["type"] == "docker" {
-				dockerCmd(yamlBlock, environmentVariablesShell, _level, _output)
-			}
-			if yamlBlock["type"] == "docker-compose" {
-				dockerComposeCmd(yamlBlock, environmentVariablesShell, _level, _output)
-			}
-			if yamlBlock["type"] == "ssh" {
-				sshCmd(yamlBlock, environmentVariablesShell, _level, _output)
-			}
-			if yamlBlock["type"] == "conf" {
-				if debug {
-					functions.PrintSwitch(color.FgHiBlue, "debug", _output, "Destination: %+v\n", yamlBlock["confdest"])
-					functions.PrintSwitch(color.FgHiBlue, "debug", _output, "Permissions: %+v\n", yamlBlock["confperm"])
-					functions.PrintSwitch(color.FgHiBlue, "debug", _output, "Data:\n---\n%+v\n---\n", yamlBlock["confdata"])
-				}
-				conf(yamlBlock, _level, _output)
-			}
+			execFunctions[yamlBlock["type"].(string)](yamlBlock, environmentVariablesShell, _level, _output)
 		}
 	}
 }
