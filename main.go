@@ -22,6 +22,7 @@ func init() {
 func main() {
 	var (
 		ydoc map[interface{}][]interface{}
+		err  error
 	)
 
 	programm := os.Args
@@ -53,7 +54,10 @@ func main() {
 		fmt.Println("\n file option was set, but it was not possible to read input yaml file.")
 	}
 
-	yaml.Unmarshal(yamlFile, &ydoc)
+	err = yaml.Unmarshal(yamlFile, &ydoc)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	for key := range ydoc["options"] {
 		options := ydoc["options"][key].(map[interface{}]interface{})
@@ -102,6 +106,9 @@ func main() {
 	}
 
 	_, filerr := os.Stat("commands.yaml")
+	if filerr != nil {
+		fmt.Println(filerr)
+	}
 	if reflect.ValueOf(*flags["file"].(*string)).IsValid() && filerr == nil && !*flags["no-file"].(*bool) {
 		cli.Runfromyaml(yamlFile, *flags["debug"].(*bool))
 	}

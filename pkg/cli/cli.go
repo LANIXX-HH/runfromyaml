@@ -22,7 +22,7 @@ var (
 	EnvironmentVariables map[string]string
 )
 
-func execCmd(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
+func execCmd(yamlBlock map[interface{}]interface{}, environmentVariablesShell []string, outputLevel string, outputType string) {
 	var (
 		cmds []string
 		desc string
@@ -32,11 +32,11 @@ func execCmd(yamlBlock map[interface{}]interface{}, _envvars []string, _level st
 	cmds = functions.ExtractAndExpand(yamlBlock, "values")
 
 	wg.Add(1)
-	go exec.Command(cmds, desc, wg, _envvars, _level, _output)
+	go exec.Command(cmds, desc, wg, environmentVariablesShell, outputLevel, outputType)
 	wg.Wait()
 }
 
-func shellCmd(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
+func shellCmd(yamlBlock map[interface{}]interface{}, environmentVariablesShell []string, outputLevel string, outputType string) {
 	var (
 		cmds []string
 		desc string
@@ -49,12 +49,12 @@ func shellCmd(yamlBlock map[interface{}]interface{}, _envvars []string, _level s
 	for ind, shcmds := range cmds {
 		shcmd := strings.Split(shcmds, " ")
 		wg.Add(1)
-		go exec.CommandShell(shcmd, desc, wg, ind, _envvars, _level, _output)
+		go exec.CommandShell(shcmd, desc, wg, ind, environmentVariablesShell, outputLevel, outputType)
 		wg.Wait()
 	}
 }
 
-func dockerCmd(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
+func dockerCmd(yamlBlock map[interface{}]interface{}, environmentVariablesShell []string, outputLevel string, outputType string) {
 	var (
 		cmds []string
 		desc string
@@ -63,11 +63,11 @@ func dockerCmd(yamlBlock map[interface{}]interface{}, _envvars []string, _level 
 	cmds = functions.ExtractAndExpand(yamlBlock, "values")
 
 	wg.Add(1)
-	go exec.CommandDockerRun(yamlBlock["command"].(string), yamlBlock["container"].(string), cmds, desc, _envvars, wg, _level, _output)
+	go exec.CommandDockerRun(yamlBlock["command"].(string), yamlBlock["container"].(string), cmds, desc, environmentVariablesShell, wg, outputLevel, outputType)
 	wg.Wait()
 }
 
-func dockerComposeCmd(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
+func dockerComposeCmd(yamlBlock map[interface{}]interface{}, environmentVariablesShell []string, outputLevel string, outputType string) {
 	var (
 		cmds       []string
 		dcoptions  []string
@@ -85,11 +85,11 @@ func dockerComposeCmd(yamlBlock map[interface{}]interface{}, _envvars []string, 
 		service = yamlBlock["service"].(string)
 	}
 	wg.Add(1)
-	go exec.CommandDockerComposeExec(yamlBlock["command"].(string), service, cmdoptions, dcoptions, cmds, desc, _envvars, wg, _level, _output)
+	go exec.CommandDockerComposeExec(yamlBlock["command"].(string), service, cmdoptions, dcoptions, cmds, desc, environmentVariablesShell, wg, outputLevel, outputType)
 	wg.Wait()
 }
 
-func sshCmd(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
+func sshCmd(yamlBlock map[interface{}]interface{}, environmentVariablesShell []string, outputLevel string, outputType string) {
 	var (
 		cmds    []string
 		options []string
@@ -111,11 +111,11 @@ func sshCmd(yamlBlock map[interface{}]interface{}, _envvars []string, _level str
 	}
 
 	wg.Add(1)
-	go exec.CommandSSH(user, yamlBlock["port"].(int), host, options, cmds, desc, _envvars, wg, _level, _output)
+	go exec.CommandSSH(user, yamlBlock["port"].(int), host, options, cmds, desc, environmentVariablesShell, wg, outputLevel, outputType)
 	wg.Wait()
 }
 
-func conf(yamlBlock map[interface{}]interface{}, _level string, _output string) {
+func conf(yamlBlock map[interface{}]interface{}, outputLevel string, outputType string) {
 	var (
 		desc     string
 		confdata string
@@ -148,86 +148,39 @@ func conf(yamlBlock map[interface{}]interface{}, _level string, _output string) 
 			confdest = os.ExpandEnv(confdest)
 		}
 	}
-	functions.PrintSwitch(color.FgGreen, _level, _output, "# create ", confdest)
+	functions.PrintSwitch(color.FgGreen, outputLevel, outputType, "# create ", confdest)
 }
 
-func ExecFunctionsMap(map[interface{}]interface{}, []string, string, string) map[string]func(map[interface{}]interface{}, []string, string, string) {
+func execFunctionsMap(map[interface{}]interface{}, []string, string, string) map[string]func(map[interface{}]interface{}, []string, string, string) {
 	execFunctions := map[string]func(map[interface{}]interface{}, []string, string, string){
-		"exec": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
-			execCmd(yamlBlock, _envvars, _level, _output)
+		"exec": func(yamlBlock map[interface{}]interface{}, environmentVariablesShell []string, outputLevel string, outputType string) {
+			execCmd(yamlBlock, environmentVariablesShell, outputLevel, outputType)
 		},
-		"shell": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
-			shellCmd(yamlBlock, _envvars, _level, _output)
+		"shell": func(yamlBlock map[interface{}]interface{}, environmentVariablesShell []string, outputLevel string, outputType string) {
+			shellCmd(yamlBlock, environmentVariablesShell, outputLevel, outputType)
 		},
-		"docker": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
-			dockerCmd(yamlBlock, _envvars, _level, _output)
+		"docker": func(yamlBlock map[interface{}]interface{}, environmentVariablesShell []string, outputLevel string, outputType string) {
+			dockerCmd(yamlBlock, environmentVariablesShell, outputLevel, outputType)
 		},
-		"docker-compose": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
-			dockerComposeCmd(yamlBlock, _envvars, _level, _output)
+		"docker-compose": func(yamlBlock map[interface{}]interface{}, environmentVariablesShell []string, outputLevel string, outputType string) {
+			dockerComposeCmd(yamlBlock, environmentVariablesShell, outputLevel, outputType)
 		},
-		"ssh": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
-			sshCmd(yamlBlock, _envvars, _level, _output)
+		"ssh": func(yamlBlock map[interface{}]interface{}, environmentVariablesShell []string, outputLevel string, outputType string) {
+			sshCmd(yamlBlock, environmentVariablesShell, outputLevel, outputType)
 		},
-		"conf": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
-			conf(yamlBlock, _level, _output)
+		"conf": func(yamlBlock map[interface{}]interface{}, environmentVariablesShell []string, outputLevel string, outputType string) {
+			conf(yamlBlock, outputLevel, outputType)
 		},
 	}
 	return execFunctions
 }
 
-func Runfromyaml(yamlFile []byte, debug bool) {
+func defineEnvironmentVariables(yamlDocument map[interface{}][]interface{}) (map[string]string, []string) {
 	var (
-		_output                   string
-		_level                    string
-		yamlDocument              map[interface{}][]interface{}
-		yamlBlock                 map[interface{}]interface{}
 		environmentVariablesShell []string
-		ok                        bool
+		tempEnvironmentVariables  map[string]string
 	)
-
-	// define functions map
-	execFunctions := ExecFunctionsMap(yamlBlock, environmentVariablesShell, _level, _output)
-	// execFunctions := map[string]func(map[interface{}]interface{}, []string, string, string){
-	// 	"exec": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
-	// 		execCmd(yamlBlock, environmentVariablesShell, _level, _output)
-	// 	},
-	// 	"shell": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
-	// 		shellCmd(yamlBlock, environmentVariablesShell, _level, _output)
-	// 	},
-	// 	"docker": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
-	// 		dockerCmd(yamlBlock, environmentVariablesShell, _level, _output)
-	// 	},
-	// 	"docker-compose": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
-	// 		dockerComposeCmd(yamlBlock, environmentVariablesShell, _level, _output)
-	// 	},
-	// 	"ssh": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
-	// 		sshCmd(yamlBlock, environmentVariablesShell, _level, _output)
-	// 	},
-	// 	"conf": func(yamlBlock map[interface{}]interface{}, _envvars []string, _level string, _output string) {
-	// 		conf(yamlBlock, _level, _output)
-	// 	},
-	// }
-
-	if err := yaml.Unmarshal(yamlFile, &yamlDocument); err != nil {
-		functions.PrintSwitch(color.FgHiWhite, "info", "stdout", "could not unmarshal YAML data ("+err.Error()+")")
-	}
-
-	for key := range yamlDocument["logging"] {
-		setting := yamlDocument["logging"][key].(map[interface{}]interface{})
-		if reflect.ValueOf(setting["output"]).IsValid() {
-			_output = setting["output"].(string)
-		}
-		if reflect.ValueOf(setting["level"]).IsValid() {
-			_level = setting["level"].(string)
-		}
-	}
-
-	if _output == "file" {
-		if debug {
-			functions.PrintSwitch(color.FgHiWhite, "info", "stdout", "logfile temp file: "+os.TempDir()+"logrus-"+time.Now().Format("20060102")+".log")
-		}
-	}
-
+	// define temp function to convert variable to key value map
 	getEnvironmentVariables := func(data []string, getkeyval func(item string) (key, val string)) map[string]string {
 		items := make(map[string]string)
 		for _, item := range data {
@@ -236,40 +189,105 @@ func Runfromyaml(yamlFile []byte, debug bool) {
 		}
 		return items
 	}
-	tempEnvironmentVariables := getEnvironmentVariables(os.Environ(), func(item string) (key, val string) {
+	// parse os environment variables and covert it to key value map
+	tempEnvironmentVariables = getEnvironmentVariables(os.Environ(), func(item string) (key, val string) {
 		splits := strings.Split(item, "=")
 		key = splits[0]
 		val = splits[1]
 		return
 	})
 
+	// read all defined environment variables as key value map and store it in string slice as variable definiton and additionaly store parsed variables to temporary variables map
 	for key := range yamlDocument["env"] {
 		_env, ok := yamlDocument["env"][key].(map[interface{}]interface{})
 		if !ok {
-			functions.PrintSwitch(color.FgRed, _level, _output, "it was not successfull to read yamlDocument['env'][key]")
+			functions.PrintSwitch(color.FgRed, "error", "file", "it was not successfull to read yamlDocument['env'][key]")
 		}
 		envkey, ok := _env["key"].(string)
 		if !ok {
-			functions.PrintSwitch(color.FgRed, _level, _output, "it was not successfull to read _env['key'].(string)")
+			functions.PrintSwitch(color.FgRed, "error", "file", "it was not successfull to read _env['key'].(string)")
 		}
 		envvalue, ok := _env["value"].(string)
 		if !ok {
-			functions.PrintSwitch(color.FgRed, _level, _output, "it was not successfull to read _env['value'].(string)")
+			functions.PrintSwitch(color.FgRed, "error", "file", "it was not successfull to read _env['value'].(string)")
 		}
 		os.Setenv(envkey, envvalue)
 		environmentVariablesShell = append(environmentVariablesShell, envkey+"="+envvalue)
 		tempEnvironmentVariables[envkey] = envvalue
 	}
-	EnvironmentVariables = tempEnvironmentVariables
+	return tempEnvironmentVariables, environmentVariablesShell
+}
 
+// parse all environment variables: defined by runfromyaml logging block or from current shell environment
+func loggingSettings(yamlDocument map[interface{}][]interface{}) (string, string) {
+	var (
+		outputType  string
+		outputLevel string
+	)
+
+	// parse logging block
+	for key := range yamlDocument["logging"] {
+
+		// store current element in setting
+		setting := yamlDocument["logging"][key].(map[interface{}]interface{})
+
+		// set outputType
+		if reflect.ValueOf(setting["output"]).IsValid() {
+			outputType = setting["output"].(string)
+		}
+
+		// set outputLevel
+		if reflect.ValueOf(setting["level"]).IsValid() {
+			outputLevel = setting["level"].(string)
+		}
+	}
+	return outputType, outputLevel
+}
+
+func Runfromyaml(yamlFile []byte, debug bool) {
+	// define all the variables
+	var (
+		outputType                string
+		outputLevel               string
+		yamlDocument              map[interface{}][]interface{}
+		yamlBlock                 map[interface{}]interface{}
+		environmentVariablesShell []string
+		ok                        bool
+	)
+
+	// define functions map
+	execFunctions := execFunctionsMap(yamlBlock, environmentVariablesShell, outputLevel, outputType)
+
+	// parse YAML structure
+	if err := yaml.Unmarshal(yamlFile, &yamlDocument); err != nil {
+		functions.PrintSwitch(color.FgHiWhite, "error", "file", "could not unmarshal YAML data ("+err.Error()+")")
+	}
+
+	// set output logging settings
+	outputType, outputLevel = loggingSettings(yamlDocument)
+
+	// print out filename if output type is as file defined
+	if outputType == "file" {
+		if debug {
+			functions.PrintSwitch(color.FgHiWhite, "info", "stdout", "logfile temp file: "+os.TempDir()+"logrus-"+time.Now().Format("20060102")+".log")
+		}
+	}
+
+	// parse environment variables and store all variables to EnvironmentVariables and only defined variables store to environmentVariablesShell
+	EnvironmentVariables, environmentVariablesShell = defineEnvironmentVariables(yamlDocument)
+
+	// parse command yaml blocks
 	for key := range yamlDocument["cmd"] {
 
+		// if the main command block is not empty, then apply all the steps
 		if !reflect.ValueOf(yamlDocument["cmd"][key].(map[interface{}]interface{})).IsNil() {
+			// read the structure and store it to yamlBlock variable otherwise print the error
 			yamlBlock, ok = yamlDocument["cmd"][key].(map[interface{}]interface{})
 			if !ok {
-				functions.PrintSwitch(color.FgRed, _level, _output, "it was not successfull to read yamlDocument['cmd'][key].(map[interface{}]interface{}))")
+				functions.PrintSwitch(color.FgRed, "error", "file", "it was not successfull to read yamlDocument['cmd'][key].(map[interface{}]interface{}))")
 			}
 
+			// if desciption block is not empty try to create from description AI generated command and print everything as comment
 			if reflect.ValueOf(yamlBlock["desc"]).IsValid() {
 				var aidesc string
 				if openai.IsAiEnabled {
@@ -280,12 +298,13 @@ func Runfromyaml(yamlFile []byte, debug bool) {
 							break
 						}
 					}
+					functions.PrintSwitch(color.FgHiCyan, outputLevel, outputType, aidesc)
 				}
-				functions.PrintSwitch(color.FgGreen, _level, _output, "\n"+functions.EvaluateDescription(yamlBlock))
-				functions.PrintSwitch(color.FgHiCyan, _level, _output, aidesc)
+				functions.PrintSwitch(color.FgGreen, outputLevel, outputType, "\n"+functions.EvaluateDescription(yamlBlock))
 			}
 
-			execFunctions[yamlBlock["type"].(string)](yamlBlock, environmentVariablesShell, _level, _output)
+			// forward all the collected options for specific command and execute specific command defined by function map
+			execFunctions[yamlBlock["type"].(string)](yamlBlock, environmentVariablesShell, outputLevel, outputType)
 		}
 	}
 }
