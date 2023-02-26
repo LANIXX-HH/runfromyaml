@@ -21,8 +21,10 @@ func init() {
 
 func main() {
 	var (
-		ydoc map[interface{}][]interface{}
-		err  error
+		ydoc  map[interface{}][]interface{}
+		err   error
+		ydata []byte
+		yfile string
 	)
 
 	programm := os.Args
@@ -49,14 +51,15 @@ func main() {
 	flags["port"] = flag.Int("port", 8080, "port - set http port for rest api mode (default http port is 8080)")
 
 	flag.Parse()
-	yamlFile, err := os.ReadFile(*flags["file"].(*string))
+	yfile = *flags["file"].(*string)
+	ydata, err = os.ReadFile(yfile)
 	if err != nil {
-		fmt.Println("\n file option was set, but it was not possible to read input yaml file.")
+		fmt.Println("\nfile option was set, but it was not possible to read this file:\n\t", yfile)
 	}
 
-	err = yaml.Unmarshal(yamlFile, &ydoc)
+	err = yaml.Unmarshal(ydata, &ydoc)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("It was not possibile to read yaml structure from this file", yfile, "with following error message:\n", err)
 	}
 
 	for key := range ydoc["options"] {
@@ -105,12 +108,12 @@ func main() {
 		}
 	}
 
-	_, filerr := os.Stat("commands.yaml")
+	_, filerr := os.Stat(yfile)
 	if filerr != nil {
-		fmt.Println(filerr)
+		fmt.Println("\t", filerr)
 	}
-	if reflect.ValueOf(*flags["file"].(*string)).IsValid() && filerr == nil && !*flags["no-file"].(*bool) {
-		cli.Runfromyaml(yamlFile, *flags["debug"].(*bool))
+	if reflect.ValueOf(yfile).IsValid() && filerr == nil && !*flags["no-file"].(*bool) {
+		cli.Runfromyaml(ydata, *flags["debug"].(*bool))
 	}
 
 	if *flags["rest"].(*bool) {
