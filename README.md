@@ -14,7 +14,7 @@ My goal was to rewrite an existing bash tool in go. An essential part was a coll
 
 ## Current state of Project
 
-At the moment I am testing this on my android phone, on my windows machine, on my mec and on my linux server and it is working pretty well so far.
+At the moment I am testing this on my android phone, on my windows machine, on my MacAir M2 and on my linux server and it is working pretty well so far.
 
 ## TODO's
 
