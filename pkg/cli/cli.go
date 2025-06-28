@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -590,7 +591,11 @@ func InteractiveShell(shell string) ([]string, error) {
 	var commands []string
 	reader := bufio.NewReader(os.Stdin)
 
+	fmt.Printf("🐚 Interactive Shell Mode (%s)\n", shell)
+	fmt.Println("Commands will be executed AND recorded for YAML generation")
 	fmt.Println("Enter commands (type 'exit' to finish):")
+	fmt.Println()
+
 	for {
 		fmt.Print("> ")
 		input, err := reader.ReadString('\n')
@@ -604,11 +609,53 @@ func InteractiveShell(shell string) ([]string, error) {
 		}
 
 		if input != "" {
+			// Record the command for YAML generation
 			commands = append(commands, input)
+			
+			// Execute the command and show output
+			fmt.Printf("🔄 Executing: %s\n", input)
+			if err := executeAndShowCommand(input, shell); err != nil {
+				fmt.Printf("❌ Error: %v\n", err)
+			}
+			fmt.Println() // Add spacing between commands
 		}
 	}
 
 	return commands, nil
+}
+
+// executeAndShowCommand executes a command and shows its output
+func executeAndShowCommand(command, shell string) error {
+	var cmd *exec.Cmd
+	
+	switch shell {
+	case "bash":
+		cmd = exec.Command("bash", "-c", command)
+	case "sh":
+		cmd = exec.Command("sh", "-c", command)
+	case "zsh":
+		cmd = exec.Command("zsh", "-c", command)
+	case "fish":
+		cmd = exec.Command("fish", "-c", command)
+	case "powershell":
+		cmd = exec.Command("powershell", "-Command", command)
+	case "cmd":
+		cmd = exec.Command("cmd", "/C", command)
+	default:
+		// Default to bash on Unix-like systems, cmd on Windows
+		if runtime.GOOS == "windows" {
+			cmd = exec.Command("cmd", "/C", command)
+		} else {
+			cmd = exec.Command("bash", "-c", command)
+		}
+	}
+
+	// Set up pipes to capture and display output
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+
+	return cmd.Run()
 }
 
 func parseEnvironmentVariables(yamlDocument map[interface{}]interface{}, env *Environment) {

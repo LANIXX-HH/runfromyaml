@@ -1,0 +1,14 @@
+
+logging:
+  - level: info
+  - output: stdout
+env:
+  - key: "TEST"
+    value: "foo"
+  - key: "BLA"
+    value: "TEST"
+cmd:
+  - type: "exec"
+    desc: "erstelle auf jeden fall, egal ob es den gibt oder nicht, ein Ordner .tmp unter $HOME"
+    values:
+      - bash

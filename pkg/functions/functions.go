@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"strings"
 	"time"
 
 	"text/template"
@@ -219,9 +220,12 @@ func PrintShellCommandsAsYaml(commands []string, envs map[string]string) map[str
 	if len(commands) > 0 {
 
 		mymap["cmd"] = []map[string]interface{}{}
-		for _, command := range commands {
+		for i, command := range commands {
 			mymap["cmd"] = append(mymap["cmd"].([]map[string]interface{}), map[string]interface{}{
-				"type": "shell",
+				"type":      "shell",
+				"name":      fmt.Sprintf("command-%d", i+1),
+				"desc":      fmt.Sprintf("Interactive command: %s", command),
+				"expandenv": true,
 				"values": []string{
 					command,
 				},
@@ -229,10 +233,12 @@ func PrintShellCommandsAsYaml(commands []string, envs map[string]string) map[str
 		}
 	}
 
-	if len(envs) > 0 {
+	// Filter environment variables - only include relevant/custom ones
+	filteredEnvs := filterRelevantEnvVars(envs)
+	if len(filteredEnvs) > 0 {
 		mymap["env"] = []map[string]interface{}{}
 
-		for key, value := range envs {
+		for key, value := range filteredEnvs {
 			mymap["env"] = append(mymap["env"].([]map[string]interface{}), map[string]interface{}{
 				"key":   key,
 				"value": value,
@@ -241,6 +247,194 @@ func PrintShellCommandsAsYaml(commands []string, envs map[string]string) map[str
 	}
 
 	return mymap
+}
+
+// filterRelevantEnvVars filters out system/session-specific environment variables
+// and keeps only relevant/custom ones that should be documented
+func filterRelevantEnvVars(envs map[string]string) map[string]string {
+	// System/session variables to exclude (common across Unix/Linux/macOS/Windows)
+	systemVars := map[string]bool{
+		// System paths and directories
+		"HOME":                true,
+		"TMPDIR":              true,
+		"TMP":                 true,
+		"TEMP":                true,
+		"PATH":                true,
+		"LD_LIBRARY_PATH":     true,
+		"DYLD_LIBRARY_PATH":   true,
+		"PWD":                 true,
+		"OLDPWD":              true,
+		
+		// User and session info
+		"USER":                true,
+		"USERNAME":            true,
+		"LOGNAME":             true,
+		"SHELL":               true,
+		"SHLVL":               true,
+		"TTY":                 true,
+		"SSH_AUTH_SOCK":       true,
+		"SSH_SOCKET_DIR":      true,
+		
+		// Terminal and display
+		"TERM":                true,
+		"TERM_PROGRAM":        true,
+		"TERM_PROGRAM_VERSION": true,
+		"COLORTERM":           true,
+		"DISPLAY":             true,
+		"WARP_HONOR_PS1":      true,
+		"WARP_IS_LOCAL_SHELL_SESSION": true,
+		"WARP_USE_SSH_WRAPPER": true,
+		
+		// System internals
+		"XPC_SERVICE_NAME":    true,
+		"XPC_FLAGS":           true,
+		"COMMAND_MODE":        true,
+		"LC_CTYPE":            true,
+		"LC_ALL":              true,
+		"LANG":                true,
+		"__CF_USER_TEXT_ENCODING": true,
+		"__CFBundleIdentifier": true,
+		"_":                   true,
+		
+		// Package managers (Homebrew, Conda, etc.)
+		"HOMEBREW_PREFIX":     true,
+		"HOMEBREW_CELLAR":     true,
+		"HOMEBREW_REPOSITORY": true,
+		"CONDA_CHANGEPS1":     true,
+		"CONDA_DEFAULT_ENV":   true,
+		"CONDA_PREFIX":        true,
+		"INFOPATH":            true,
+		
+		// Process/shell specific
+		"SHELL_PID":           true,
+		"PPID":                true,
+		"PID":                 true,
+		
+		// Q CLI specific (our own tool)
+		"Q_SET_PARENT_CHECK":  true,
+	}
+	
+	// Prefixes to exclude (variables starting with these)
+	excludePrefixes := []string{
+		"BASH_",
+		"ZSH_",
+		"FISH_",
+		"PS1",
+		"PS2",
+		"PS3",
+		"PS4",
+		"PROMPT_",
+		"LESS",
+		"PAGER",
+		"EDITOR",
+		"VISUAL",
+		"MANPATH",
+		"HISTFILE",
+		"HISTSIZE",
+		"HISTCONTROL",
+		"XDG_",
+		"DBUS_",
+		"GNOME_",
+		"KDE_",
+		"QT_",
+		"GTK_",
+	}
+	
+	filtered := make(map[string]string)
+	
+	for key, value := range envs {
+		// Skip if it's a known system variable
+		if systemVars[key] {
+			continue
+		}
+		
+		// Skip if it starts with excluded prefixes
+		shouldSkip := false
+		for _, prefix := range excludePrefixes {
+			if strings.HasPrefix(key, prefix) {
+				shouldSkip = true
+				break
+			}
+		}
+		if shouldSkip {
+			continue
+		}
+		
+		// Include variables that are likely custom/relevant:
+		// - AWS, DOCKER, KUBERNETES related
+		// - Custom application variables
+		// - Development environment variables
+		if isRelevantEnvVar(key) {
+			filtered[key] = value
+		}
+	}
+	
+	return filtered
+}
+
+// isRelevantEnvVar determines if an environment variable is relevant for documentation
+func isRelevantEnvVar(key string) bool {
+	relevantPrefixes := []string{
+		"AWS_",
+		"DOCKER_",
+		"KUBE",
+		"K8S_",
+		"HELM_",
+		"TERRAFORM_",
+		"ANSIBLE_",
+		"JENKINS_",
+		"CI_",
+		"BUILD_",
+		"DEPLOY_",
+		"ENV_",
+		"APP_",
+		"API_",
+		"DB_",
+		"DATABASE_",
+		"REDIS_",
+		"MONGO_",
+		"MYSQL_",
+		"POSTGRES_",
+		"NODE_",
+		"PYTHON_",
+		"JAVA_",
+		"GO_",
+		"RUST_",
+		"PHP_",
+		"RUBY_",
+		"GIT_",
+		"GITHUB_",
+		"GITLAB_",
+		"BITBUCKET_",
+	}
+	
+	for _, prefix := range relevantPrefixes {
+		if strings.HasPrefix(key, prefix) {
+			return true
+		}
+	}
+	
+	// Also include some specific relevant variables
+	relevantVars := map[string]bool{
+		"PORT":        true,
+		"HOST":        true,
+		"DEBUG":       true,
+		"ENVIRONMENT": true,
+		"STAGE":       true,
+		"VERSION":     true,
+		"REGION":      true,
+		"ZONE":        true,
+		"NAMESPACE":   true,
+		"SERVICE":     true,
+		"CONFIG":      true,
+		"SECRET":      true,
+		"TOKEN":       true,
+		"KEY":         true,
+		"URL":         true,
+		"ENDPOINT":    true,
+	}
+	
+	return relevantVars[key]
 }
 
 func EvaluateDescription(yamlBlock map[interface{}]interface{}, defaultDescription ...string) string {

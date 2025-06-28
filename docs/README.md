@@ -17,6 +17,8 @@ Welcome to the runfromyaml documentation! This directory contains comprehensive 
 
 ### ✨ Features Documentation
 **Location: [`features/`](features/)**
+- **[INTERACTIVE_SHELL.md](features/INTERACTIVE_SHELL.md)** - Interactive Shell Mode documentation
+- **[ENVIRONMENT_FILTERING.md](features/ENVIRONMENT_FILTERING.md)** - Environment variable filtering system
 - **[EMPTY_VALUES_SUPPORT.md](features/EMPTY_VALUES_SUPPORT.md)** - Empty values feature documentation
 
 ### 🔧 Fixes Documentation
@@ -96,6 +98,8 @@ High-level summaries and overviews:
 |--------------|----------|
 | **Run tests** | [testing/TESTING.md](testing/TESTING.md) |
 | **Understand the codebase** | [development/ARCHITECTURE.md](development/ARCHITECTURE.md) |
+| **Use interactive shell** | [features/INTERACTIVE_SHELL.md](features/INTERACTIVE_SHELL.md) |
+| **Filter environment variables** | [features/ENVIRONMENT_FILTERING.md](features/ENVIRONMENT_FILTERING.md) |
 | **Use empty values feature** | [features/EMPTY_VALUES_SUPPORT.md](features/EMPTY_VALUES_SUPPORT.md) |
 | **See recent changes** | [summaries/RECENT_FIXES_SUMMARY.md](summaries/RECENT_FIXES_SUMMARY.md) |
 | **Check test results** | [testing/TEST_SUMMARY.md](testing/TEST_SUMMARY.md) |
