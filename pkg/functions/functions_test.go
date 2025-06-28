@@ -1,6 +1,7 @@
 package functions
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -246,7 +247,7 @@ func BenchmarkWriteFile(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		filename := filepath.Join(tempDir, "bench_test_"+string(rune(i))+".txt")
+		filename := filepath.Join(tempDir, fmt.Sprintf("bench_test_%d.txt", i))
 		WriteFile(content, filename, 0644)
 	}
 }
