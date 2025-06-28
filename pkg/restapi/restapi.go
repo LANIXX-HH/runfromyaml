@@ -9,10 +9,11 @@ import (
 	"time"
 
 	auth "github.com/abbot/go-http-auth"
-	"github.com/lanixx/runfromyaml/pkg/cli"
-	"github.com/lanixx/runfromyaml/pkg/functions"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/yaml.v2"
+
+	"github.com/lanixx/runfromyaml/pkg/cli"
+	"github.com/lanixx/runfromyaml/pkg/functions"
 )
 
 const (
@@ -91,7 +92,7 @@ func (s *Server) handleCommand(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	if err := s.processRequest(w, r, body); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -105,7 +106,7 @@ func (s *Server) handleCommandAuth(w http.ResponseWriter, r *auth.AuthenticatedR
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	if err := s.processRequest(w, &r.Request, body); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -121,7 +122,7 @@ func (s *Server) processRequest(w http.ResponseWriter, r *http.Request, body []b
 	w.WriteHeader(http.StatusOK)
 
 	if !s.config.Output {
-		cli.Runfromyaml(body, false)
+		_ = cli.Runfromyaml(body, false)
 		return nil
 	}
 
@@ -147,7 +148,7 @@ func (s *Server) processRequest(w http.ResponseWriter, r *http.Request, body []b
 		return fmt.Errorf("failed to marshal modified YAML: %w", err)
 	}
 
-	cli.Runfromyaml(modifiedBody, false)
+	_ = cli.Runfromyaml(modifiedBody, false)
 	return nil
 }
 
@@ -159,8 +160,8 @@ var (
 	RestOut  bool
 )
 
-// RestApi is a legacy function that uses the new server internally
-func RestApi(port int, host string) {
+// RestAPI is a legacy function that uses the new server internally
+func RestAPI(port int, host string) {
 	server := NewServer(Config{
 		Port:     port,
 		Host:     host,

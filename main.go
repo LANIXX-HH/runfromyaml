@@ -7,13 +7,14 @@ import (
 
 	"github.com/dchest/uniuri"
 	"github.com/fatih/color"
+	"gopkg.in/yaml.v2"
+
 	"github.com/lanixx/runfromyaml/pkg/cli"
 	"github.com/lanixx/runfromyaml/pkg/config"
 	"github.com/lanixx/runfromyaml/pkg/errors"
 	"github.com/lanixx/runfromyaml/pkg/functions"
 	"github.com/lanixx/runfromyaml/pkg/openai"
 	"github.com/lanixx/runfromyaml/pkg/restapi"
-	"gopkg.in/yaml.v2"
 )
 
 func init() {
@@ -34,7 +35,7 @@ func main() {
 	if err := cfg.ParseFlags(); err != nil {
 		errorHandler = errors.NewErrorHandler(false) // Default to non-debug for early errors
 		errorHandler.Handle(errors.NewConfigError("Failed to parse command line flags", err))
-		os.Exit(1)
+		return // Use return instead of os.Exit to allow defer to run
 	}
 
 	// Initialize error handler with debug setting
@@ -127,7 +128,7 @@ func loadYAMLConfig(cfg *config.Config) error {
 
 // handleAIMode handles AI interaction mode
 func handleAIMode(cfg *config.Config) error {
-	if len(cfg.AIKey) > 0 {
+	if cfg.AIKey != "" {
 		openai.Key = cfg.AIKey
 		openai.IsAiEnabled = true
 	} else {
@@ -139,7 +140,7 @@ func handleAIMode(cfg *config.Config) error {
 	openai.Model = cfg.AIModel
 	openai.ShellType = cfg.AICmdType
 
-	if len(cfg.AIInput) == 0 {
+	if cfg.AIInput == "" {
 		return errors.NewValidationError("AI input is required", "ai-in", cfg.AIInput).
 			WithSuggestion("Provide input using --ai-in flag")
 	}
@@ -211,7 +212,7 @@ func handleRestMode(cfg *config.Config) error {
 	}
 
 	// Start REST API server (this is blocking)
-	restapi.RestApi(cfg.Port, cfg.Host)
+	restapi.RestAPI(cfg.Port, cfg.Host)
 	return nil
 }
 

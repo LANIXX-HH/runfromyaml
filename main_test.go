@@ -118,7 +118,7 @@ func TestGeneratePassword(t *testing.T) {
 	}
 
 	// Test password length (assuming it uses uniuri which typically generates 16 char strings)
-	if len(password) == 0 {
+	if password == "" {
 		t.Error("generatePassword() returned password with zero length")
 	}
 

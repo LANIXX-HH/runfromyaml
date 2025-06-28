@@ -63,9 +63,9 @@ func (c *Client) GenerateCompletion(ctx context.Context, prompt string) (string,
 				"content": fmt.Sprintf("%s. show a %s example. Please do not write explanations. Please just a suggestion as %s code.", prompt, c.config.ShellType, c.config.ShellType),
 			},
 		},
-		"max_tokens":   100,
-		"temperature":  0,
-		"top_p":        1.0,
+		"max_tokens":  100,
+		"temperature": 0,
+		"top_p":       1.0,
 	}
 
 	jsonReq, err := json.Marshal(reqBody)
@@ -85,7 +85,7 @@ func (c *Client) GenerateCompletion(ctx context.Context, prompt string) (string,
 	if err != nil {
 		return "", fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)

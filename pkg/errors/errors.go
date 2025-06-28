@@ -138,29 +138,29 @@ func NewConfigError(message string, cause error) *RunFromYAMLError {
 // NewFileError creates a file-related error
 func NewFileError(message string, cause error, filename string) *RunFromYAMLError {
 	err := Wrap(cause, ErrorTypeFile, message)
-	err.WithContext("filename", filename)
+	_ = err.WithContext("filename", filename)
 	return err.WithSuggestion("Verify the file exists and you have proper permissions")
 }
 
 // NewYAMLError creates a YAML parsing error
 func NewYAMLError(message string, cause error, filename string) *RunFromYAMLError {
 	err := Wrap(cause, ErrorTypeYAML, message)
-	err.WithContext("filename", filename)
+	_ = err.WithContext("filename", filename)
 	return err.WithSuggestion("Check YAML syntax using a YAML validator")
 }
 
 // NewExecutionError creates a command execution error
 func NewExecutionError(message string, cause error, command string) *RunFromYAMLError {
 	err := Wrap(cause, ErrorTypeExecution, message)
-	err.WithContext("command", command)
+	_ = err.WithContext("command", command)
 	return err.WithSuggestion("Check if the command exists and you have proper permissions")
 }
 
 // NewValidationError creates a validation error
 func NewValidationError(message string, field string, value interface{}) *RunFromYAMLError {
 	err := New(ErrorTypeValidation, message)
-	err.WithContext("field", field)
-	err.WithContext("value", value)
+	_ = err.WithContext("field", field)
+	_ = err.WithContext("value", value)
 	return err.WithSuggestion("Review the documentation for valid values")
 }
 
@@ -173,14 +173,14 @@ func NewAIError(message string, cause error) *RunFromYAMLError {
 // NewDockerError creates a Docker-related error
 func NewDockerError(message string, cause error, container string) *RunFromYAMLError {
 	err := Wrap(cause, ErrorTypeDocker, message)
-	err.WithContext("container", container)
+	_ = err.WithContext("container", container)
 	return err.WithSuggestion("Ensure Docker is running and the container exists")
 }
 
 // NewSSHError creates an SSH-related error
 func NewSSHError(message string, cause error, host string) *RunFromYAMLError {
 	err := Wrap(cause, ErrorTypeSSH, message)
-	err.WithContext("host", host)
+	_ = err.WithContext("host", host)
 	return err.WithSuggestion("Check SSH connectivity and authentication")
 }
 

@@ -19,7 +19,7 @@ type ExecResult struct {
 
 // List docker containers
 func List() error {
-	cli, err := client.NewEnvClient()
+	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		log.Fatalf("Unable to get new docker client: %v", err)
 	}
@@ -40,7 +40,7 @@ func List() error {
 
 // Exec a command in docker container
 func Exec(ctx context.Context, containerID string, command []string) error {
-	cli, err := client.NewEnvClient()
+	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		log.Fatalf("Unable to get new docker client: %v", err)
 	}

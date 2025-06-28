@@ -63,7 +63,7 @@ func NewEnvironment() *Environment {
 func (e *Environment) Set(key, value string) {
 	e.variables[key] = value
 	e.shell = append(e.shell, key+"="+value)
-	os.Setenv(key, value)
+	_ = os.Setenv(key, value)
 }
 
 // Get retrieves an environment variable

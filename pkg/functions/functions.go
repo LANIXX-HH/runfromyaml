@@ -112,12 +112,12 @@ func PrintRestHeader() {
 
 func PrintRest(ctype color.Attribute, _level string, cstring ...interface{}) {
 	mystring := color.New(ctype)
-	mystring.Fprintln(RestOut, cstring...)
+	_, _ = mystring.Fprintln(RestOut, cstring...)
 }
 
 func PrintColor(ctype color.Attribute, _level string, cstring ...interface{}) {
 	mystring := color.New(ctype)
-	mystring.Println(cstring...)
+	_, _ = mystring.Println(cstring...)
 }
 
 func GoTemplate(mymap map[string]string, mytemplate string) string {

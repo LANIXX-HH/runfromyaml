@@ -73,6 +73,7 @@ func TestNewEnvironment(t *testing.T) {
 
 	if env == nil {
 		t.Error("NewEnvironment() returned nil")
+		return // Early return to avoid nil pointer dereference
 	}
 
 	if env.variables == nil {

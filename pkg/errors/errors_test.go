@@ -215,12 +215,10 @@ func TestValidator_ValidateRequired(t *testing.T) {
 }
 
 func TestValidator_ValidatePort(t *testing.T) {
-	validator := NewValidator()
-
 	// Test invalid ports
 	testCases := []int{0, -1, 65536, 100000}
 	for _, port := range testCases {
-		validator = NewValidator()
+		validator := NewValidator()
 		validator.ValidatePort("test_port", port)
 		if !validator.HasErrors() {
 			t.Errorf("Expected validation error for port %d", port)
@@ -230,7 +228,7 @@ func TestValidator_ValidatePort(t *testing.T) {
 	// Test valid ports
 	validPorts := []int{1, 80, 443, 8080, 65535}
 	for _, port := range validPorts {
-		validator = NewValidator()
+		validator := NewValidator()
 		validator.ValidatePort("test_port", port)
 		if validator.HasErrors() {
 			t.Errorf("Expected no validation error for port %d", port)
@@ -239,12 +237,10 @@ func TestValidator_ValidatePort(t *testing.T) {
 }
 
 func TestValidator_ValidateHostname(t *testing.T) {
-	validator := NewValidator()
-
 	// Test invalid hostnames
 	invalidHostnames := []string{"", "invalid..hostname", "hostname-", "-hostname"}
 	for _, hostname := range invalidHostnames {
-		validator = NewValidator()
+		validator := NewValidator()
 		validator.ValidateHostname("test_host", hostname)
 		if !validator.HasErrors() {
 			t.Errorf("Expected validation error for hostname '%s'", hostname)
@@ -254,7 +250,7 @@ func TestValidator_ValidateHostname(t *testing.T) {
 	// Test valid hostnames
 	validHostnames := []string{"localhost", "example.com", "sub.example.com", "192.168.1.1"}
 	for _, hostname := range validHostnames {
-		validator = NewValidator()
+		validator := NewValidator()
 		validator.ValidateHostname("test_host", hostname)
 		if validator.HasErrors() {
 			t.Errorf("Expected no validation error for hostname '%s'", hostname)

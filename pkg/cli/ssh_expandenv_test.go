@@ -97,7 +97,7 @@ func TestSSHExpandenvUserHost(t *testing.T) {
 
 	// Check if user and host were expanded
 	expectedArgs := []string{"ssh", "-p", "22", "-l", "expandeduser", "expandedhost"}
-	
+
 	if len(args) < len(expectedArgs) {
 		t.Errorf("Expected at least %d args, got %d: %v", len(expectedArgs), len(args), args)
 		return
