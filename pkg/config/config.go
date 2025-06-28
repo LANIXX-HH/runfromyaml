@@ -47,7 +47,7 @@ func New() *Config {
 }
 
 // ParseFlags parses command line flags into the config
-func (c *Config) ParseFlags() {
+func (c *Config) ParseFlags() error {
 	flag.BoolVar(&c.Debug, "debug", c.Debug, "debug - activate debug mode to print more informations")
 	flag.BoolVar(&c.Rest, "rest", c.Rest, "restapi - start this instance in background mode in rest api mode")
 	flag.BoolVar(&c.NoAuth, "no-auth", c.NoAuth, "no-auth - disable rest auth")
@@ -68,4 +68,5 @@ func (c *Config) ParseFlags() {
 	flag.IntVar(&c.Port, "port", c.Port, "port - set http port for rest api mode (default http port is 8080)")
 
 	flag.Parse()
+	return nil
 }

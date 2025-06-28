@@ -1,0 +1,83 @@
+---
+# Error Handling Demo
+# This example demonstrates improved error handling and validation
+
+# Logging configuration
+logging:
+  - level: debug
+  - output: stdout
+
+# Environment variables
+env:
+  - key: "DEMO_PATH"
+    value: "/tmp/error-demo"
+  - key: "TEST_FILE"
+    value: "test.txt"
+
+# Command blocks with various scenarios
+cmd:
+  # Valid command - should work
+  - type: "shell"
+    name: "setup"
+    desc: "Create demo directory"
+    expandenv: true
+    values:
+      - mkdir -p $DEMO_PATH
+      - echo "Demo directory created"
+
+  # Valid configuration file creation
+  - type: "conf"
+    name: "create-config"
+    desc: "Create a test configuration file"
+    expandenv: true
+    confdest: "$DEMO_PATH/demo.conf"
+    confperm: 0644
+    confdata: |
+      # Demo Configuration
+      demo_mode=true
+      created_at=$(date)
+      path=$DEMO_PATH
+
+  # Command that might fail - file operations
+  - type: "shell"
+    name: "file-operations"
+    desc: "Demonstrate file operations with potential errors"
+    expandenv: true
+    values:
+      - touch $DEMO_PATH/$TEST_FILE
+      - echo "Test content" > $DEMO_PATH/$TEST_FILE
+      - cat $DEMO_PATH/$TEST_FILE
+
+  # Docker command example (will fail if Docker not available)
+  - type: "docker"
+    name: "docker-test"
+    desc: "Test Docker availability"
+    command: run
+    container: alpine:latest
+    values:
+      - echo "Docker is working"
+      - uname -a
+
+  # SSH command example (will likely fail without proper setup)
+  - type: "ssh"
+    name: "ssh-test"
+    desc: "Test SSH connectivity to localhost"
+    expandenv: true
+    user: "$USER"
+    host: "localhost"
+    port: 22
+    options:
+      - -o ConnectTimeout=5
+      - -o StrictHostKeyChecking=no
+    values:
+      - echo "SSH connection successful"
+      - whoami
+
+  # Cleanup
+  - type: "shell"
+    name: "cleanup"
+    desc: "Clean up demo files"
+    expandenv: true
+    values:
+      - rm -rf $DEMO_PATH
+      - echo "Cleanup completed"

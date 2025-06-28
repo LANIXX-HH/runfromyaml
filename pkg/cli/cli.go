@@ -337,14 +337,18 @@ func splitCommands(cmd []string) []string {
 }
 
 // Runfromyaml executes commands from YAML file
-func Runfromyaml(yamlFile []byte, debug bool) {
+// Runfromyaml processes and executes commands from YAML data
+func Runfromyaml(yamlFile []byte, debug bool) error {
 	var yamlDocument map[interface{}]interface{}
 	if err := yaml.Unmarshal(yamlFile, &yamlDocument); err != nil {
-		fmt.Printf("Error parsing YAML: %v\n", err)
-		return
+		return fmt.Errorf("failed to parse YAML: %w", err)
 	}
 
 	env := NewEnvironment()
+	if env == nil {
+		return fmt.Errorf("failed to create environment instance")
+	}
+	
 	parseEnvironmentVariables(yamlDocument, env)
 	outputType, outputLevel := parseLoggingSettings(yamlDocument)
 
@@ -357,10 +361,16 @@ func Runfromyaml(yamlFile []byte, debug bool) {
 
 	// Process commands
 	if cmdBlocks, ok := yamlDocument["cmd"].([]interface{}); ok {
-		for _, cmdBlock := range cmdBlocks {
+		for i, cmdBlock := range cmdBlocks {
 			if cmdMap, ok := cmdBlock.(map[interface{}]interface{}); ok {
+				// Validate required fields
+				cmdType, ok := cmdMap["type"].(string)
+				if !ok {
+					return fmt.Errorf("command block %d: missing or invalid 'type' field", i+1)
+				}
+
 				cmd := &Command{
-					Type:        CommandType(cmdMap["type"].(string)),
+					Type:        CommandType(cmdType),
 					Description: functions.EvaluateDescription(cmdMap),
 					Values:      functions.ExtractAndExpand(cmdMap, "values"),
 					Options:     make(map[string]interface{}),
@@ -374,16 +384,84 @@ func Runfromyaml(yamlFile []byte, debug bool) {
 					}
 				}
 
-				if err := executor.Execute(cmd); err != nil {
-					fmt.Printf("Error executing command: %v\n", err)
+				// Validate command before execution
+				if err := validateCommand(cmd); err != nil {
+					return fmt.Errorf("command block %d validation failed: %w", i+1, err)
 				}
+
+				if err := executor.Execute(cmd); err != nil {
+					return fmt.Errorf("failed to execute command block %d (%s): %w", i+1, cmdType, err)
+				}
+			} else {
+				return fmt.Errorf("command block %d: invalid format", i+1)
 			}
 		}
 	}
+
+	return nil
+}
+
+// validateCommand validates a command before execution
+func validateCommand(cmd *Command) error {
+	// Validate command type
+	validTypes := []CommandType{
+		CommandTypeExec,
+		CommandTypeShell,
+		CommandTypeDocker,
+		CommandTypeDockerCompose,
+		CommandTypeSSH,
+		CommandTypeConfig,
+	}
+	
+	isValidType := false
+	for _, validType := range validTypes {
+		if cmd.Type == validType {
+			isValidType = true
+			break
+		}
+	}
+	
+	if !isValidType {
+		return fmt.Errorf("invalid command type: %s", cmd.Type)
+	}
+
+	// Validate type-specific requirements
+	switch cmd.Type {
+	case CommandTypeDocker:
+		if container, ok := cmd.Options["container"].(string); !ok || container == "" {
+			return fmt.Errorf("docker command requires 'container' field")
+		}
+		if command, ok := cmd.Options["command"].(string); !ok || command == "" {
+			return fmt.Errorf("docker command requires 'command' field")
+		}
+		
+	case CommandTypeSSH:
+		if user, ok := cmd.Options["user"].(string); !ok || user == "" {
+			return fmt.Errorf("ssh command requires 'user' field")
+		}
+		if host, ok := cmd.Options["host"].(string); !ok || host == "" {
+			return fmt.Errorf("ssh command requires 'host' field")
+		}
+		
+	case CommandTypeConfig:
+		if dest, ok := cmd.Options["confdest"].(string); !ok || dest == "" {
+			return fmt.Errorf("config command requires 'confdest' field")
+		}
+		if data, ok := cmd.Options["confdata"].(string); !ok || data == "" {
+			return fmt.Errorf("config command requires 'confdata' field")
+		}
+	}
+
+	// Validate that commands have values (except for config type)
+	if cmd.Type != CommandTypeConfig && len(cmd.Values) == 0 {
+		return fmt.Errorf("command must have at least one value")
+	}
+
+	return nil
 }
 
 // InteractiveShell provides an interactive shell for command input
-func InteractiveShell(shell string) []string {
+func InteractiveShell(shell string) ([]string, error) {
 	var commands []string
 	reader := bufio.NewReader(os.Stdin)
 
@@ -392,8 +470,7 @@ func InteractiveShell(shell string) []string {
 		fmt.Print("> ")
 		input, err := reader.ReadString('\n')
 		if err != nil {
-			fmt.Printf("Error reading input: %v\n", err)
-			continue
+			return nil, fmt.Errorf("error reading input: %w", err)
 		}
 
 		input = strings.TrimSpace(input)
@@ -401,10 +478,12 @@ func InteractiveShell(shell string) []string {
 			break
 		}
 
-		commands = append(commands, input)
+		if input != "" {
+			commands = append(commands, input)
+		}
 	}
 
-	return commands
+	return commands, nil
 }
 
 func parseEnvironmentVariables(yamlDocument map[interface{}]interface{}, env *Environment) {

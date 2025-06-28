@@ -16,11 +16,21 @@ My goal was to rewrite an existing bash tool in go. An essential part was a coll
 
 At the moment I am testing this on my android phone, on my windows machine, on my MacAir M2 and on my linux server and it is working pretty well so far.
 
+### New Features (v0.0.1+)
+
+- **AI Integration**: OpenAI API integration for command generation and assistance
+- **Interactive Shell Mode**: Record commands interactively and generate YAML automatically
+- **Enhanced Configuration**: YAML-based configuration support with options block
+- **Improved REST API**: Better authentication and output handling
+
 ## TODO's
 
 - [ ] write tests !!
 - [ ] implement connection between blocks (artifacts or other way. i don't know)
 - [ ] implement dependency between blocks
+- [ ] update AI model defaults to newer OpenAI models
+- [ ] add support for other AI providers
+- [ ] improve error handling and validation
 
 ## HowTo build
 
@@ -72,30 +82,64 @@ curl --silent --location https://raw.githubusercontent.com/LANIXX-HH/runfromyaml
 
 ~~~bash
 Usage of ./runfromyaml:
-  --debug
+  -ai
+    	ai - interact with OpenAI
+  -ai-cmdtype string
+    	ai-cmdtype - For which type of code should be examples generated (default "shell")
+  -ai-in string
+    	ai - interact with OpenAI
+  -ai-key string
+    	ai - OpenAI API Key
+  -ai-model string
+    	ai-model - OpenAI Model for answer generation (default "text-davinci-003")
+  -debug
     	debug - activate debug mode to print more informations
-  --file string
+  -file string
     	file - file with all defined commands, descriptions and configuration blocks in yaml fromat (default "commands.yaml")
-  --host string
+  -host string
     	host - set host for rest api mode (default host is localhost) (default "localhost")
-  --no-auth
+  -no-auth
     	no-auth - disable rest auth
-  --port int
+  -no-file
+    	no-file - file option should be disabled
+  -port int
     	port - set http port for rest api mode (default http port is 8080) (default 8080)
-  --rest
+  -rest
     	restapi - start this instance in background mode in rest api mode
-  --restout
+  -restout
     	rest output - activate output to http response
-  --user string
-    	user - set username for rest api authentication (default username is rest)  (default "rest")  
+  -shell
+    	shell - interactive shell
+  -shell-type string
+    	shell-type - which shell type should be used for recording all the commands to generate yaml structure (default "bash")
+  -user string
+    	user - set username for rest api authentication (default username is rest) (default "rest")
 ~~~
 
 ### Examples
 
-* parse yaml file localy
+* Parse YAML file locally
 
 ~~~bash
+runfromyaml --file my-commands.yaml
+~~~
 
+* Interactive Shell Mode (NEW)
+
+~~~bash
+runfromyaml --shell
+~~~
+
+This mode allows you to interactively record commands and automatically generate YAML structure from your input.
+
+* AI Integration Mode (NEW)
+
+~~~bash
+# Set OpenAI API key and interact with AI
+runfromyaml --ai --ai-key "your-api-key" --ai-in "create a docker command to list containers"
+
+# Use different AI model
+runfromyaml --ai --ai-key "your-api-key" --ai-model "gpt-4" --ai-cmdtype "bash" --ai-in "show disk usage"
 ~~~
 
 * REST API Mode
@@ -124,6 +168,30 @@ CURLOPT_TIMEOUT=30 curl -X POST -H "Content-Type: application/x-yaml" -u rest:$P
 ~~~
 
 ## Syntax
+
+### Options Block (NEW)
+
+You can now define global options directly in your YAML file:
+
+~~~yaml
+options:
+  - key: "rest"
+    value: false
+  - key: "no-auth"
+    value: true
+  - key: "host"
+    value: "0.0.0.0"
+  - key: "port"
+    value: 8000
+  - key: "ai"
+    value: true
+  - key: "ai-key"
+    value: "sk-..."
+  - key: "ai-model"
+    value: "gpt-4"
+  - key: "shell"
+    value: false
+~~~
 
 ### Logging Settings
 

@@ -1,0 +1,156 @@
+---
+# Advanced Features Example
+# This example demonstrates the new features in runfromyaml v0.0.1+
+
+# Global options configuration (NEW)
+options:
+  - key: "debug"
+    value: true
+  - key: "ai"
+    value: false
+  - key: "ai-model"
+    value: "gpt-4"
+  - key: "shell-type"
+    value: "bash"
+
+# Logging configuration
+logging:
+  - level: info
+  - output: stdout
+
+# Environment variables
+env:
+  - key: "PROJECT_NAME"
+    value: "runfromyaml-demo"
+  - key: "WORKSPACE"
+    value: "$HOME/workspace"
+  - key: "LOG_LEVEL"
+    value: "debug"
+
+# Command blocks demonstrating various features
+cmd:
+  # Basic shell command with environment expansion
+  - type: "shell"
+    name: "setup-workspace"
+    desc: "Create project workspace directory"
+    expandenv: true
+    values:
+      - mkdir -p $WORKSPACE/$PROJECT_NAME
+      - echo "Created workspace at $WORKSPACE/$PROJECT_NAME"
+
+  # Configuration file creation
+  - type: "conf"
+    name: "create-config"
+    desc: "Create application configuration file"
+    expandenv: true
+    confdest: "$WORKSPACE/$PROJECT_NAME/app.conf"
+    confperm: 0644
+    confdata: |
+      # Application Configuration
+      project_name=$PROJECT_NAME
+      log_level=$LOG_LEVEL
+      created_at=$(date)
+      
+      [database]
+      host=localhost
+      port=5432
+      
+      [api]
+      host=0.0.0.0
+      port=8080
+
+  # Docker operations
+  - type: "docker"
+    name: "docker-info"
+    desc: "Get Docker system information"
+    command: run
+    container: alpine:latest
+    values:
+      - uname -a
+      - cat /etc/os-release
+      - df -h
+
+  # Docker Compose example
+  - type: "docker-compose"
+    name: "compose-example"
+    desc: "Example Docker Compose operation"
+    expandenv: true
+    dcoptions:
+      - -f $WORKSPACE/$PROJECT_NAME/docker-compose.yml
+      - --project-directory $WORKSPACE/$PROJECT_NAME
+    command: config
+    cmdoptions: []
+    service: ""
+    values: []
+
+  # SSH remote execution example
+  - type: "ssh"
+    name: "remote-check"
+    desc: "Check remote system status"
+    expandenv: true
+    user: "$USER"
+    host: "localhost"
+    port: 22
+    options:
+      - -o ConnectTimeout=5
+      - -o StrictHostKeyChecking=no
+    values:
+      - uptime
+      - free -h
+      - df -h /
+
+  # Multiple shell commands
+  - type: "shell"
+    name: "system-info"
+    desc: "Gather comprehensive system information"
+    expandenv: true
+    values:
+      - echo "=== System Information ==="
+      - uname -a
+      - echo "=== Memory Usage ==="
+      - free -h
+      - echo "=== Disk Usage ==="
+      - df -h
+      - echo "=== Network Interfaces ==="
+      - ip addr show || ifconfig
+      - echo "=== Environment Variables ==="
+      - env | grep -E "(PROJECT_NAME|WORKSPACE|LOG_LEVEL)"
+
+  # Exec command example
+  - type: "exec"
+    name: "direct-execution"
+    desc: "Direct command execution without shell wrapper"
+    expandenv: true
+    values:
+      - echo
+      - "Direct execution completed for $PROJECT_NAME"
+
+  # Conditional-like behavior using shell
+  - type: "shell"
+    name: "conditional-setup"
+    desc: "Conditional setup based on system type"
+    expandenv: true
+    values:
+      - |
+        if command -v apt-get >/dev/null 2>&1; then
+          echo "Debian/Ubuntu system detected"
+          # apt-get update would go here
+        elif command -v yum >/dev/null 2>&1; then
+          echo "RedHat/CentOS system detected"
+          # yum update would go here
+        elif command -v brew >/dev/null 2>&1; then
+          echo "macOS with Homebrew detected"
+          # brew update would go here
+        else
+          echo "Unknown system type"
+        fi
+
+  # Cleanup operations
+  - type: "shell"
+    name: "cleanup"
+    desc: "Clean up temporary files and directories"
+    expandenv: true
+    values:
+      - echo "Cleaning up workspace..."
+      - ls -la $WORKSPACE/$PROJECT_NAME/
+      - echo "Cleanup completed"
