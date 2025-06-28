@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/fatih/color"
@@ -15,7 +16,11 @@ func TestWriteFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Warning: failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	tests := []struct {
 		name     string
@@ -85,15 +90,18 @@ func TestWriteFile(t *testing.T) {
 					t.Errorf("File content = %q, want %q", string(content), tt.content)
 				}
 
-				// Verify file permissions
+				// Verify file permissions (skip on Windows as permissions work differently)
 				info, err := os.Stat(filePath)
 				if err != nil {
 					t.Errorf("Failed to get file info: %v", err)
 					return
 				}
 
-				if info.Mode().Perm() != tt.perm {
-					t.Errorf("File permissions = %o, want %o", info.Mode().Perm(), tt.perm)
+				// Only check permissions on Unix-like systems
+				if runtime.GOOS != "windows" {
+					if info.Mode().Perm() != tt.perm {
+						t.Errorf("File permissions = %o, want %o", info.Mode().Perm(), tt.perm)
+					}
 				}
 			}
 		})
@@ -106,10 +114,14 @@ func TestWriteFileWithEnvVar(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Warning: failed to clean up temp dir: %v", err)
+		}
+	}()
 
-	os.Setenv("TEST_DIR", tempDir)
-	defer os.Unsetenv("TEST_DIR")
+	_ = os.Setenv("TEST_DIR", tempDir)
+	defer func() { _ = os.Unsetenv("TEST_DIR") }()
 
 	content := "Test content"
 	filePath := "$TEST_DIR/envtest.txt"
@@ -241,13 +253,19 @@ func BenchmarkWriteFile(b *testing.B) {
 	if err != nil {
 		b.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		// Give some time for file handles to close on Windows
+		if err := os.RemoveAll(tempDir); err != nil {
+			b.Logf("Warning: failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	content := "This is test content for benchmarking file write operations."
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		filename := filepath.Join(tempDir, fmt.Sprintf("bench_test_%d.txt", i))
-		WriteFile(content, filename, 0644)
+		// Use 0666 which is more compatible across platforms
+		WriteFile(content, filename, 0666)
 	}
 }
