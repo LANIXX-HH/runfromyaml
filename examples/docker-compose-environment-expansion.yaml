@@ -1,0 +1,86 @@
+# Docker Compose Environment Variable Expansion Example
+# This example demonstrates the fix for environment variable expansion in docker-compose commands
+
+logging:
+  - level: info
+  - output: stdout
+
+env:
+  - key: PROJECT_NAME
+    value: "my-project"
+  - key: COMPOSE_FILE
+    value: "docker-compose.yml"
+
+cmd:
+  # Example 1: Build with environment variables
+  - type: "docker-compose"
+    expandenv: true
+    name: "build-with-env-vars"
+    desc: "Build docker-compose project using environment variables in paths"
+    dcoptions:
+      - -f $HOME/.tmp/$PROJECT_NAME/$COMPOSE_FILE
+      - --project-directory $HOME/.tmp/$PROJECT_NAME
+    command: build
+    service: ""
+    values: []
+
+  # Example 2: Run service with environment variables
+  - type: "docker-compose"
+    expandenv: true
+    name: "run-with-env-vars"
+    desc: "Run a service using environment variables"
+    dcoptions:
+      - -f $HOME/.tmp/$PROJECT_NAME/$COMPOSE_FILE
+      - --project-directory $HOME/.tmp/$PROJECT_NAME
+    command: run
+    cmdoptions:
+      - --rm
+      - -it
+    service: "web"
+    values:
+      - echo "Running in container with expanded environment variables"
+      - pwd
+      - env | grep PROJECT
+
+  # Example 3: Complex options with environment variables
+  - type: "docker-compose"
+    expandenv: true
+    name: "complex-env-expansion"
+    desc: "Demonstrate complex environment variable expansion"
+    dcoptions:
+      - -f $HOME/.config/docker/$PROJECT_NAME.yml
+      - --project-directory $HOME/projects/$PROJECT_NAME
+      - --env-file $HOME/.env.$PROJECT_NAME
+    command: up
+    cmdoptions:
+      - --detach
+      - --build
+      - --remove-orphans
+    service: ""
+    values: []
+
+  # Example 4: Without expandenv (for comparison)
+  - type: "docker-compose"
+    expandenv: false
+    name: "without-expansion"
+    desc: "Example without environment expansion (will fail if paths contain variables)"
+    dcoptions:
+      - -f ./docker-compose.yml
+      - --project-directory .
+    command: ps
+    service: ""
+    values: []
+
+  # Example 5: Service-specific environment expansion
+  - type: "docker-compose"
+    expandenv: true
+    name: "service-env-expansion"
+    desc: "Environment expansion in service names"
+    dcoptions:
+      - -f $HOME/.tmp/$PROJECT_NAME/$COMPOSE_FILE
+    command: logs
+    cmdoptions:
+      - --follow
+      - --tail=100
+    service: "$PROJECT_NAME-web"
+    values: []

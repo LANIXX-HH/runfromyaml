@@ -1,0 +1,85 @@
+options:
+  - key: "debug"
+    value: true
+  - key: "file"
+    value: "test_commands.yaml"
+
+logging:
+  - level: info
+  - output: stdout
+
+env:
+  - key: TEST_VAR
+    value: test_value
+  - key: HOME
+    value: /tmp/test_home
+  - key: USER
+    value: testuser
+
+cmd:
+  - type: exec
+    name: simple-echo
+    desc: Simple echo command for testing
+    values:
+      - echo
+      - "Hello from runfromyaml tests!"
+
+  - type: shell
+    name: list-files
+    desc: List files in current directory
+    values:
+      - ls -la
+
+  - type: conf
+    name: test-config
+    desc: Create a test configuration file
+    confdest: /tmp/test-config.conf
+    confperm: "0644"
+    confdata: |
+      # Test configuration file
+      test.setting1=value1
+      test.setting2=value2
+      test.debug=true
+
+  - type: exec
+    name: env-test
+    desc: Test environment variable expansion
+    expandenv: true
+    values:
+      - echo
+      - "User: $USER, Home: $HOME, Test: $TEST_VAR"
+
+  - type: shell
+    name: empty-values-test
+    desc: Test command with empty values (should be skipped)
+    values: []
+
+  - type: exec
+    name: multi-command
+    desc: Multiple commands in one block
+    values:
+      - echo "First command"
+      - echo "Second command"
+      - echo "Third command"
+
+  # Docker command example (will only work if Docker is available)
+  - type: docker
+    name: docker-test
+    desc: Test Docker command execution
+    container: alpine
+    command: run
+    values:
+      - echo "Hello from Docker container"
+
+  # SSH command example (for testing structure, won't actually connect)
+  - type: ssh
+    name: ssh-test
+    desc: Test SSH command structure
+    user: testuser
+    host: localhost
+    port: 22
+    options:
+      - -o ConnectTimeout=5
+    values:
+      - echo "Hello from SSH"
+      - pwd

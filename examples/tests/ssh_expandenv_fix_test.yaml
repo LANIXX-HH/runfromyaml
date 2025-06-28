@@ -1,0 +1,42 @@
+---
+logging:
+  - level: debug
+  - output: stdout
+
+env:
+  - key: "SSH_KEY_PATH"
+    value: "$HOME/.ssh/id_rsa-localhost"
+  - key: "SSH_USER"
+    value: "testuser"
+
+cmd:
+  - type: "ssh"
+    expandenv: true
+    name: "ssh-expandenv-fix-test"
+    desc: "Test SSH expandenv fix for options array"
+    user: $SSH_USER
+    host: localhost
+    port: 22
+    options:
+      - -i $SSH_KEY_PATH
+      - -o ConnectTimeout=1
+      - -o StrictHostKeyChecking=no
+      - -o UserKnownHostsFile=/dev/null
+    values:
+      - echo "SSH expandenv fix test successful"
+      - echo "USER: $USER"
+      - echo "SSH_KEY_PATH: $SSH_KEY_PATH"
+
+  - type: "ssh"
+    expandenv: false
+    name: "ssh-expandenv-disabled-test"
+    desc: "Test SSH without expandenv for comparison"
+    user: $SSH_USER
+    host: localhost
+    port: 22
+    options:
+      - -i $SSH_KEY_PATH
+      - -o ConnectTimeout=1
+    values:
+      - echo "SSH without expandenv test"
+      - echo "USER: $USER"

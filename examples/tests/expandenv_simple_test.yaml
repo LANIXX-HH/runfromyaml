@@ -1,0 +1,69 @@
+---
+# Simple test YAML file to debug expandenv functionality
+
+logging:
+  - level: info
+  - output: stdout
+
+env:
+  - key: "TEST_MESSAGE"
+    value: "Hello World"
+  - key: "TEST_USER"
+    value: "testuser"
+
+cmd:
+  # Test 1: exec command with expandenv enabled
+  - type: "exec"
+    expandenv: true
+    name: "exec-with-expandenv"
+    desc: "Test exec command with environment variable expansion"
+    values:
+      - echo
+      - "Message: $TEST_MESSAGE"
+
+  # Test 2: exec command with expandenv disabled
+  - type: "exec"
+    expandenv: false
+    name: "exec-without-expandenv"
+    desc: "Test exec command without environment variable expansion"
+    values:
+      - echo
+      - "Should not expand: $TEST_MESSAGE"
+
+  # Test 3: shell command with expandenv enabled - single command
+  - type: "shell"
+    expandenv: true
+    name: "shell-with-expandenv-single"
+    desc: "Test shell command with environment variable expansion - single command"
+    values:
+      - "echo 'Shell test: $TEST_MESSAGE'"
+
+  # Test 4: shell command with expandenv disabled
+  - type: "shell"
+    expandenv: false
+    name: "shell-without-expandenv"
+    desc: "Test shell command without environment variable expansion"
+    values:
+      - "echo 'Should not expand: $TEST_MESSAGE'"
+
+  # Test 5: conf command with expandenv enabled
+  - type: "conf"
+    expandenv: true
+    name: "conf-with-expandenv"
+    desc: "Test configuration file creation with environment variable expansion"
+    confdata: |
+      user=$TEST_USER
+      message=$TEST_MESSAGE
+    confdest: "/tmp/test_expand.conf"
+    confperm: 0644
+
+  # Test 6: conf command with expandenv disabled
+  - type: "conf"
+    expandenv: false
+    name: "conf-without-expandenv"
+    desc: "Test configuration file creation without environment variable expansion"
+    confdata: |
+      user=$TEST_USER
+      message=$TEST_MESSAGE
+    confdest: "/tmp/test_no_expand.conf"
+    confperm: 0644

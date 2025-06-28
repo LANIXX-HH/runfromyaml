@@ -35,13 +35,13 @@ type RunFromYAMLError struct {
 // Error implements the error interface
 func (e *RunFromYAMLError) Error() string {
 	var parts []string
-	
+
 	parts = append(parts, fmt.Sprintf("[%s] %s", e.Type, e.Message))
-	
+
 	if e.Cause != nil {
 		parts = append(parts, fmt.Sprintf("Caused by: %v", e.Cause))
 	}
-	
+
 	if len(e.Context) > 0 {
 		var contextParts []string
 		for k, v := range e.Context {
@@ -49,7 +49,7 @@ func (e *RunFromYAMLError) Error() string {
 		}
 		parts = append(parts, fmt.Sprintf("Context: %s", strings.Join(contextParts, ", ")))
 	}
-	
+
 	return strings.Join(parts, " | ")
 }
 
@@ -105,25 +105,25 @@ func Wrap(err error, errorType ErrorType, message string) *RunFromYAMLError {
 // getStackTrace captures the current stack trace
 func getStackTrace() string {
 	var stackTrace strings.Builder
-	
+
 	// Skip the first 3 frames (getStackTrace, New/Wrap, caller)
 	for i := 3; i < 10; i++ {
 		pc, file, line, ok := runtime.Caller(i)
 		if !ok {
 			break
 		}
-		
+
 		fn := runtime.FuncForPC(pc)
 		if fn == nil {
 			continue
 		}
-		
+
 		// Only include our package functions
 		if strings.Contains(file, "runfromyaml") {
 			stackTrace.WriteString(fmt.Sprintf("  %s:%d %s\n", file, line, fn.Name()))
 		}
 	}
-	
+
 	return stackTrace.String()
 }
 
@@ -205,7 +205,7 @@ func (h *ErrorHandler) Handle(err error) {
 	if err == nil {
 		return
 	}
-	
+
 	if rfyErr, ok := err.(*RunFromYAMLError); ok {
 		h.handleStructuredError(rfyErr)
 	} else {
@@ -216,25 +216,25 @@ func (h *ErrorHandler) Handle(err error) {
 // handleStructuredError handles RunFromYAMLError instances
 func (h *ErrorHandler) handleStructuredError(err *RunFromYAMLError) {
 	fmt.Printf("❌ Error: %s\n", err.Message)
-	
+
 	if err.Cause != nil {
 		fmt.Printf("   Cause: %v\n", err.Cause)
 	}
-	
+
 	if len(err.Context) > 0 {
 		fmt.Printf("   Context:\n")
 		for k, v := range err.Context {
 			fmt.Printf("     %s: %v\n", k, v)
 		}
 	}
-	
+
 	if len(err.Suggestions) > 0 {
 		fmt.Printf("   💡 Suggestions:\n")
 		for _, suggestion := range err.Suggestions {
 			fmt.Printf("     • %s\n", suggestion)
 		}
 	}
-	
+
 	if h.Debug && err.StackTrace != "" {
 		fmt.Printf("   Stack Trace:\n%s", err.StackTrace)
 	}
@@ -243,7 +243,7 @@ func (h *ErrorHandler) handleStructuredError(err *RunFromYAMLError) {
 // handleGenericError handles standard Go errors
 func (h *ErrorHandler) handleGenericError(err error) {
 	fmt.Printf("❌ Error: %v\n", err)
-	
+
 	if h.Debug {
 		// Try to get stack trace for debugging
 		fmt.Printf("   Stack Trace:\n%s", getStackTrace())
@@ -262,7 +262,7 @@ func (h *ErrorHandler) Recovery() {
 		default:
 			err = New(ErrorTypeInternal, fmt.Sprintf("Unknown panic: %v", r))
 		}
-		
+
 		h.Handle(err)
 	}
 }

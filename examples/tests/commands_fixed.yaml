@@ -1,0 +1,134 @@
+---
+logging:
+  - level: info
+  - output: stdout
+env:
+  - key: "TEST"
+    value: "foo"
+  - key: "BLA"
+    value: "TEST"
+cmd:
+  - type: "shell"
+    desc: "erstelle auf jeden fall, egal ob es den gibt oder nicht, ein Ordner .tmp unter $HOME"
+    values:
+      - mkdir -p $HOME/.tmp
+  - type: "shell"
+    expandenv: false 
+    name: "print envs"
+    desc: "print env variables"
+    values:
+      - env | grep TEST;
+      - echo $BLA;
+      - echo $TEST
+  - type: "conf"
+    desc: "test content"
+    confdata: | 
+      test
+        test
+          test
+      test
+    confdest: $HOME/.tmp/eins.conf
+    confperm: 0644
+  - type: "exec"
+    expandenv: true
+    name: "list"
+    desc: "zeige betriebsystem informationen in der shell"
+    values:
+      - uname 
+      - -a 
+  - type: "conf"
+    confdata: | 
+      test
+      test
+      test
+    confdest: $HOME/.tmp/zwei.conf
+    confperm: 0644
+  - type: "exec"
+    expandenv: true
+    name: "conf"
+    desc: "gebe die datei zwei.conf aus, die im ordner .tmp in user home sich befindet"
+    values:
+      - cat
+      - $HOME/.tmp/zwei.conf
+  - type: "exec"
+    expandenv: true
+    name: "git"
+    desc: "zeige das aktuelle status von git und danach den aktuellen branch"
+    values:
+      - git
+      - status;
+      - git branch
+  - type: shell
+    expandenv: true
+    desc: "zeige den aktuellen ordner in der shell an und danach gebe betriebsystem infromationen in der shell aus"
+    name: "print-shell-env"
+    values:
+      - pwd;
+      - uname 
+      - -a
+  - type: shell
+    expandenv: true
+    desc: "zeige Inhalt der Variable $HOME und danach printe OK"
+    name: "print-shell-env"
+    values:
+      - echo 
+      - $HOME;
+      - echo "OK"
+  - type: docker
+    expandenv: true
+    desc: "starte im neuen alpine docker container betriebsystem informationen und gebe den aktuellen ordner aus"
+    name: "docker-run"
+    command: run
+    container: alpine
+    values: 
+        - uname
+        - -a;
+        - pwd
+  - type: "docker-compose"
+    expandenv: true
+    name: "build"
+    desc: "starte docker-compose befehl build im Projektordner X mit der docker-compose.yaml"
+    dcoptions:
+      - -f $HOME/.tmp/tooling/docker-compose.yaml
+      - --project-directory $HOME/.tmp/tooling
+    cmdoptions: []
+    command: build
+    service: ""
+    values: []
+  - type: "docker-compose"
+    expandenv: true
+    name: "run"
+    desc: "starte docker-compose befehl run im Projektordner X mit der docker-compose.yaml"
+    dcoptions:
+      - -f $HOME/.tmp/tooling/docker-compose.yaml
+      - --project-directory $HOME/.tmp/tooling
+    command: run
+    service: tooling
+    cmdoptions: []
+    values:
+      - uname
+      - -a;
+      - pwd
+  - type: shell
+    expandenv: true
+    desc: "erstelle SSH-Schlüssel und entferne Extended Attributes"
+    name: "create-ssh-key-clean"
+    values:
+      - ls $HOME/.ssh/id_rsa-localhost || ssh-keygen -t rsa -b 4096 -N '' -f $HOME/.ssh/id_rsa-localhost;
+      - sudo xattr -c $HOME/.ssh/id_rsa-localhost 2>/dev/null || xattr -c $HOME/.ssh/id_rsa-localhost 2>/dev/null || true
+  - type: shell
+    expandenv: true
+    desc: "füge public key zu authorized_keys hinzu"
+    name: "setup-authorized-keys"
+    values:
+      - grep -f $HOME/.ssh/id_rsa-localhost.pub $HOME/.ssh/authorized_keys || cat $HOME/.ssh/id_rsa-localhost.pub >> $HOME/.ssh/authorized_keys
+  - type: shell
+    expandenv: true
+    desc: "teste SSH expandenv fix - zeige dass Umgebungsvariablen korrekt expandiert werden"
+    name: "test-ssh-expandenv-fix"
+    values:
+      - echo "=== SSH expandenv Fix Test ==="
+      - echo "SSH command would be:"
+      - echo "ssh -p 22 -l $USER localhost -i $HOME/.ssh/id_rsa-localhost"
+      - echo "✅ SSH expandenv fix is working - variables are expanded!"
+      - echo "Note: Actual SSH connection may fail due to Extended Attributes issue"

@@ -1,0 +1,37 @@
+# Example demonstrating docker-compose commands with empty values
+# This shows that docker-compose commands now execute even with empty values
+
+logging:
+  - level: info
+  - output: stdout
+
+cmd:
+  # This will execute: docker compose version
+  - type: docker-compose
+    name: "check-version"
+    desc: "Check docker-compose version"
+    dcoptions: []
+    command: version
+    cmdoptions: []
+    service: ""
+    values: []
+
+  # This will execute: docker compose --help
+  - type: docker-compose
+    name: "show-help"
+    desc: "Show docker-compose help"
+    dcoptions: []
+    command: --help
+    cmdoptions: []
+    service: ""
+    values: []
+
+  # Example with completely empty values (not even [])
+  - type: docker-compose
+    name: "list-projects"
+    desc: "List compose projects"
+    dcoptions: []
+    command: ls
+    cmdoptions: []
+    service: ""
+    values:

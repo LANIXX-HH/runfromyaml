@@ -6,6 +6,23 @@ Actually it's a playground and an attempt to write a tool with which I can both 
 
 Мy main goal of this project is to write a utility with which it would be convenient and easy to collect documentation, configuration files and the commands themselves under one roof in the right sequence. basically, the way you try to achieve your goal. this is the most efficient way for this task and i have not found a sensible utility that does this.
 
+## 📚 Documentation
+
+For comprehensive documentation, see the [docs/](docs/) directory with organized categories:
+
+- **[docs/README.md](docs/README.md)** - Complete documentation index and navigation
+- **[docs/testing/](docs/testing/)** - Testing guides, setup, and results
+- **[docs/development/](docs/development/)** - Architecture, error handling, and development guides
+- **[docs/features/](docs/features/)** - Feature documentation and usage examples
+- **[docs/fixes/](docs/fixes/)** - Bug fixes and improvement documentation
+- **[docs/summaries/](docs/summaries/)** - Project summaries and implementation overviews
+
+### Quick Links
+- **Getting Started**: [docs/development/ARCHITECTURE.md](docs/development/ARCHITECTURE.md)
+- **Running Tests**: [docs/testing/TESTING.md](docs/testing/TESTING.md)
+- **Empty Values Feature**: [docs/features/EMPTY_VALUES_SUPPORT.md](docs/features/EMPTY_VALUES_SUPPORT.md)
+- **Recent Updates**: [docs/summaries/RECENT_FIXES_SUMMARY.md](docs/summaries/RECENT_FIXES_SUMMARY.md)
+
 ## Why didn't I go with ansible?
 
 Very heavyweight for such a task in my opinion. I have met people who saw everything in ansible and then only they understand how it works. very quickly the focus is lost - to write down the steps you just did quite simply and quickly and preferably document what is going on here in general.
@@ -22,6 +39,7 @@ At the moment I am testing this on my android phone, on my windows machine, on m
 - **Interactive Shell Mode**: Record commands interactively and generate YAML automatically
 - **Enhanced Configuration**: YAML-based configuration support with options block
 - **Improved REST API**: Better authentication and output handling
+- **Empty Values Support**: Allow empty values blocks and empty command blocks for documentation and placeholders
 
 ## TODO's
 
@@ -31,6 +49,8 @@ At the moment I am testing this on my android phone, on my windows machine, on m
 - [ ] update AI model defaults to newer OpenAI models
 - [ ] add support for other AI providers
 - [ ] improve error handling and validation
+- [x] **NEW**: Support for empty values blocks and empty command blocks
+- [x] **NEW**: Organize documentation in docs/ folder
 
 ## HowTo build
 
@@ -115,6 +135,37 @@ Usage of ./runfromyaml:
   -user string
     	user - set username for rest api authentication (default username is rest) (default "rest")
 ~~~
+
+### Empty Values and Command Blocks
+
+runfromyaml now supports empty `values` blocks and empty command blocks, which are useful for:
+
+- **Documentation**: Creating placeholder commands that document future implementations
+- **Conditional Execution**: Commands that may be conditionally populated
+- **Template Creation**: YAML templates with placeholder blocks
+- **Development Workflow**: Incremental development where commands are added over time
+
+#### Examples
+
+Empty values block:
+```yaml
+cmd:
+  - type: exec
+    name: "future-setup"
+    desc: "Setup commands will be added here"
+    values: []
+```
+
+Completely empty command block:
+```yaml
+cmd:
+  - type: shell
+    name: "deployment-placeholder"
+    desc: "Deployment commands to be implemented"
+    values:
+```
+
+When empty command blocks are encountered, runfromyaml will skip execution with an informative message and continue processing the next commands.
 
 ### Examples
 

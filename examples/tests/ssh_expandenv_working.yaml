@@ -1,0 +1,55 @@
+---
+logging:
+  - level: debug
+  - output: stdout
+
+env:
+  - key: "SSH_TEST_USER"
+    value: "testuser"
+  - key: "SSH_TEST_HOST"
+    value: "localhost"
+  - key: "SSH_TEST_MSG"
+    value: "Hello from SSH expandenv test"
+
+cmd:
+  - type: "shell"
+    expandenv: true
+    name: "show-env-before-ssh"
+    desc: "Show environment variables before SSH tests"
+    values:
+      - echo "Current USER: $USER";
+      - echo "SSH_TEST_USER: $SSH_TEST_USER";
+      - echo "SSH_TEST_HOST: $SSH_TEST_HOST";
+      - echo "SSH_TEST_MSG: $SSH_TEST_MSG"
+
+  - type: "ssh"
+    expandenv: true
+    name: "ssh-expandenv-true"
+    desc: "SSH test with expandenv=true - variables should be expanded"
+    user: $SSH_TEST_USER
+    host: $SSH_TEST_HOST
+    port: 22
+    options:
+      - -o ConnectTimeout=2
+      - -o StrictHostKeyChecking=no
+    values:
+      - echo "SSH with expandenv=true"
+      - echo "USER variable: $USER"
+      - echo "SSH_TEST_USER: $SSH_TEST_USER"
+      - echo "SSH_TEST_MSG: $SSH_TEST_MSG"
+
+  - type: "ssh"
+    expandenv: false
+    name: "ssh-expandenv-false"
+    desc: "SSH test with expandenv=false - variables should NOT be expanded"
+    user: $SSH_TEST_USER
+    host: $SSH_TEST_HOST
+    port: 22
+    options:
+      - -o ConnectTimeout=2
+      - -o StrictHostKeyChecking=no
+    values:
+      - echo "SSH with expandenv=false"
+      - echo "USER variable (literal): $USER"
+      - echo "SSH_TEST_USER (literal): $SSH_TEST_USER"
+      - echo "SSH_TEST_MSG (literal): $SSH_TEST_MSG"

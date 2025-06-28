@@ -1,0 +1,63 @@
+---
+# Test file for empty values and empty command blocks functionality
+logging:
+  - level: info
+  - output: stdout
+
+env:
+  - key: TEST_MESSAGE
+    value: "Empty values support is working!"
+
+cmd:
+  # Test 1: Empty exec command
+  - type: exec
+    name: "empty-exec"
+    desc: "Empty exec command test"
+    values: []
+
+  # Test 2: Empty shell command  
+  - type: shell
+    name: "empty-shell"
+    desc: "Empty shell command test"
+    values:
+
+  # Test 3: Empty docker command
+  - type: docker
+    name: "empty-docker"
+    desc: "Empty docker command test"
+    container: "alpine"
+    command: "run"
+    values: []
+
+  # Test 4: Empty SSH command
+  - type: ssh
+    name: "empty-ssh"
+    desc: "Empty SSH command test"
+    user: "testuser"
+    host: "localhost"
+    port: 22
+    values:
+
+  # Test 5: Empty config command
+  - type: conf
+    name: "empty-config"
+    desc: "Empty config command test"
+    confdest: ""
+    confdata: ""
+    confperm: 0644
+
+  # Test 6: Working command to verify normal execution
+  - type: exec
+    name: "working-test"
+    desc: "Verify normal execution still works"
+    expandenv: true
+    values:
+      - echo
+      - "$TEST_MESSAGE"
+
+  # Test 7: Working shell command
+  - type: shell
+    name: "working-shell"
+    desc: "Verify shell commands work"
+    values:
+      - "echo \"All tests completed successfully!\""

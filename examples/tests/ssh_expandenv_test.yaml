@@ -1,0 +1,61 @@
+logging:
+  - level: info
+  - output: stdout
+
+env:
+  - key: TEST_USER
+    value: $USER
+  - key: TEST_HOST
+    value: localhost
+  - key: SSH_PORT
+    value: 22
+  - key: HOME_DIR
+    value: $HOME
+  - key: SSH_KEY_PATH
+    value: $HOME/.ssh/id_rsa
+
+cmd:
+  - type: ssh
+    expandenv: true
+    name: "ssh-with-expandenv-enabled"
+    desc: "SSH test with expandenv enabled - environment variables should be expanded"
+    user: $TEST_USER
+    host: $TEST_HOST
+    port: $SSH_PORT
+    options:
+      - -o ConnectTimeout=5
+      - -o StrictHostKeyChecking=no
+    values:
+      - echo "Current user: $(whoami)"
+      - echo "Home directory: $HOME_DIR"
+      - pwd
+      - uname -a
+
+  - type: ssh
+    expandenv: false
+    name: "ssh-with-expandenv-disabled"
+    desc: "SSH test with expandenv disabled - environment variables should NOT be expanded"
+    user: $TEST_USER
+    host: $TEST_HOST
+    port: $SSH_PORT
+    options:
+      - -o ConnectTimeout=5
+      - -o StrictHostKeyChecking=no
+    values:
+      - echo "This should show literal: $TEST_USER"
+      - echo "This should show literal: $HOME_DIR"
+      - pwd
+
+  - type: ssh
+    name: "ssh-without-expandenv-setting"
+    desc: "SSH test without expandenv setting (should default to disabled)"
+    user: $TEST_USER
+    host: $TEST_HOST
+    port: $SSH_PORT
+    options:
+      - -o ConnectTimeout=5
+      - -o StrictHostKeyChecking=no
+    values:
+      - echo "Default behavior test"
+      - echo "USER variable: $TEST_USER"
+      - echo "HOME variable: $HOME_DIR"

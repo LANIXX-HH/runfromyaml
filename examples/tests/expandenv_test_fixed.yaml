@@ -1,0 +1,123 @@
+---
+# Test YAML file to verify expandenv functionality for all command types
+# This file tests environment variable expansion in different command types
+
+logging:
+  - level: info
+  - output: stdout
+
+env:
+  - key: "TEST_USER"
+    value: "testuser"
+  - key: "TEST_HOME"
+    value: "/tmp/test_home"
+  - key: "TEST_FILE"
+    value: "expandenv_test.txt"
+  - key: "TEST_MESSAGE"
+    value: "Hello from expandenv test"
+
+cmd:
+  # Test 1: exec command with expandenv enabled
+  - type: "exec"
+    expandenv: true
+    name: "exec-with-expandenv"
+    desc: "Test exec command with environment variable expansion"
+    values:
+      - echo
+      - "TEST_MESSAGE: $TEST_MESSAGE"
+      - "TEST_USER: $TEST_USER"
+
+  # Test 2: exec command with expandenv disabled
+  - type: "exec"
+    expandenv: false
+    name: "exec-without-expandenv"
+    desc: "Test exec command without environment variable expansion"
+    values:
+      - echo
+      - "Should not expand: $TEST_MESSAGE"
+
+  # Test 3: shell command with expandenv enabled
+  - type: "shell"
+    expandenv: true
+    name: "shell-with-expandenv"
+    desc: "Test shell command with environment variable expansion"
+    values:
+      - "echo 'Shell test - TEST_HOME: $TEST_HOME'"
+      - "echo 'Shell test - TEST_FILE: $TEST_FILE'"
+
+  # Test 4: shell command with expandenv disabled
+  - type: "shell"
+    expandenv: false
+    name: "shell-without-expandenv"
+    desc: "Test shell command without environment variable expansion"
+    values:
+      - "echo 'Should not expand: $TEST_HOME and $TEST_FILE'"
+
+  # Test 5: conf command with expandenv enabled
+  - type: "conf"
+    expandenv: true
+    name: "conf-with-expandenv"
+    desc: "Test configuration file creation with environment variable expansion"
+    confdata: |
+      # Test configuration file
+      user=$TEST_USER
+      home=$TEST_HOME
+      message=$TEST_MESSAGE
+      file=$TEST_FILE
+    confdest: "$TEST_HOME/$TEST_FILE"
+    confperm: 0644
+
+  # Test 6: conf command with expandenv disabled
+  - type: "conf"
+    expandenv: false
+    name: "conf-without-expandenv"
+    desc: "Test configuration file creation without environment variable expansion"
+    confdata: |
+      # Test configuration file (no expansion)
+      user=$TEST_USER
+      home=$TEST_HOME
+      message=$TEST_MESSAGE
+    confdest: "/tmp/no_expand_test.txt"
+    confperm: 0644
+
+  # Test 7: Mixed environment variables in different contexts
+  - type: "exec"
+    expandenv: true
+    name: "mixed-env-test"
+    desc: "Test mixed environment variables in different contexts"
+    values:
+      - echo
+      - "User: $TEST_USER, Home: $TEST_HOME, File: $TEST_FILE"
+
+  # Test 8: Test with system environment variables
+  - type: "shell"
+    expandenv: true
+    name: "system-env-test"
+    desc: "Test with system environment variables"
+    values:
+      - "echo 'System USER: $USER'"
+      - "echo 'System HOME: $HOME'"
+      - "echo 'Custom TEST_USER: $TEST_USER'"
+
+  # Test 9: Test empty values with expandenv (should be skipped)
+  - type: "exec"
+    expandenv: true
+    name: "empty-values-test"
+    desc: "Test empty values with expandenv enabled (should be skipped)"
+    values: []
+
+  # Test 10: Test configuration with complex environment variable usage
+  - type: "conf"
+    expandenv: true
+    name: "complex-conf-test"
+    desc: "Test configuration with complex environment variable usage"
+    confdata: |
+      [settings]
+      user_home=$TEST_HOME
+      user_name=$TEST_USER
+      log_file=$TEST_HOME/logs/$TEST_FILE
+      
+      [message]
+      greeting=$TEST_MESSAGE
+    confdest: "$TEST_HOME/complex_config.conf"
+    confperm: 0644

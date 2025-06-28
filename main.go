@@ -23,7 +23,7 @@ func init() {
 func main() {
 	// Set up error handler and panic recovery
 	var errorHandler *errors.ErrorHandler
-	
+
 	defer func() {
 		if errorHandler != nil {
 			errorHandler.Recovery()
@@ -82,32 +82,32 @@ func main() {
 // validateConfig validates the configuration
 func validateConfig(cfg *config.Config) error {
 	validator := errors.NewValidator()
-	
+
 	// Validate port
 	if cfg.Port != 0 {
 		validator.ValidatePort("port", cfg.Port)
 	}
-	
+
 	// Validate host
 	if cfg.Host != "" {
 		validator.ValidateHostname("host", cfg.Host)
 	}
-	
+
 	// Validate AI model if AI is enabled
 	if cfg.AI && cfg.AIModel != "" {
 		validator.ValidateAIModel(cfg.AIModel)
 	}
-	
+
 	// Validate shell type
 	if cfg.ShellType != "" {
 		validator.ValidateShellType(cfg.ShellType)
 	}
-	
+
 	// Validate file exists if not disabled
 	if !cfg.NoFile && cfg.File != "" {
 		validator.ValidateFileExists("file", cfg.File)
 	}
-	
+
 	return validator.GetCombinedError()
 }
 
@@ -117,11 +117,11 @@ func loadYAMLConfig(cfg *config.Config) error {
 	if err != nil {
 		return errors.NewFileError("Failed to read configuration file", err, cfg.File)
 	}
-	
+
 	if err := cfg.LoadFromYAML(ydata); err != nil {
 		return errors.NewYAMLError("Failed to parse YAML configuration", err, cfg.File)
 	}
-	
+
 	return nil
 }
 
@@ -152,19 +152,19 @@ func handleAIMode(cfg *config.Config) error {
 			fmt.Println(openai.PrintAiResponse(response))
 			return nil
 		}
-		
+
 		if attempt == maxRetries {
 			return errors.NewAIError("Failed to get AI response after multiple attempts", err).
 				WithContext("attempts", maxRetries).
 				WithSuggestion("Check your API key and network connection")
 		}
-		
+
 		// Log retry attempt if debug is enabled
 		if cfg.Debug {
 			fmt.Printf("AI request attempt %d failed: %v\n", attempt, err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -254,6 +254,6 @@ func handleShellMode(cfg *config.Config) error {
 	fmt.Println("\n📄 Generated YAML:")
 	fmt.Println("---")
 	fmt.Println(string(tempyaml))
-	
+
 	return nil
 }

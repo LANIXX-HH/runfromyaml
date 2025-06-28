@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"reflect"
-	"strings"
 	"time"
 
 	"text/template"
@@ -30,7 +29,7 @@ func WriteFile(file string, path string, perm os.FileMode) {
 	}
 }
 
-//ReadFile read file
+// ReadFile read file
 func ReadFile(file string) {
 	content, err := os.ReadFile(os.ExpandEnv(file))
 	if err != nil {
@@ -40,7 +39,7 @@ func ReadFile(file string) {
 	fmt.Printf("File contents: %s", content)
 }
 
-//Remove element from slice
+// Remove element from slice
 func Remove(slice []string, i int) []string {
 	copy(slice[i:], slice[i+1:])
 	return slice[:len(slice)-1]
@@ -139,15 +138,51 @@ func GoTemplate(mymap map[string]string, mytemplate string) string {
 // If the expandenv key exists in the yblock map and is set to true, the function then expands any environment variables in the string.
 // Finally, the function splits the string into an array of strings and returns it. If the key does not exist, then the function returns nil.
 
+// ExtractAndExpand extracts values from a YAML block and optionally expands environment variables.
+// It now handles empty values gracefully, returning an empty slice instead of nil for empty values.
 func ExtractAndExpand(yblock map[interface{}]interface{}, key string) []string {
-	if reflect.ValueOf(yblock[key]).IsValid() {
-		values := strings.Trim(fmt.Sprint(yblock[key]), "[]")
-		if reflect.ValueOf(yblock["expandenv"]).IsValid() && yblock["expandenv"].(bool) {
-			values = os.ExpandEnv(values)
-		}
-		return strings.Fields(values)
+	if !reflect.ValueOf(yblock[key]).IsValid() {
+		// Return empty slice instead of nil to allow empty values blocks
+		return []string{}
 	}
-	return nil
+
+	var result []string
+
+	// Handle different types of values
+	switch v := yblock[key].(type) {
+	case []interface{}:
+		// Handle YAML array
+		for _, item := range v {
+			if str, ok := item.(string); ok {
+				result = append(result, str)
+			} else {
+				result = append(result, fmt.Sprint(item))
+			}
+		}
+	case string:
+		// Handle single string value
+		if v != "" {
+			result = []string{v}
+		}
+	case nil:
+		// Handle explicit nil values
+		return []string{}
+	default:
+		// Handle other types by converting to string
+		str := fmt.Sprint(v)
+		if str != "" && str != "[]" && str != "<nil>" {
+			result = []string{str}
+		}
+	}
+
+	// Apply environment variable expansion if requested
+	if reflect.ValueOf(yblock["expandenv"]).IsValid() && yblock["expandenv"].(bool) {
+		for i, val := range result {
+			result[i] = os.ExpandEnv(val)
+		}
+	}
+
+	return result
 }
 
 func PrintShellCommandsAsYaml(commands []string, envs map[string]string) map[string]interface{} {

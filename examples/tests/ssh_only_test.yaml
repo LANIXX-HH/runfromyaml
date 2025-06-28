@@ -1,0 +1,37 @@
+---
+logging:
+  - level: debug
+  - output: stdout
+env:
+  - key: "SSH_USER"
+    value: "testuser"
+  - key: "SSH_HOST"
+    value: "localhost"
+cmd:
+  - type: "ssh"
+    expandenv: true
+    name: "ssh-expandenv-enabled"
+    desc: "SSH test with expandenv=true"
+    user: $SSH_USER
+    host: $SSH_HOST
+    port: 22
+    options:
+      - -o ConnectTimeout=2
+      - -o StrictHostKeyChecking=no
+    values:
+      - echo "SSH expandenv=true test"
+      - echo "USER: $USER"
+      - echo "SSH_USER: $SSH_USER"
+  - type: "ssh"
+    expandenv: false
+    name: "ssh-expandenv-disabled"
+    desc: "SSH test with expandenv=false"
+    user: $SSH_USER
+    host: $SSH_HOST
+    port: 22
+    options:
+      - -o ConnectTimeout=2
+    values:
+      - echo "SSH expandenv=false test"
+      - echo "USER: $USER"
+      - echo "SSH_USER: $SSH_USER"

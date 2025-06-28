@@ -1,0 +1,220 @@
+---
+# Test YAML file to verify expandenv functionality for all command types
+# This file tests environment variable expansion in different command types
+
+logging:
+  - level: info
+  - output: stdout
+
+env:
+  - key: "TEST_USER"
+    value: "testuser"
+  - key: "TEST_HOME"
+    value: "/tmp/test_home"
+  - key: "TEST_FILE"
+    value: "expandenv_test.txt"
+  - key: "TEST_CONTAINER"
+    value: "alpine"
+  - key: "TEST_HOST"
+    value: "localhost"
+  - key: "TEST_PORT"
+    value: "22"
+  - key: "TEST_MESSAGE"
+    value: "Hello from expandenv test"
+
+cmd:
+  # Test 1: exec command with expandenv enabled
+  - type: "exec"
+    expandenv: true
+    name: "exec-with-expandenv"
+    desc: "Test exec command with environment variable expansion"
+    values:
+      - echo
+      - "TEST_MESSAGE: $TEST_MESSAGE"
+      - "TEST_USER: $TEST_USER"
+
+  # Test 2: exec command with expandenv disabled
+  - type: "exec"
+    expandenv: false
+    name: "exec-without-expandenv"
+    desc: "Test exec command without environment variable expansion"
+    values:
+      - echo
+      - "Should not expand: $TEST_MESSAGE"
+
+  # Test 3: shell command with expandenv enabled
+  - type: "shell"
+    expandenv: true
+    name: "shell-with-expandenv"
+    desc: "Test shell command with environment variable expansion"
+    values:
+      - echo "Shell test - TEST_HOME: $TEST_HOME"
+      - echo "Shell test - TEST_FILE: $TEST_FILE"
+
+  # Test 4: shell command with expandenv disabled
+  - type: "shell"
+    expandenv: false
+    name: "shell-without-expandenv"
+    desc: "Test shell command without environment variable expansion"
+    values:
+      - echo "Should not expand: $TEST_HOME and $TEST_FILE"
+
+  # Test 5: conf command with expandenv enabled
+  - type: "conf"
+    expandenv: true
+    name: "conf-with-expandenv"
+    desc: "Test configuration file creation with environment variable expansion"
+    confdata: |
+      # Test configuration file
+      user=$TEST_USER
+      home=$TEST_HOME
+      message=$TEST_MESSAGE
+      file=$TEST_FILE
+    confdest: "$TEST_HOME/$TEST_FILE"
+    confperm: "0644"
+
+  # Test 6: conf command with expandenv disabled
+  - type: "conf"
+    expandenv: false
+    name: "conf-without-expandenv"
+    desc: "Test configuration file creation without environment variable expansion"
+    confdata: |
+      # Test configuration file (no expansion)
+      user=$TEST_USER
+      home=$TEST_HOME
+      message=$TEST_MESSAGE
+    confdest: "/tmp/no_expand_test.txt"
+    confperm: "0644"
+
+  # Test 7: docker command with expandenv enabled
+  - type: "docker"
+    expandenv: true
+    name: "docker-with-expandenv"
+    desc: "Test docker command with environment variable expansion"
+    command: "run"
+    container: "$TEST_CONTAINER"
+    values:
+      - echo
+      - "Docker test - TEST_MESSAGE: $TEST_MESSAGE"
+      - echo
+      - "Docker test - TEST_USER: $TEST_USER"
+
+  # Test 8: docker command with expandenv disabled
+  - type: "docker"
+    expandenv: false
+    name: "docker-without-expandenv"
+    desc: "Test docker command without environment variable expansion"
+    command: "run"
+    container: "alpine"
+    values:
+      - echo
+      - "Should not expand: $TEST_MESSAGE"
+
+  # Test 9: docker-compose command with expandenv enabled
+  - type: "docker-compose"
+    expandenv: true
+    name: "docker-compose-with-expandenv"
+    desc: "Test docker-compose command with environment variable expansion"
+    dcoptions:
+      - "-f"
+      - "$TEST_HOME/docker-compose.yaml"
+      - "--project-directory"
+      - "$TEST_HOME"
+    command: "ps"
+    service: ""
+    cmdoptions: []
+    values: []
+
+  # Test 10: docker-compose command with expandenv disabled
+  - type: "docker-compose"
+    expandenv: false
+    name: "docker-compose-without-expandenv"
+    desc: "Test docker-compose command without environment variable expansion"
+    dcoptions:
+      - "-f"
+      - "$TEST_HOME/docker-compose.yaml"
+    command: "ps"
+    service: ""
+    cmdoptions: []
+    values: []
+
+  # Test 11: ssh command with expandenv enabled
+  - type: "ssh"
+    expandenv: true
+    name: "ssh-with-expandenv"
+    desc: "Test SSH command with environment variable expansion"
+    user: "$TEST_USER"
+    host: "$TEST_HOST"
+    port: 22
+    options:
+      - "-o"
+      - "ConnectTimeout=5"
+      - "-o"
+      - "StrictHostKeyChecking=no"
+    values:
+      - echo
+      - "SSH test - TEST_MESSAGE: $TEST_MESSAGE"
+      - echo
+      - "SSH test - TEST_HOME: $TEST_HOME"
+
+  # Test 12: ssh command with expandenv disabled
+  - type: "ssh"
+    expandenv: false
+    name: "ssh-without-expandenv"
+    desc: "Test SSH command without environment variable expansion"
+    user: "testuser"
+    host: "localhost"
+    port: 22
+    options:
+      - "-o"
+      - "ConnectTimeout=5"
+    values:
+      - echo
+      - "Should not expand: $TEST_MESSAGE"
+
+  # Test 13: Mixed environment variables in different contexts
+  - type: "exec"
+    expandenv: true
+    name: "mixed-env-test"
+    desc: "Test mixed environment variables in different contexts"
+    values:
+      - echo
+      - "User: $TEST_USER, Home: $TEST_HOME, File: $TEST_FILE"
+
+  # Test 14: Test with system environment variables
+  - type: "shell"
+    expandenv: true
+    name: "system-env-test"
+    desc: "Test with system environment variables"
+    values:
+      - echo "System USER: $USER"
+      - echo "System HOME: $HOME"
+      - echo "Custom TEST_USER: $TEST_USER"
+
+  # Test 15: Test empty values with expandenv (should be skipped)
+  - type: "exec"
+    expandenv: true
+    name: "empty-values-test"
+    desc: "Test empty values with expandenv enabled (should be skipped)"
+    values: []
+
+  # Test 16: Test configuration with complex template expansion
+  - type: "conf"
+    expandenv: true
+    name: "complex-conf-test"
+    desc: "Test configuration with complex environment variable usage"
+    confdata: |
+      [settings]
+      user_home=$TEST_HOME
+      user_name=$TEST_USER
+      log_file=$TEST_HOME/logs/$TEST_FILE
+      
+      [docker]
+      container=$TEST_CONTAINER
+      host=$TEST_HOST:$TEST_PORT
+      
+      [message]
+      greeting=$TEST_MESSAGE
+      timestamp=$(date)
+    confdest: "$TEST_HOME/complex_config.conf"
+    confperm: "0644"

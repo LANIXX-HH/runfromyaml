@@ -1,0 +1,18 @@
+---
+logging:
+  - level: debug
+  - output: stdout
+
+cmd:
+  - type: "ssh"
+    expandenv: true
+    name: "ssh-fixed-test"
+    desc: "SSH test with absolute path"
+    user: $USER
+    host: localhost
+    port: 22
+    options:
+      - -i /Users/anatoli.lichii/.ssh/id_rsa-localhost
+      - -o ConnectTimeout=1
+    values:
+      - echo "SSH test with absolute path"

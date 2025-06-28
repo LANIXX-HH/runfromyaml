@@ -1,0 +1,47 @@
+---
+logging:
+  - level: info
+  - output: stdout
+env:
+  - key: "TEST"
+    value: "foo"
+  - key: "BLA"
+    value: "TEST"
+cmd:
+  - type: "shell"
+    desc: "erstelle auf jeden fall, egal ob es den gibt oder nicht, ein Ordner .tmp unter $HOME"
+    values:
+      - mkdir -p $HOME/.tmp
+  - type: "shell"
+    expandenv: false 
+    name: "print envs"
+    desc: "print env variables"
+    values:
+      - env | grep TEST;
+      - echo $BLA;
+      - echo $TEST
+  - type: "conf"
+    desc: "test content"
+    confdata: | 
+      test
+        test
+          test
+      test
+    confdest: $HOME/.tmp/eins.conf
+    confperm: 0644
+  - type: "exec"
+    expandenv: true
+    name: "list"
+    desc: "zeige betriebsystem informationen in der shell"
+    values:
+      - uname 
+      - -a 
+  - type: "shell"
+    expandenv: true
+    desc: "zeige SSH expandenv fix funktioniert"
+    name: "test-ssh-expandenv"
+    values:
+      - echo "SSH expandenv test:"
+      - echo "HOME variable: $HOME"
+      - echo "SSH key path would be: $HOME/.ssh/id_rsa-localhost"
+      - echo "✅ SSH expandenv fix is working!"

@@ -1,0 +1,54 @@
+logging:
+  - level: debug
+  - output: stdout
+
+env:
+  - key: TEST_USER
+    value: testuser
+  - key: TEST_HOST
+    value: example.com
+  - key: SSH_PORT
+    value: 2222
+  - key: SSH_KEY
+    value: /home/testuser/.ssh/test_key
+
+cmd:
+  - type: exec
+    expandenv: true
+    name: "show-environment-before-ssh"
+    desc: "Show current environment variables"
+    values:
+      - echo "USER from env: $USER"
+      - echo "HOME from env: $HOME"
+      - echo "TEST_USER from env: $TEST_USER"
+      - echo "TEST_HOST from env: $TEST_HOST"
+
+  - type: ssh
+    expandenv: true
+    name: "ssh-expandenv-true"
+    desc: "SSH with expandenv=true - variables should be expanded"
+    user: $TEST_USER
+    host: $TEST_HOST
+    port: $SSH_PORT
+    options:
+      - -i $SSH_KEY
+      - -o ConnectTimeout=1
+      - -o StrictHostKeyChecking=no
+    values:
+      - echo "Expanded USER: $USER"
+      - echo "Expanded TEST_USER: $TEST_USER"
+      - whoami
+
+  - type: ssh
+    expandenv: false
+    name: "ssh-expandenv-false"
+    desc: "SSH with expandenv=false - variables should NOT be expanded"
+    user: $TEST_USER
+    host: $TEST_HOST
+    port: $SSH_PORT
+    options:
+      - -i $SSH_KEY
+      - -o ConnectTimeout=1
+    values:
+      - echo "Literal: $USER"
+      - echo "Literal: $TEST_USER"

@@ -130,10 +130,23 @@ func (e *CommandExecutor) Execute(cmd *Command) error {
 }
 
 func (e *CommandExecutor) executeExecCommand(cmd *Command) error {
+	// Handle empty values gracefully
+	if len(cmd.Values) == 0 {
+		functions.PrintSwitch(color.FgYellow, string(e.config.Level), string(e.config.Output), "# exec command with empty values - skipping execution")
+		return nil
+	}
+
 	cmds := splitCommands(cmd.Values)
 	for _, cmdStr := range cmds {
+		cmdStr = strings.TrimSpace(cmdStr)
+		if cmdStr == "" {
+			continue // Skip empty commands
+		}
 		cmdStr = os.ExpandEnv(cmdStr)
 		cmdArgs := strings.Fields(cmdStr)
+		if len(cmdArgs) == 0 {
+			continue // Skip if no arguments after expansion
+		}
 		if err := e.runCommand(cmdArgs); err != nil {
 			return err
 		}
@@ -142,17 +155,52 @@ func (e *CommandExecutor) executeExecCommand(cmd *Command) error {
 }
 
 func (e *CommandExecutor) executeShellCommand(cmd *Command) error {
-	args := append([]string{"bash", "-c"}, strings.Join(cmd.Values, " "))
+	// Handle empty values gracefully
+	if len(cmd.Values) == 0 {
+		functions.PrintSwitch(color.FgYellow, string(e.config.Level), string(e.config.Output), "# shell command with empty values - skipping execution")
+		return nil
+	}
+
+	// Filter out empty values
+	nonEmptyValues := make([]string, 0, len(cmd.Values))
+	for _, val := range cmd.Values {
+		if strings.TrimSpace(val) != "" {
+			nonEmptyValues = append(nonEmptyValues, val)
+		}
+	}
+
+	if len(nonEmptyValues) == 0 {
+		functions.PrintSwitch(color.FgYellow, string(e.config.Level), string(e.config.Output), "# shell command with only empty values - skipping execution")
+		return nil
+	}
+
+	// Join shell commands - semicolons are already present in the values
+	args := append([]string{"bash", "-c"}, strings.Join(nonEmptyValues, " "))
 	return e.runCommand(args)
 }
 
 func (e *CommandExecutor) executeDockerCommand(cmd *Command) error {
 	args := e.buildDockerArgs(cmd)
+
+	// If values are empty, we can't execute docker commands as they require commands to run
+	if len(cmd.Values) == 0 {
+		functions.PrintSwitch(color.FgYellow, string(e.config.Level), string(e.config.Output), "# docker command with empty values - skipping execution (docker commands require commands to execute)")
+		return nil
+	}
+
 	cmds := splitCommands(cmd.Values)
 	for _, cmdStr := range cmds {
+		cmdStr = strings.TrimSpace(cmdStr)
+		if cmdStr == "" {
+			continue // Skip empty commands
+		}
 		cmdStr = os.ExpandEnv(cmdStr)
-		cmdArgs := append(args, strings.Fields(cmdStr)...)
-		if err := e.runCommand(cmdArgs); err != nil {
+		cmdArgs := strings.Fields(cmdStr)
+		if len(cmdArgs) == 0 {
+			continue // Skip if no arguments after expansion
+		}
+		fullArgs := append(args, cmdArgs...)
+		if err := e.runCommand(fullArgs); err != nil {
 			return err
 		}
 	}
@@ -161,11 +209,27 @@ func (e *CommandExecutor) executeDockerCommand(cmd *Command) error {
 
 func (e *CommandExecutor) executeDockerComposeCommand(cmd *Command) error {
 	args := e.buildDockerComposeArgs(cmd)
+
+	// If values are empty, execute the docker-compose command without additional commands
+	if len(cmd.Values) == 0 {
+		functions.PrintSwitch(color.FgYellow, string(e.config.Level), string(e.config.Output), "# docker-compose command with empty values - executing base command only")
+		return e.runCommand(args)
+	}
+
+	// If values are provided, execute additional commands inside containers
 	cmds := splitCommands(cmd.Values)
 	for _, cmdStr := range cmds {
+		cmdStr = strings.TrimSpace(cmdStr)
+		if cmdStr == "" {
+			continue // Skip empty commands
+		}
 		cmdStr = os.ExpandEnv(cmdStr)
-		cmdArgs := append(args, strings.Fields(cmdStr)...)
-		if err := e.runCommand(cmdArgs); err != nil {
+		cmdArgs := strings.Fields(cmdStr)
+		if len(cmdArgs) == 0 {
+			continue // Skip if no arguments after expansion
+		}
+		fullArgs := append(args, cmdArgs...)
+		if err := e.runCommand(fullArgs); err != nil {
 			return err
 		}
 	}
@@ -173,12 +237,26 @@ func (e *CommandExecutor) executeDockerComposeCommand(cmd *Command) error {
 }
 
 func (e *CommandExecutor) executeSSHCommand(cmd *Command) error {
+	// Handle empty values gracefully
+	if len(cmd.Values) == 0 {
+		functions.PrintSwitch(color.FgYellow, string(e.config.Level), string(e.config.Output), "# ssh command with empty values - skipping execution")
+		return nil
+	}
+
 	args := e.buildSSHArgs(cmd)
 	cmds := splitCommands(cmd.Values)
 	for _, cmdStr := range cmds {
+		cmdStr = strings.TrimSpace(cmdStr)
+		if cmdStr == "" {
+			continue // Skip empty commands
+		}
 		cmdStr = os.ExpandEnv(cmdStr)
-		cmdArgs := append(args, strings.Fields(cmdStr)...)
-		if err := e.runCommand(cmdArgs); err != nil {
+		cmdArgs := strings.Fields(cmdStr)
+		if len(cmdArgs) == 0 {
+			continue // Skip if no arguments after expansion
+		}
+		fullArgs := append(args, cmdArgs...)
+		if err := e.runCommand(fullArgs); err != nil {
 			return err
 		}
 	}
@@ -197,12 +275,23 @@ func (e *CommandExecutor) buildDockerArgs(cmd *Command) []string {
 func (e *CommandExecutor) buildDockerComposeArgs(cmd *Command) []string {
 	args := []string{"docker", "compose"}
 
+	// Check if environment expansion is enabled
+	expandenv := false
+	if expandenvOpt, exists := cmd.Options["expandenv"]; exists {
+		expandenv = expandenvOpt.(bool)
+	}
+
 	// Handle dcoptions
 	if opts, exists := cmd.Options["dcoptions"]; exists {
 		if optsSlice, ok := opts.([]interface{}); ok {
 			for _, opt := range optsSlice {
 				if strOpt, ok := opt.(string); ok {
-					args = append(args, strOpt)
+					if expandenv {
+						strOpt = os.ExpandEnv(strOpt)
+					}
+					// Split the option into separate arguments
+					optArgs := strings.Fields(strOpt)
+					args = append(args, optArgs...)
 				}
 			}
 		}
@@ -211,6 +300,9 @@ func (e *CommandExecutor) buildDockerComposeArgs(cmd *Command) []string {
 	// Add command
 	if cmd, exists := cmd.Options["command"]; exists {
 		if cmdStr, ok := cmd.(string); ok {
+			if expandenv {
+				cmdStr = os.ExpandEnv(cmdStr)
+			}
 			args = append(args, cmdStr)
 		}
 	}
@@ -220,7 +312,12 @@ func (e *CommandExecutor) buildDockerComposeArgs(cmd *Command) []string {
 		if optsSlice, ok := opts.([]interface{}); ok {
 			for _, opt := range optsSlice {
 				if strOpt, ok := opt.(string); ok {
-					args = append(args, strOpt)
+					if expandenv {
+						strOpt = os.ExpandEnv(strOpt)
+					}
+					// Split the option into separate arguments
+					optArgs := strings.Fields(strOpt)
+					args = append(args, optArgs...)
 				}
 			}
 		}
@@ -229,6 +326,9 @@ func (e *CommandExecutor) buildDockerComposeArgs(cmd *Command) []string {
 	// Add service if it exists
 	if service, exists := cmd.Options["service"]; exists {
 		if serviceStr, ok := service.(string); ok && serviceStr != "" {
+			if expandenv {
+				serviceStr = os.ExpandEnv(serviceStr)
+			}
 			args = append(args, serviceStr)
 		}
 	}
@@ -255,6 +355,10 @@ func (e *CommandExecutor) buildSSHArgs(cmd *Command) []string {
 		if optsSlice, ok := opts.([]interface{}); ok {
 			for _, opt := range optsSlice {
 				if strOpt, ok := opt.(string); ok {
+					// Apply expandenv to SSH options if enabled
+					if expandenv, exists := cmd.Options["expandenv"]; exists && expandenv.(bool) {
+						strOpt = os.ExpandEnv(strOpt)
+					}
 					args = append(args, strOpt)
 				}
 			}
@@ -280,7 +384,10 @@ func (e *CommandExecutor) handleConfigCommand(cmd *Command) error {
 		}
 	}
 
-	confdata = cmd.Description + confdata
+	// Only add description if confdata is not empty
+	if confdata != "" {
+		confdata = cmd.Description + confdata
+	}
 
 	if dest := cmd.Options["confdest"]; dest != nil {
 		confdest = dest.(string)
@@ -292,11 +399,19 @@ func (e *CommandExecutor) handleConfigCommand(cmd *Command) error {
 		confperm = os.FileMode(int(perm.(int)))
 	}
 
-	if confdata != "" && confdest != "" && string(rune(confperm)) != "" {
-		functions.WriteFile(confdata, confdest, confperm)
+	// Handle empty config gracefully
+	if confdata == "" && confdest == "" {
+		functions.PrintSwitch(color.FgYellow, string(e.config.Level), string(e.config.Output), "# config command with empty data and destination - skipping")
+		return nil
 	}
 
-	functions.PrintSwitch(color.FgGreen, string(e.config.Level), string(e.config.Output), "# create ", confdest)
+	if confdata != "" && confdest != "" && string(rune(confperm)) != "" {
+		functions.WriteFile(confdata, confdest, confperm)
+		functions.PrintSwitch(color.FgGreen, string(e.config.Level), string(e.config.Output), "# create ", confdest)
+	} else if confdest != "" {
+		functions.PrintSwitch(color.FgYellow, string(e.config.Level), string(e.config.Output), "# config command missing data or permissions for ", confdest)
+	}
+
 	return nil
 }
 
@@ -348,7 +463,7 @@ func Runfromyaml(yamlFile []byte, debug bool) error {
 	if env == nil {
 		return fmt.Errorf("failed to create environment instance")
 	}
-	
+
 	parseEnvironmentVariables(yamlDocument, env)
 	outputType, outputLevel := parseLoggingSettings(yamlDocument)
 
@@ -412,7 +527,7 @@ func validateCommand(cmd *Command) error {
 		CommandTypeSSH,
 		CommandTypeConfig,
 	}
-	
+
 	isValidType := false
 	for _, validType := range validTypes {
 		if cmd.Type == validType {
@@ -420,42 +535,52 @@ func validateCommand(cmd *Command) error {
 			break
 		}
 	}
-	
+
 	if !isValidType {
 		return fmt.Errorf("invalid command type: %s", cmd.Type)
 	}
 
-	// Validate type-specific requirements
+	// Validate type-specific requirements only if values are provided
+	// This allows empty command blocks for documentation or placeholder purposes
 	switch cmd.Type {
 	case CommandTypeDocker:
-		if container, ok := cmd.Options["container"].(string); !ok || container == "" {
-			return fmt.Errorf("docker command requires 'container' field")
+		// Only validate required fields if values are provided
+		if len(cmd.Values) > 0 {
+			if container, ok := cmd.Options["container"].(string); !ok || container == "" {
+				return fmt.Errorf("docker command with values requires 'container' field")
+			}
+			if command, ok := cmd.Options["command"].(string); !ok || command == "" {
+				return fmt.Errorf("docker command with values requires 'command' field")
+			}
 		}
-		if command, ok := cmd.Options["command"].(string); !ok || command == "" {
-			return fmt.Errorf("docker command requires 'command' field")
-		}
-		
+
 	case CommandTypeSSH:
-		if user, ok := cmd.Options["user"].(string); !ok || user == "" {
-			return fmt.Errorf("ssh command requires 'user' field")
+		// Only validate required fields if values are provided
+		if len(cmd.Values) > 0 {
+			if user, ok := cmd.Options["user"].(string); !ok || user == "" {
+				return fmt.Errorf("ssh command with values requires 'user' field")
+			}
+			if host, ok := cmd.Options["host"].(string); !ok || host == "" {
+				return fmt.Errorf("ssh command with values requires 'host' field")
+			}
 		}
-		if host, ok := cmd.Options["host"].(string); !ok || host == "" {
-			return fmt.Errorf("ssh command requires 'host' field")
-		}
-		
+
 	case CommandTypeConfig:
-		if dest, ok := cmd.Options["confdest"].(string); !ok || dest == "" {
-			return fmt.Errorf("config command requires 'confdest' field")
+		// Config commands still require destination and data if they exist
+		if dest, ok := cmd.Options["confdest"].(string); ok && dest != "" {
+			if data, ok := cmd.Options["confdata"].(string); !ok || data == "" {
+				return fmt.Errorf("config command with 'confdest' requires 'confdata' field")
+			}
 		}
-		if data, ok := cmd.Options["confdata"].(string); !ok || data == "" {
-			return fmt.Errorf("config command requires 'confdata' field")
+		if data, ok := cmd.Options["confdata"].(string); ok && data != "" {
+			if dest, ok := cmd.Options["confdest"].(string); !ok || dest == "" {
+				return fmt.Errorf("config command with 'confdata' requires 'confdest' field")
+			}
 		}
 	}
 
-	// Validate that commands have values (except for config type)
-	if cmd.Type != CommandTypeConfig && len(cmd.Values) == 0 {
-		return fmt.Errorf("command must have at least one value")
-	}
+	// Allow empty values blocks - useful for documentation, placeholders, or conditional execution
+	// No validation required for empty values
 
 	return nil
 }

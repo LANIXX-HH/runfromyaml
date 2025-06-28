@@ -1,0 +1,19 @@
+---
+logging:
+  - level: debug
+  - output: stdout
+
+cmd:
+  - type: "ssh"
+    expandenv: true
+    name: "ssh-debug-test"
+    desc: "SSH debug test to see how options are expanded"
+    user: $USER
+    host: localhost
+    port: 22
+    options:
+      - -i $HOME/.ssh/id_rsa-localhost
+      - -o ConnectTimeout=1
+      - -v
+    values:
+      - echo "SSH test"

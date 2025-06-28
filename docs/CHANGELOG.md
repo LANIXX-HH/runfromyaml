@@ -1,5 +1,26 @@
 # Changelog
 
+## Version 0.0.1+ (Current Development)
+
+### Bug Fixes
+
+#### Docker-Compose Environment Variable Expansion Fix
+- **Fixed**: Environment variable expansion now works correctly in docker-compose commands
+- **Problem**: `expandenv: true` was not being applied to `dcoptions`, `cmdoptions`, and other fields
+- **Symptoms**: Errors like `unknown flag: --project-directory $HOME/.tmp/tooling`
+- **Root Cause**: Missing environment expansion and incorrect argument splitting
+- **Solution**: Added proper `os.ExpandEnv()` calls and `strings.Fields()` for argument splitting
+- **Impact**: Docker-compose commands with environment variables now work as expected
+- **Documentation**: Added comprehensive fix documentation in `DOCKER_COMPOSE_ENVIRONMENT_EXPANSION_FIX.md`
+
+#### Docker-Compose Empty Values Fix
+- **Fixed**: Docker-compose commands with empty values now execute properly
+- **Before**: Commands with empty `values` blocks were completely skipped
+- **After**: Base docker-compose commands execute even with empty values
+- **Impact**: Enables proper use of standard docker-compose operations (up, down, build, pull, etc.)
+- **Documentation**: Added comprehensive fix documentation in `DOCKER_COMPOSE_EMPTY_VALUES_FIX.md`
+- **Examples**: Added `examples/docker-compose-empty-values.yaml` demonstrating the fix
+
 ## Version 0.0.1 (Current)
 
 ### New Features

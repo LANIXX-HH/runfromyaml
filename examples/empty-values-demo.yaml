@@ -1,0 +1,106 @@
+---
+# Demo: Empty Values and Empty Command Blocks Support
+# This example demonstrates the new functionality that allows empty values blocks
+# and empty command blocks for documentation, placeholders, and conditional execution
+
+logging:
+  - level: info
+  - output: stdout
+
+env:
+  - key: DEMO_VAR
+    value: "Hello from runfromyaml!"
+  - key: PROJECT_NAME
+    value: "empty-values-demo"
+
+cmd:
+  # 1. Empty exec command - useful for placeholders
+  - type: exec
+    name: "placeholder-setup"
+    desc: "Placeholder for future setup commands"
+    values: []
+
+  # 2. Empty shell command - useful for documentation
+  - type: shell
+    name: "future-deployment"
+    desc: "Future deployment commands will be added here"
+    values:
+
+  # 3. Empty config block - useful for conditional configurations
+  - type: conf
+    name: "conditional-config"
+    desc: "Configuration that may be created conditionally"
+    confdest: ""
+    confdata: ""
+    confperm: 0644
+
+  # 4. Working command to show normal execution continues
+  - type: exec
+    name: "demo-greeting"
+    desc: "Display demo greeting"
+    expandenv: true
+    values:
+      - echo
+      - "=== $PROJECT_NAME ==="
+      - echo
+      - "$DEMO_VAR"
+
+  # 5. Empty docker command - useful for future container operations
+  - type: docker
+    name: "future-container-task"
+    desc: "Placeholder for future container operations"
+    container: "alpine"
+    command: "run"
+    values: []
+
+  # 6. Working shell command with multiple operations
+  - type: shell
+    name: "system-info"
+    desc: "Display system information"
+    values:
+      - "echo \"Current directory: $(pwd)\""
+      - "echo \"Current user: $(whoami)\""
+      - "echo \"Date: $(date)\""
+
+  # 7. Empty SSH command - useful for future remote operations
+  - type: ssh
+    name: "future-remote-task"
+    desc: "Placeholder for future remote server operations"
+    user: "admin"
+    host: "server.example.com"
+    port: 22
+    values:
+
+  # 8. Working config creation
+  - type: conf
+    name: "demo-config"
+    desc: "Create a demo configuration file"
+    expandenv: true
+    confdest: "/tmp/$PROJECT_NAME.conf"
+    confdata: |
+      # Demo Configuration File
+      project_name=$PROJECT_NAME
+      demo_var=$DEMO_VAR
+      created_at=$(date)
+    confperm: 0644
+
+  # 9. Final confirmation
+  - type: exec
+    name: "demo-complete"
+    desc: "Confirm demo completion"
+    values:
+      - echo
+      - "✅ Demo completed successfully!"
+  - type: exec
+    name: "demo-summary"
+    desc: "Show demo summary"
+    values:
+      - echo
+      - "Empty values blocks were skipped gracefully"
+  - type: exec
+    name: "show-config"
+    desc: "Show created config file"
+    values:
+      - ls
+      - -la
+      - /tmp/empty-values-demo.conf

@@ -10,14 +10,14 @@ import (
 	"github.com/docker/docker/client"
 )
 
-//ExecResult is a struct for Inspect Exec Response function
+// ExecResult is a struct for Inspect Exec Response function
 type ExecResult struct {
 	StdOut   string
 	StdErr   string
 	ExitCode int
 }
 
-//List docker containers
+// List docker containers
 func List() error {
 	cli, err := client.NewEnvClient()
 	if err != nil {
@@ -38,7 +38,7 @@ func List() error {
 	return err
 }
 
-//Exec a command in docker container
+// Exec a command in docker container
 func Exec(ctx context.Context, containerID string, command []string) error {
 	cli, err := client.NewEnvClient()
 	if err != nil {
