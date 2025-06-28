@@ -51,7 +51,7 @@ func TestExecuteAndShowCommand(t *testing.T) {
 func TestExecuteAndShowCommandShellSelection(t *testing.T) {
 	// Test that the correct shell is selected based on the shell parameter
 	testCommand := "echo 'shell test'"
-	
+
 	tests := []struct {
 		shell    string
 		expected []string
@@ -77,7 +77,7 @@ func TestExecuteAndShowCommandShellSelection(t *testing.T) {
 			}
 
 			// Test that executeAndShowCommand doesn't panic with valid shells
-			err = executeAndShowCommand("echo 'test'", tt.shell)
+			_ = executeAndShowCommand("echo 'test'", tt.shell)
 			// We don't check for specific error as it depends on system setup
 			// The important thing is that it doesn't panic
 		})
@@ -87,7 +87,7 @@ func TestExecuteAndShowCommandShellSelection(t *testing.T) {
 func TestExecuteAndShowCommandDefaultShell(t *testing.T) {
 	// Test default shell selection
 	testCommand := "echo 'default shell test'"
-	
+
 	// Test with empty/unknown shell - should use default
 	err := executeAndShowCommand(testCommand, "unknown_shell")
 	// Should not panic and should attempt to use default shell
@@ -116,7 +116,7 @@ func TestExecuteAndShowCommandWindowsShells(t *testing.T) {
 				t.Skipf("Shell %s not available on Windows system", tt.shell)
 			}
 
-			err = executeAndShowCommand(tt.command, tt.shell)
+			_ = executeAndShowCommand(tt.command, tt.shell)
 			// We don't check for specific error as it depends on system setup
 			// The important thing is that it doesn't panic
 		})
@@ -127,15 +127,15 @@ func TestExecuteAndShowCommandWindowsShells(t *testing.T) {
 func TestInteractiveShellCommandRecording(t *testing.T) {
 	// This test would require mocking stdin, which is complex
 	// For now, we test the logic components separately
-	
+
 	// Test that we can create the basic structure
 	commands := []string{"ls -la", "pwd", "echo test"}
-	
+
 	// Verify that commands would be recorded properly
 	if len(commands) != 3 {
 		t.Errorf("Expected 3 commands, got %d", len(commands))
 	}
-	
+
 	// Verify command content
 	expectedCommands := []string{"ls -la", "pwd", "echo test"}
 	for i, cmd := range commands {

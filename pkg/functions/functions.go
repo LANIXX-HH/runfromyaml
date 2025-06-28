@@ -255,47 +255,47 @@ func filterRelevantEnvVars(envs map[string]string) map[string]string {
 	// System/session variables to exclude (common across Unix/Linux/macOS/Windows)
 	systemVars := map[string]bool{
 		// System paths and directories
-		"HOME":                true,
-		"TMPDIR":              true,
-		"TMP":                 true,
-		"TEMP":                true,
-		"PATH":                true,
-		"LD_LIBRARY_PATH":     true,
-		"DYLD_LIBRARY_PATH":   true,
-		"PWD":                 true,
-		"OLDPWD":              true,
-		
+		"HOME":              true,
+		"TMPDIR":            true,
+		"TMP":               true,
+		"TEMP":              true,
+		"PATH":              true,
+		"LD_LIBRARY_PATH":   true,
+		"DYLD_LIBRARY_PATH": true,
+		"PWD":               true,
+		"OLDPWD":            true,
+
 		// User and session info
-		"USER":                true,
-		"USERNAME":            true,
-		"LOGNAME":             true,
-		"SHELL":               true,
-		"SHLVL":               true,
-		"TTY":                 true,
-		"SSH_AUTH_SOCK":       true,
-		"SSH_SOCKET_DIR":      true,
-		
+		"USER":           true,
+		"USERNAME":       true,
+		"LOGNAME":        true,
+		"SHELL":          true,
+		"SHLVL":          true,
+		"TTY":            true,
+		"SSH_AUTH_SOCK":  true,
+		"SSH_SOCKET_DIR": true,
+
 		// Terminal and display
-		"TERM":                true,
-		"TERM_PROGRAM":        true,
-		"TERM_PROGRAM_VERSION": true,
-		"COLORTERM":           true,
-		"DISPLAY":             true,
-		"WARP_HONOR_PS1":      true,
+		"TERM":                        true,
+		"TERM_PROGRAM":                true,
+		"TERM_PROGRAM_VERSION":        true,
+		"COLORTERM":                   true,
+		"DISPLAY":                     true,
+		"WARP_HONOR_PS1":              true,
 		"WARP_IS_LOCAL_SHELL_SESSION": true,
-		"WARP_USE_SSH_WRAPPER": true,
-		
+		"WARP_USE_SSH_WRAPPER":        true,
+
 		// System internals
-		"XPC_SERVICE_NAME":    true,
-		"XPC_FLAGS":           true,
-		"COMMAND_MODE":        true,
-		"LC_CTYPE":            true,
-		"LC_ALL":              true,
-		"LANG":                true,
+		"XPC_SERVICE_NAME":        true,
+		"XPC_FLAGS":               true,
+		"COMMAND_MODE":            true,
+		"LC_CTYPE":                true,
+		"LC_ALL":                  true,
+		"LANG":                    true,
 		"__CF_USER_TEXT_ENCODING": true,
-		"__CFBundleIdentifier": true,
-		"_":                   true,
-		
+		"__CFBundleIdentifier":    true,
+		"_":                       true,
+
 		// Package managers (Homebrew, Conda, etc.)
 		"HOMEBREW_PREFIX":     true,
 		"HOMEBREW_CELLAR":     true,
@@ -304,16 +304,16 @@ func filterRelevantEnvVars(envs map[string]string) map[string]string {
 		"CONDA_DEFAULT_ENV":   true,
 		"CONDA_PREFIX":        true,
 		"INFOPATH":            true,
-		
+
 		// Process/shell specific
-		"SHELL_PID":           true,
-		"PPID":                true,
-		"PID":                 true,
-		
+		"SHELL_PID": true,
+		"PPID":      true,
+		"PID":       true,
+
 		// Q CLI specific (our own tool)
-		"Q_SET_PARENT_CHECK":  true,
+		"Q_SET_PARENT_CHECK": true,
 	}
-	
+
 	// Prefixes to exclude (variables starting with these)
 	excludePrefixes := []string{
 		"BASH_",
@@ -339,15 +339,15 @@ func filterRelevantEnvVars(envs map[string]string) map[string]string {
 		"QT_",
 		"GTK_",
 	}
-	
+
 	filtered := make(map[string]string)
-	
+
 	for key, value := range envs {
 		// Skip if it's a known system variable
 		if systemVars[key] {
 			continue
 		}
-		
+
 		// Skip if it starts with excluded prefixes
 		shouldSkip := false
 		for _, prefix := range excludePrefixes {
@@ -359,7 +359,7 @@ func filterRelevantEnvVars(envs map[string]string) map[string]string {
 		if shouldSkip {
 			continue
 		}
-		
+
 		// Include variables that are likely custom/relevant:
 		// - AWS, DOCKER, KUBERNETES related
 		// - Custom application variables
@@ -368,7 +368,7 @@ func filterRelevantEnvVars(envs map[string]string) map[string]string {
 			filtered[key] = value
 		}
 	}
-	
+
 	return filtered
 }
 
@@ -407,13 +407,13 @@ func isRelevantEnvVar(key string) bool {
 		"GITLAB_",
 		"BITBUCKET_",
 	}
-	
+
 	for _, prefix := range relevantPrefixes {
 		if strings.HasPrefix(key, prefix) {
 			return true
 		}
 	}
-	
+
 	// Also include some specific relevant variables
 	relevantVars := map[string]bool{
 		"PORT":        true,
@@ -433,7 +433,7 @@ func isRelevantEnvVar(key string) bool {
 		"URL":         true,
 		"ENDPOINT":    true,
 	}
-	
+
 	return relevantVars[key]
 }
 

@@ -3,6 +3,10 @@ run:
   tests: true
   modules-download-mode: readonly
 
+output:
+  formats:
+    - format: colored-line-number
+
 linters-settings:
   govet:
     shadow: true

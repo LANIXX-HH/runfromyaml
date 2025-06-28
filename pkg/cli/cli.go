@@ -611,7 +611,7 @@ func InteractiveShell(shell string) ([]string, error) {
 		if input != "" {
 			// Record the command for YAML generation
 			commands = append(commands, input)
-			
+
 			// Execute the command and show output
 			fmt.Printf("🔄 Executing: %s\n", input)
 			if err := executeAndShowCommand(input, shell); err != nil {
@@ -627,7 +627,7 @@ func InteractiveShell(shell string) ([]string, error) {
 // executeAndShowCommand executes a command and shows its output
 func executeAndShowCommand(command, shell string) error {
 	var cmd *exec.Cmd
-	
+
 	switch shell {
 	case "bash":
 		cmd = exec.Command("bash", "-c", command)

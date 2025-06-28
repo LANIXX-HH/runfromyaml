@@ -13,13 +13,13 @@ func TestFilterRelevantEnvVars(t *testing.T) {
 		{
 			name: "Filter system variables",
 			input: map[string]string{
-				"HOME":     "/home/user",
-				"PATH":     "/usr/bin:/bin",
-				"USER":     "testuser",
-				"SHELL":    "/bin/bash",
-				"PWD":      "/current/dir",
-				"TMPDIR":   "/tmp",
-				"AWS_REGION": "eu-central-1",
+				"HOME":        "/home/user",
+				"PATH":        "/usr/bin:/bin",
+				"USER":        "testuser",
+				"SHELL":       "/bin/bash",
+				"PWD":         "/current/dir",
+				"TMPDIR":      "/tmp",
+				"AWS_REGION":  "eu-central-1",
 				"DOCKER_HOST": "tcp://localhost:2376",
 			},
 			expected: map[string]string{
@@ -49,13 +49,13 @@ func TestFilterRelevantEnvVars(t *testing.T) {
 		{
 			name: "Filter shell and terminal variables",
 			input: map[string]string{
-				"BASH_VERSION":    "5.1.0",
-				"ZSH_VERSION":     "5.8",
-				"PS1":             "$ ",
-				"HISTFILE":        "/home/user/.bash_history",
-				"COLORTERM":       "truecolor",
+				"BASH_VERSION":            "5.1.0",
+				"ZSH_VERSION":             "5.8",
+				"PS1":                     "$ ",
+				"HISTFILE":                "/home/user/.bash_history",
+				"COLORTERM":               "truecolor",
 				"KUBERNETES_SERVICE_HOST": "10.0.0.1",
-				"CI_COMMIT_SHA":   "abc123",
+				"CI_COMMIT_SHA":           "abc123",
 			},
 			expected: map[string]string{
 				"KUBERNETES_SERVICE_HOST": "10.0.0.1",
@@ -63,8 +63,8 @@ func TestFilterRelevantEnvVars(t *testing.T) {
 			},
 		},
 		{
-			name: "Empty input",
-			input: map[string]string{},
+			name:     "Empty input",
+			input:    map[string]string{},
 			expected: map[string]string{},
 		},
 		{
@@ -82,11 +82,11 @@ func TestFilterRelevantEnvVars(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := filterRelevantEnvVars(tt.input)
-			
+
 			if len(result) != len(tt.expected) {
 				t.Errorf("Expected %d variables, got %d", len(tt.expected), len(result))
 			}
-			
+
 			for key, expectedValue := range tt.expected {
 				if actualValue, exists := result[key]; !exists {
 					t.Errorf("Expected key %s not found in result", key)
@@ -94,7 +94,7 @@ func TestFilterRelevantEnvVars(t *testing.T) {
 					t.Errorf("Expected %s=%s, got %s=%s", key, expectedValue, key, actualValue)
 				}
 			}
-			
+
 			// Check that no unexpected keys are present
 			for key := range result {
 				if _, expected := tt.expected[key]; !expected {
@@ -115,41 +115,41 @@ func TestIsRelevantEnvVar(t *testing.T) {
 		{"AWS_REGION", "AWS_REGION", true},
 		{"AWS_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID", true},
 		{"AWS_SECRET_ACCESS_KEY", "AWS_SECRET_ACCESS_KEY", true},
-		
+
 		// Docker variables
 		{"DOCKER_HOST", "DOCKER_HOST", true},
 		{"DOCKER_TLS_VERIFY", "DOCKER_TLS_VERIFY", true},
-		
+
 		// Kubernetes variables
 		{"KUBECONFIG", "KUBECONFIG", true},
 		{"K8S_NAMESPACE", "K8S_NAMESPACE", true},
-		
+
 		// CI/CD variables
 		{"CI_COMMIT_SHA", "CI_COMMIT_SHA", true},
 		{"BUILD_NUMBER", "BUILD_NUMBER", true},
 		{"DEPLOY_ENV", "DEPLOY_ENV", true},
-		
+
 		// Database variables
 		{"DATABASE_URL", "DATABASE_URL", true},
 		{"REDIS_URL", "REDIS_URL", true},
 		{"MYSQL_HOST", "MYSQL_HOST", true},
-		
+
 		// Application variables
 		{"API_KEY", "API_KEY", true},
 		{"PORT", "PORT", true},
 		{"DEBUG", "DEBUG", true},
 		{"ENVIRONMENT", "ENVIRONMENT", true},
-		
+
 		// Programming language variables
 		{"NODE_ENV", "NODE_ENV", true},
 		{"PYTHON_PATH", "PYTHON_PATH", true},
 		{"JAVA_HOME", "JAVA_HOME", true},
 		{"GO_PATH", "GO_PATH", true},
-		
+
 		// Git variables
 		{"GIT_BRANCH", "GIT_BRANCH", true},
 		{"GITHUB_TOKEN", "GITHUB_TOKEN", true},
-		
+
 		// Non-relevant variables should return false
 		{"HOME", "HOME", false},
 		{"PATH", "PATH", false},
