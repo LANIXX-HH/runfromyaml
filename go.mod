@@ -1,6 +1,6 @@
 module github.com/lanixx/runfromyaml
 
-go 1.19
+go 1.23.0
 
 require (
 	github.com/docker/docker v20.10.22+incompatible
@@ -8,7 +8,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+require golang.org/x/crypto v0.35.0
 
 require (
 	github.com/Microsoft/go-winio v0.5.2 // indirect
@@ -27,8 +27,8 @@ require (
 	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.9.0
-	golang.org/x/net v0.5.0 // indirect
-	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/net v0.21.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.0.3 // indirect
