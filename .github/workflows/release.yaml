@@ -12,7 +12,7 @@ jobs:
         github_token: ${{ secrets.MY_GITHUB_TOKEN }}
         goos: linux
         goarch: 386
-        goversion: 1.17
+        goversion: 1.23
         binary_name: runfromyaml
         asset_name: runfromyaml-Linux-i686
   release-linux-amd64:
@@ -26,7 +26,7 @@ jobs:
         github_token: ${{ secrets.MY_GITHUB_TOKEN }}
         goos: linux
         goarch: amd64
-        goversion: 1.17
+        goversion: 1.23
         binary_name: runfromyaml
         asset_name: runfromyaml-Linux-x86_64
   release-linux-arm:
@@ -40,7 +40,7 @@ jobs:
         github_token: ${{ secrets.MY_GITHUB_TOKEN }}
         goos: linux
         goarch: arm
-        goversion: 1.17
+        goversion: 1.23
         binary_name: runfromyaml
         asset_name: runfromyaml-Linux-armvXl
   release-linux-aarch4:
@@ -54,7 +54,7 @@ jobs:
         github_token: ${{ secrets.MY_GITHUB_TOKEN }}
         goos: linux
         goarch: arm64
-        goversion: 1.17
+        goversion: 1.23
         binary_name: runfromyaml
         asset_name: runfromyaml-Linux-aarch64
   release-linux-arm64:
@@ -68,7 +68,7 @@ jobs:
         github_token: ${{ secrets.MY_GITHUB_TOKEN }}
         goos: linux
         goarch: arm64
-        goversion: 1.17
+        goversion: 1.23
         binary_name: runfromyaml
         asset_name: runfromyaml-Linux-arm64
   release-darwin-amd64:
@@ -82,7 +82,7 @@ jobs:
         github_token: ${{ secrets.MY_GITHUB_TOKEN }}
         goos: darwin
         goarch: amd64
-        goversion: 1.17
+        goversion: 1.23
         binary_name: runfromyaml
         asset_name: runfromyaml-Darwin-x86_64
   release-darwin-arm64:
@@ -96,7 +96,7 @@ jobs:
         github_token: ${{ secrets.MY_GITHUB_TOKEN }}
         goos: darwin
         goarch: arm64
-        goversion: 1.17
+        goversion: 1.23
         binary_name: runfromyaml
         asset_name: runfromyaml-Darwin-arm64
   release-windows-386:
@@ -110,7 +110,7 @@ jobs:
         github_token: ${{ secrets.MY_GITHUB_TOKEN }}
         goos: windows
         goarch: 386
-        goversion: 1.17
+        goversion: 1.23
         binary_name: runfromyaml
         asset_name: runfromyaml-Windows-i686
   release-windows-amd64:
@@ -124,6 +124,6 @@ jobs:
         github_token: ${{ secrets.MY_GITHUB_TOKEN }}
         goos: windows
         goarch: amd64
-        goversion: 1.17
+        goversion: 1.23
         binary_name: runfromyaml
         asset_name: runfromyaml-Windows-x86_64
