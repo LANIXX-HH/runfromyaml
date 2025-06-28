@@ -4,8 +4,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/lanixx-hh/runfromyaml)](https://goreportcard.com/report/github.com/lanixx-hh/runfromyaml)
 [![Release](https://img.shields.io/github/release/lanixx-hh/runfromyaml.svg)](https://github.com/lanixx-hh/runfromyaml/releases/latest)
 
-**Version**: 0.0.1
-
 ## What is the goal of the project?
 
 Actually it's a playground and an attempt to write a tool with which I can both create documentation of the steps automatically, record all the necessary configurations and all the necessary commands that must be executed to achieve the goal.

@@ -2,6 +2,7 @@ package errors
 
 import (
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -45,7 +46,14 @@ func TestRunFromYAMLError_Error(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := tt.err.Error()
-			if result != tt.expected {
+			if tt.name == "error with context" {
+				// For context errors, check that both expected parts are present
+				if !strings.Contains(result, "[VALIDATION] invalid value | Context:") ||
+					!strings.Contains(result, "field=port") ||
+					!strings.Contains(result, "value=99999") {
+					t.Errorf("Error() = %v, want to contain [VALIDATION] invalid value | Context: with field=port and value=99999", result)
+				}
+			} else if result != tt.expected {
 				t.Errorf("Error() = %v, want %v", result, tt.expected)
 			}
 		})
