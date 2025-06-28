@@ -34,8 +34,8 @@ func TestNew(t *testing.T) {
 		t.Errorf("Expected User to be 'rest', got %s", cfg.User)
 	}
 
-	if cfg.AIModel != "text-davinci-003" {
-		t.Errorf("Expected AIModel to be 'text-davinci-003', got %s", cfg.AIModel)
+	if cfg.AIModel != "gpt-3.5-turbo" {
+		t.Errorf("Expected AIModel to be 'gpt-3.5-turbo', got %s", cfg.AIModel)
 	}
 
 	if cfg.AICmdType != "shell" {
@@ -68,7 +68,7 @@ func TestParseFlags(t *testing.T) {
 				File:      "commands.yaml",
 				Host:      "localhost",
 				User:      "rest",
-				AIModel:   "text-davinci-003",
+				AIModel:   "gpt-3.5-turbo",
 				AICmdType: "shell",
 				ShellType: "bash",
 				Port:      8080,
@@ -83,7 +83,7 @@ func TestParseFlags(t *testing.T) {
 				File:      "commands.yaml",
 				Host:      "localhost",
 				User:      "rest",
-				AIModel:   "text-davinci-003",
+				AIModel:   "gpt-3.5-turbo",
 				AICmdType: "shell",
 				ShellType: "bash",
 				Port:      8080,
@@ -98,7 +98,7 @@ func TestParseFlags(t *testing.T) {
 				File:      "test.yaml",
 				Host:      "localhost",
 				User:      "rest",
-				AIModel:   "text-davinci-003",
+				AIModel:   "gpt-3.5-turbo",
 				AICmdType: "shell",
 				ShellType: "bash",
 				Port:      8080,
@@ -113,7 +113,7 @@ func TestParseFlags(t *testing.T) {
 				File:      "commands.yaml",
 				Host:      "localhost",
 				User:      "rest",
-				AIModel:   "text-davinci-003",
+				AIModel:   "gpt-3.5-turbo",
 				AICmdType: "shell",
 				ShellType: "bash",
 				Port:      9090,

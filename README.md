@@ -1,5 +1,11 @@
 # RUN FROM YAML
 
+[![Tests](https://github.com/lanixx-hh/runfromyaml/actions/workflows/test.yml/badge.svg)](https://github.com/lanixx-hh/runfromyaml/actions/workflows/test.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/lanixx-hh/runfromyaml)](https://goreportcard.com/report/github.com/lanixx-hh/runfromyaml)
+[![Release](https://img.shields.io/github/release/lanixx-hh/runfromyaml.svg)](https://github.com/lanixx-hh/runfromyaml/releases/latest)
+
+**Version**: 0.0.1
+
 ## What is the goal of the project?
 
 Actually it's a playground and an attempt to write a tool with which I can both create documentation of the steps automatically, record all the necessary configurations and all the necessary commands that must be executed to achieve the goal.
@@ -43,20 +49,47 @@ At the moment I am testing this on my android phone, on my windows machine, on m
 
 ## TODO's
 
-- [ ] write tests !!
+- [x] ~~write tests !!~~ **COMPLETED**: Comprehensive test suite implemented
 - [ ] implement connection between blocks (artifacts or other way. i don't know)
 - [ ] implement dependency between blocks
-- [ ] update AI model defaults to newer OpenAI models
-- [ ] add support for other AI providers
-- [ ] improve error handling and validation
-- [x] **NEW**: Support for empty values blocks and empty command blocks
-- [x] **NEW**: Organize documentation in docs/ folder
+- [x] ~~update AI model defaults to newer OpenAI models (currently using deprecated text-davinci-003)~~ **COMPLETED**: Updated to gpt-3.5-turbo
+- [ ] add support for other AI providers (Claude, Gemini, etc.)
+- [ ] add version command flag
+- [ ] implement dry-run mode
+- [ ] add YAML validation and schema support
+- [x] **COMPLETED**: Support for empty values blocks and empty command blocks
+- [x] **COMPLETED**: Organize documentation in docs/ folder
+- [x] **COMPLETED**: Add comprehensive testing infrastructure
+- [x] **COMPLETED**: Add GitHub Actions CI/CD pipeline
+- [x] **COMPLETED**: Add golangci-lint for code quality
 
 ## HowTo build
 
 ~~~shell
 make clean && make
 ~~~
+
+## Running Tests
+
+The project now includes comprehensive testing infrastructure:
+
+~~~shell
+# Run all tests
+make test
+
+# Run tests with coverage
+go test -v -cover ./...
+
+# Run specific test scripts
+./scripts/run_tests.sh
+./scripts/test_expandenv.sh
+~~~
+
+### Test Categories
+- **Unit Tests**: Core functionality testing for CLI, config, functions
+- **Integration Tests**: SSH expandenv, Docker Compose, empty values support
+- **Example Tests**: Validation of example YAML configurations
+- **CI/CD**: Automated testing via GitHub Actions
 
 ## How To get the binary
 
@@ -91,6 +124,16 @@ curl --silent --location https://raw.githubusercontent.com/LANIXX-HH/runfromyaml
 ./runfromyaml --file tooling.yaml
 ~~~
 
+## Additional Examples
+
+The project includes various example configurations:
+
+- **[examples/empty-values-demo.yaml](examples/empty-values-demo.yaml)** - Demonstrates empty values support
+- **[examples/docker-compose-environment-expansion.yaml](examples/docker-compose-environment-expansion.yaml)** - Docker Compose with environment variables
+- **[examples/advanced-features.yaml](examples/advanced-features.yaml)** - Advanced feature demonstrations
+- **[examples/aws.yaml](examples/aws.yaml)** - AWS CLI integration example
+- **[examples/tests/](examples/tests/)** - Comprehensive test examples for various scenarios
+
 ## Full example based on pre-release runfromyaml binary & tooling image setup
 
 ~~~shell
@@ -111,7 +154,7 @@ Usage of ./runfromyaml:
   -ai-key string
     	ai - OpenAI API Key
   -ai-model string
-    	ai-model - OpenAI Model for answer generation (default "text-davinci-003")
+    	ai-model - OpenAI Model for answer generation (default "gpt-3.5-turbo")
   -debug
     	debug - activate debug mode to print more informations
   -file string

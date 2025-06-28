@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	apiURL         = "https://api.openai.com/v1/engines/text-davinci-003/completions"
+	chatAPIURL     = "https://api.openai.com/v1/chat/completions"
 	defaultTimeout = 30 * time.Second
 )
 
@@ -30,10 +30,12 @@ type Client struct {
 	httpClient *http.Client
 }
 
-// Response represents the OpenAI API response
+// Response represents the OpenAI API response for chat completions
 type Response struct {
 	Choices []struct {
-		Text string `json:"text"`
+		Message struct {
+			Content string `json:"content"`
+		} `json:"message"`
 	} `json:"choices"`
 }
 
@@ -47,20 +49,23 @@ func NewClient(config Config) *Client {
 	}
 }
 
-// GenerateCompletion generates a completion using OpenAI API
+// GenerateCompletion generates a completion using OpenAI Chat API
 func (c *Client) GenerateCompletion(ctx context.Context, prompt string) (string, error) {
 	if !c.config.Enabled {
 		return "", fmt.Errorf("OpenAI is not enabled")
 	}
 
 	reqBody := map[string]interface{}{
-		"prompt": fmt.Sprintf("%s. show a %s example. Please do not write explanations. Please just a suggestion as %s code.",
-			prompt, c.config.ShellType, c.config.ShellType),
-		"max_tokens":        100,
-		"temperature":       0,
-		"top_p":             1.0,
-		"frequency_penalty": 0.2,
-		"presence_penalty":  0.0,
+		"model": c.config.Model,
+		"messages": []map[string]string{
+			{
+				"role":    "user",
+				"content": fmt.Sprintf("%s. show a %s example. Please do not write explanations. Please just a suggestion as %s code.", prompt, c.config.ShellType, c.config.ShellType),
+			},
+		},
+		"max_tokens":   100,
+		"temperature":  0,
+		"top_p":        1.0,
 	}
 
 	jsonReq, err := json.Marshal(reqBody)
@@ -68,7 +73,7 @@ func (c *Client) GenerateCompletion(ctx context.Context, prompt string) (string,
 		return "", fmt.Errorf("failed to encode request body: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewBuffer(jsonReq))
+	req, err := http.NewRequestWithContext(ctx, "POST", chatAPIURL, bytes.NewBuffer(jsonReq))
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
@@ -96,7 +101,7 @@ func (c *Client) GenerateCompletion(ctx context.Context, prompt string) (string,
 		return "", fmt.Errorf("no choices in response")
 	}
 
-	return strings.TrimSpace(strings.ReplaceAll(response.Choices[0].Text, "`", "")), nil
+	return strings.TrimSpace(strings.ReplaceAll(response.Choices[0].Message.Content, "`", "")), nil
 }
 
 // Legacy support for backward compatibility

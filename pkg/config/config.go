@@ -39,7 +39,7 @@ func New() *Config {
 		User:      "rest",
 		AIInput:   "",
 		AIKey:     "",
-		AIModel:   "text-davinci-003",
+		AIModel:   "gpt-3.5-turbo",
 		AICmdType: "shell",
 		ShellType: "bash",
 		Port:      8080,
