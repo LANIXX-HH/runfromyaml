@@ -13,6 +13,7 @@ import (
 	"github.com/lanixx/runfromyaml/pkg/config"
 	"github.com/lanixx/runfromyaml/pkg/errors"
 	"github.com/lanixx/runfromyaml/pkg/functions"
+	"github.com/lanixx/runfromyaml/pkg/mcp"
 	"github.com/lanixx/runfromyaml/pkg/openai"
 	"github.com/lanixx/runfromyaml/pkg/restapi"
 )
@@ -292,21 +293,15 @@ func handleMCPMode(cfg *config.Config) error {
 	fmt.Println()
 	fmt.Println("🔄 Starting MCP server...")
 
-	// Import and start the actual MCP server
-	// We need to import the mcp package properly
+	// Start the actual MCP server
 	return startMCPServer(cfg)
 }
 
 // startMCPServer starts the actual MCP server
 func startMCPServer(cfg *config.Config) error {
-	// This is a placeholder that will be replaced with actual MCP server implementation
-	// For now, we'll simulate the server running
 	fmt.Println("✅ MCP server started successfully!")
 	fmt.Println("🔌 Ready to accept MCP protocol connections...")
 
-	// In a real implementation, this would be:
-	// return mcp.StartServer(cfg)
-
-	// For now, we'll keep the server "running" indefinitely
-	select {} // This blocks forever, simulating a running server
+	// Start the MCP server (this is a blocking call)
+	return mcp.StartServer(cfg)
 }
