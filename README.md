@@ -22,6 +22,7 @@ For comprehensive documentation, see the [docs/](docs/) directory with organized
 - **[docs/summaries/](docs/summaries/)** - Project summaries and implementation overviews
 
 ### Quick Links
+
 - **Getting Started**: [docs/development/ARCHITECTURE.md](docs/development/ARCHITECTURE.md)
 - **Running Tests**: [docs/testing/TESTING.md](docs/testing/TESTING.md)
 - **Empty Values Feature**: [docs/features/EMPTY_VALUES_SUPPORT.md](docs/features/EMPTY_VALUES_SUPPORT.md)
@@ -39,6 +40,7 @@ At the moment I am testing this on my android phone, on my windows machine, on m
 
 ### New Features (v0.0.1+)
 
+- **🤖 MCP Server**: Model Context Protocol server for AI assistants to generate and execute workflows through natural language
 - **AI Integration**: OpenAI API integration for command generation and assistance
 - **Interactive Shell Mode**: Record commands interactively and generate YAML automatically
 - **Enhanced Configuration**: YAML-based configuration support with options block
@@ -84,6 +86,7 @@ go test -v -cover ./...
 ~~~
 
 ### Test Categories
+
 - **Unit Tests**: Core functionality testing for CLI, config, functions
 - **Integration Tests**: SSH expandenv, Docker Compose, empty values support
 - **Example Tests**: Validation of example YAML configurations
@@ -144,37 +147,43 @@ curl --silent --location https://raw.githubusercontent.com/LANIXX-HH/runfromyaml
 ~~~bash
 Usage of ./runfromyaml:
   -ai
-    	ai - interact with OpenAI
+     ai - interact with OpenAI
   -ai-cmdtype string
-    	ai-cmdtype - For which type of code should be examples generated (default "shell")
+     ai-cmdtype - For which type of code should be examples generated (default "shell")
   -ai-in string
-    	ai - interact with OpenAI
+     ai - interact with OpenAI
   -ai-key string
-    	ai - OpenAI API Key
+     ai - OpenAI API Key
   -ai-model string
-    	ai-model - OpenAI Model for answer generation (default "gpt-3.5-turbo")
+     ai-model - OpenAI Model for answer generation (default "gpt-3.5-turbo")
   -debug
-    	debug - activate debug mode to print more informations
+     debug - activate debug mode to print more informations
   -file string
-    	file - file with all defined commands, descriptions and configuration blocks in yaml fromat (default "commands.yaml")
+     file - file with all defined commands, descriptions and configuration blocks in yaml fromat (default "commands.yaml")
   -host string
-    	host - set host for rest api mode (default host is localhost) (default "localhost")
+     host - set host for rest api mode (default host is localhost) (default "localhost")
+  -mcp
+     mcp - start MCP (Model Context Protocol) server mode
+  -mcp-name string
+     mcp-name - set MCP server name (default "runfromyaml-workflow-server")
+  -mcp-version string
+     mcp-version - set MCP server version (default "1.0.0")
   -no-auth
-    	no-auth - disable rest auth
+     no-auth - disable rest auth
   -no-file
-    	no-file - file option should be disabled
+     no-file - file option should be disabled
   -port int
-    	port - set http port for rest api mode (default http port is 8080) (default 8080)
+     port - set http port for rest api mode (default http port is 8080) (default 8080)
   -rest
-    	restapi - start this instance in background mode in rest api mode
+     restapi - start this instance in background mode in rest api mode
   -restout
-    	rest output - activate output to http response
+     rest output - activate output to http response
   -shell
-    	shell - interactive shell
+     shell - interactive shell
   -shell-type string
-    	shell-type - which shell type should be used for recording all the commands to generate yaml structure (default "bash")
+     shell-type - which shell type should be used for recording all the commands to generate yaml structure (default "bash")
   -user string
-    	user - set username for rest api authentication (default username is rest) (default "rest")
+     user - set username for rest api authentication (default username is rest) (default "rest")
 ~~~
 
 ### Empty Values and Command Blocks
@@ -189,6 +198,7 @@ runfromyaml now supports empty `values` blocks and empty command blocks, which a
 #### Examples
 
 Empty values block:
+
 ```yaml
 cmd:
   - type: exec
@@ -198,6 +208,7 @@ cmd:
 ```
 
 Completely empty command block:
+
 ```yaml
 cmd:
   - type: shell
@@ -210,13 +221,13 @@ When empty command blocks are encountered, runfromyaml will skip execution with 
 
 ### Examples
 
-* Parse YAML file locally
+- Parse YAML file locally
 
 ~~~bash
 runfromyaml --file my-commands.yaml
 ~~~
 
-* Interactive Shell Mode (NEW)
+- Interactive Shell Mode (NEW)
 
 ~~~bash
 runfromyaml --shell
@@ -224,7 +235,7 @@ runfromyaml --shell
 
 This mode allows you to interactively record commands and automatically generate YAML structure from your input.
 
-* AI Integration Mode (NEW)
+- AI Integration Mode (NEW)
 
 ~~~bash
 # Set OpenAI API key and interact with AI
@@ -234,27 +245,63 @@ runfromyaml --ai --ai-key "your-api-key" --ai-in "create a docker command to lis
 runfromyaml --ai --ai-key "your-api-key" --ai-model "gpt-4" --ai-cmdtype "bash" --ai-in "show disk usage"
 ~~~
 
-* REST API Mode
+- **🤖 MCP Server Mode (NEW)**
+
+~~~bash
+# Start MCP server with stdio transport (default for MCP)
+runfromyaml --mcp
+
+# Start MCP server with TCP transport and debug
+runfromyaml --mcp --port 8080 --host localhost --debug
+
+# Custom MCP server configuration
+runfromyaml --mcp --mcp-name "my-workflow-server" --mcp-version "2.0.0"
+~~~
+
+The MCP (Model Context Protocol) server enables AI assistants to generate and execute workflows through natural language descriptions. It provides:
+
+**🛠️ Six Powerful Tools for AI Assistants:**
+
+- `generate_and_execute_workflow` - Generate and execute workflows from natural language
+- `generate_workflow` - Generate workflow YAML without execution  
+- `execute_existing_workflow` - Execute pre-written YAML workflows
+- `validate_workflow` - Validate workflow syntax and structure
+- `explain_workflow` - Explain what workflows will do before execution
+- `workflow_from_template` - Generate workflows from predefined templates
+
+**📚 Rich Resource Library:**
+
+- `workflow://templates` - Available workflow templates with parameters
+- `workflow://examples` - Example workflows demonstrating features
+- `workflow://schema` - JSON schema for workflow validation
+- `workflow://best-practices` - Comprehensive best practices guide
+
+**🧠 Intelligent Workflow Generation:**
+The server analyzes natural language and automatically generates appropriate blocks for Docker operations, database setup, web applications, SSH operations, and configuration management.
+
+**📖 For complete MCP documentation, examples, and integration guides, see: [docs/MCP_SERVER.md](docs/MCP_SERVER.md)**
+
+- REST API Mode
 
 ~~~bash
 runfromyaml --rest
 ~~~
 
-* REST API Mode without Authentication ( !!! CAUTION: Do not use it in public networks !!! )
+- REST API Mode without Authentication ( !!! CAUTION: Do not use it in public networks !!! )
 
 ~~~bash
 runfromyaml --rest --no-auth
 ~~~
 
-* REST API Mode with redirected output to http response
+- REST API Mode with redirected output to http response
 
 ~~~bash
 runfromyaml --rest --restout
 ~~~
 
-* Example CURL Call for REST API Mode
+- Example CURL Call for REST API Mode
 
-~~~bash 
+~~~bash
 PASS=<rest_api_generated_password>
 CURLOPT_TIMEOUT=30 curl -X POST -H "Content-Type: application/x-yaml" -u rest:$PASS --data-binary @examples/windows.yaml http://192.168.0.100:8000/
 ~~~
@@ -295,12 +342,12 @@ logging:
   - level: info
 ~~~
 
-  * `level` - the following levels are possible: info, warn, debug, error, trace, fatal, panic
-  * `output` - define how the output should happen
-    * NIL (nothing was set. missing output option) - it nothing is defined, no output will be created :)
-    * `stdout` - should be default output
-    * `file` - all the output will be redirected to json logfile (implemented with logrus module) in the current temp directory. by start of this program the logging json file will be shown. 
-    * `rest` - this payload should be delivered only via http post request as YAML. by default, if the programm is running in rest api mode, output will be overwritten to `rest`
+- `level` - the following levels are possible: info, warn, debug, error, trace, fatal, panic
+- `output` - define how the output should happen
+  - NIL (nothing was set. missing output option) - it nothing is defined, no output will be created :)
+  - `stdout` - should be default output
+  - `file` - all the output will be redirected to json logfile (implemented with logrus module) in the current temp directory. by start of this program the logging json file will be shown.
+  - `rest` - this payload should be delivered only via http post request as YAML. by default, if the programm is running in rest api mode, output will be overwritten to `rest`
 
 ### Environment Variables
 
@@ -347,42 +394,42 @@ every section should begin with `-`
 
 #### CMD Syntax
 
-* `type` - this section describes the type of the current section. possible values:
-  * `exec` - executes all commands described in the Values section.
-  * `conf` - creates a configuration file with permissions under a specified path. required values are:
-    * `confdest` - destination path for this configuration.
-    * `confperm` - permissions (in Unix format. e.g.: `0644`) to save this file
-    * `confdata` - contained data for the current configuration block
-  * `shell` - this section defines a set of commands to be executed in a bash session
-  * `docker` - this section defines a set of commands to be executed in a started and/or running container. required values for this section are:
-    * `container` - name of the running container where all commands should be executed.
-    * `command` - this section contains 2 different options how the proposed command should be executed. required values:
-      * `run` - start all commands in the new container
-      * `exec` - execute the command in the currently running container
-    * `values` - this section defines all the commands to be executed in a started or running container
-  * `docker-compose` - this section describes all things that should be executed with docker-compose. why do we need this? experience has shown that it is easier for developers to write a yaml file and specify the necessary options in a similar order than to remember the order of commands to execute. :) you can skip settings (global and command) with empty map like `[]` and set empty service name with `""`. to run a command inside of container, you should define values. for multiple command just separate it with semicolon (`;`)
+- `type` - this section describes the type of the current section. possible values:
+  - `exec` - executes all commands described in the Values section.
+  - `conf` - creates a configuration file with permissions under a specified path. required values are:
+    - `confdest` - destination path for this configuration.
+    - `confperm` - permissions (in Unix format. e.g.: `0644`) to save this file
+    - `confdata` - contained data for the current configuration block
+  - `shell` - this section defines a set of commands to be executed in a bash session
+  - `docker` - this section defines a set of commands to be executed in a started and/or running container. required values for this section are:
+    - `container` - name of the running container where all commands should be executed.
+    - `command` - this section contains 2 different options how the proposed command should be executed. required values:
+      - `run` - start all commands in the new container
+      - `exec` - execute the command in the currently running container
+    - `values` - this section defines all the commands to be executed in a started or running container
+  - `docker-compose` - this section describes all things that should be executed with docker-compose. why do we need this? experience has shown that it is easier for developers to write a yaml file and specify the necessary options in a similar order than to remember the order of commands to execute. :) you can skip settings (global and command) with empty map like `[]` and set empty service name with `""`. to run a command inside of container, you should define values. for multiple command just separate it with semicolon (`;`)
   The required values for this section are:
-    * `dcoptions` - global docker-compose options like path directory or docker-compose file(s).
-    * `command` - docker-compose command like `run`, `up` or `down`.
-    * `cmdoptions` - options needed for the selected command like `-i` or/and `-t`.
-    * `service` - name of the service defined in the docker-compose yaml file
-    * `values` - commands to be executed within the selected service (when starting the container or in the currently running container)
-  * `ssh` - in this section you can run a remote command on specified host via SSH Connection
-    * `user` - username for SSH Connection
-    * `host` - hostname for SSH Connection
-    * `port` - ssh port for SSH Connection
-    * `options` - additional options for SSH Connection like `-i <path/to/ssh/public_key>`
-    * `values` - set of commands separated by semicolon (`;`) which should be executed on remote host via SSH Connection
-* `name` - this is the name of the section
-* `desc` - long description of this section. should contain the really necessary information, what happens in this section.
-* `values` - this section generally contains all the steps that should be executed to implement the described workflow. Multiple commands should be separated by `;`.
-* `expandenv` - this is an optional switch setting used to enable or disable the environment variable resolution in the corresponding block. default value is disabled
+    - `dcoptions` - global docker-compose options like path directory or docker-compose file(s).
+    - `command` - docker-compose command like `run`, `up` or `down`.
+    - `cmdoptions` - options needed for the selected command like `-i` or/and `-t`.
+    - `service` - name of the service defined in the docker-compose yaml file
+    - `values` - commands to be executed within the selected service (when starting the container or in the currently running container)
+  - `ssh` - in this section you can run a remote command on specified host via SSH Connection
+    - `user` - username for SSH Connection
+    - `host` - hostname for SSH Connection
+    - `port` - ssh port for SSH Connection
+    - `options` - additional options for SSH Connection like `-i <path/to/ssh/public_key>`
+    - `values` - set of commands separated by semicolon (`;`) which should be executed on remote host via SSH Connection
+- `name` - this is the name of the section
+- `desc` - long description of this section. should contain the really necessary information, what happens in this section.
+- `values` - this section generally contains all the steps that should be executed to implement the described workflow. Multiple commands should be separated by `;`.
+- `expandenv` - this is an optional switch setting used to enable or disable the environment variable resolution in the corresponding block. default value is disabled
 
 ## Examples
 
 ### Set logging options
 
-* logging - with this you can set how the output should happen and with which log level that should take place
+- logging - with this you can set how the output should happen and with which log level that should take place
 
 ~~~yaml
 logging:
@@ -392,7 +439,7 @@ logging:
 
 ### Define environment variables
 
-* env - in this block variables are set, the other blocks both in the data area and in the setting in the respective block, such as path.
+- env - in this block variables are set, the other blocks both in the data area and in the setting in the respective block, such as path.
 
 ~~~yaml
 env:
@@ -404,7 +451,7 @@ env:
   
 ### Create configuration file
 
-* confdata - here the content of the configuration file is written in.
+- confdata - here the content of the configuration file is written in.
 
 ~~~yaml
 --
@@ -421,7 +468,7 @@ cmd:
 
 ### Call a OS Command with EXEC
 
-* exec - with this you can start an OS system call with exec 
+- exec - with this you can start an OS system call with exec
 
 ~~~yaml
   - type: "exec"
@@ -436,7 +483,7 @@ cmd:
 
 ### Call a Shell Command
 
-* shell - This gives the possibility to call a command that is wrapped in bash. for example: `bash -c 'ls -lisa'`
+- shell - This gives the possibility to call a command that is wrapped in bash. for example: `bash -c 'ls -lisa'`
   
 ~~~yaml
   - type: "shell"
@@ -449,7 +496,7 @@ cmd:
 
 ### Run a Command via SSH connection on remote server
   
-* ssh - in this section you can define a block with username, hostname, port and additional options to run a command set remotely via this SSH Connection
+- ssh - in this section you can define a block with username, hostname, port and additional options to run a command set remotely via this SSH Connection
 
 ~~~yaml
   - type: "ssh"
@@ -469,7 +516,7 @@ cmd:
 
 ### Docker-Compose Block
 
-* docker-compose - Here you have the possibility to compose a complete docker-compose command as a YAML structure with global docker-compose options and specific command options and optionally execute there specific collection of commands separated by semicolon.
+- docker-compose - Here you have the possibility to compose a complete docker-compose command as a YAML structure with global docker-compose options and specific command options and optionally execute there specific collection of commands separated by semicolon.
 
 ~~~yaml
   - type: "docker-compose"
@@ -497,9 +544,9 @@ cmd:
       - zsh
 ~~~
   
-### Call a Command inside a running Docker container or run it once.
+### Call a Command inside a running Docker container or run it once
 
-* docker - this section can be used to start some command or set of multiple command separated by semicolon in a running container or by starting new container and terminate it after run.
+- docker - this section can be used to start some command or set of multiple command separated by semicolon in a running container or by starting new container and terminate it after run.
 
 attention: you can use only `run` or `exec` command
 
