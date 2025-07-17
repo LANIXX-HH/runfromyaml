@@ -6,43 +6,49 @@ import (
 
 // Config holds all configuration for the application
 type Config struct {
-	Debug     bool
-	Rest      bool
-	NoAuth    bool
-	RestOut   bool
-	NoFile    bool
-	AI        bool
-	Shell     bool
-	File      string
-	Host      string
-	User      string
-	AIInput   string
-	AIKey     string
-	AIModel   string
-	AICmdType string
-	ShellType string
-	Port      int
+	Debug      bool
+	Rest       bool
+	NoAuth     bool
+	RestOut    bool
+	NoFile     bool
+	AI         bool
+	Shell      bool
+	MCP        bool
+	File       string
+	Host       string
+	User       string
+	AIInput    string
+	AIKey      string
+	AIModel    string
+	AICmdType  string
+	ShellType  string
+	MCPName    string
+	MCPVersion string
+	Port       int
 }
 
 // New creates a new Config instance with default values
 func New() *Config {
 	return &Config{
-		Debug:     false,
-		Rest:      false,
-		NoAuth:    false,
-		RestOut:   false,
-		NoFile:    false,
-		AI:        false,
-		Shell:     false,
-		File:      "commands.yaml",
-		Host:      "localhost",
-		User:      "rest",
-		AIInput:   "",
-		AIKey:     "",
-		AIModel:   "gpt-3.5-turbo",
-		AICmdType: "shell",
-		ShellType: "bash",
-		Port:      8080,
+		Debug:      false,
+		Rest:       false,
+		NoAuth:     false,
+		RestOut:    false,
+		NoFile:     false,
+		AI:         false,
+		Shell:      false,
+		MCP:        false,
+		File:       "commands.yaml",
+		Host:       "localhost",
+		User:       "rest",
+		AIInput:    "",
+		AIKey:      "",
+		AIModel:    "gpt-3.5-turbo",
+		AICmdType:  "shell",
+		ShellType:  "bash",
+		MCPName:    "runfromyaml-workflow-server",
+		MCPVersion: "1.0.0",
+		Port:       8080,
 	}
 }
 
@@ -55,6 +61,7 @@ func (c *Config) ParseFlags() error {
 	flag.BoolVar(&c.NoFile, "no-file", c.NoFile, "no-file - file option should be disabled")
 	flag.BoolVar(&c.AI, "ai", c.AI, "ai - interact with OpenAI")
 	flag.BoolVar(&c.Shell, "shell", c.Shell, "shell - interactive shell")
+	flag.BoolVar(&c.MCP, "mcp", c.MCP, "mcp - start MCP (Model Context Protocol) server mode")
 
 	flag.StringVar(&c.File, "file", c.File, "file - file with all defined commands, descriptions and configuration blocks in yaml fromat")
 	flag.StringVar(&c.Host, "host", c.Host, "host - set host for rest api mode (default host is localhost)")
@@ -64,6 +71,8 @@ func (c *Config) ParseFlags() error {
 	flag.StringVar(&c.AIModel, "ai-model", c.AIModel, "ai-model - OpenAI Model for answer generation")
 	flag.StringVar(&c.AICmdType, "ai-cmdtype", c.AICmdType, "ai-cmdtype - For which type of code should be examples generated")
 	flag.StringVar(&c.ShellType, "shell-type", c.ShellType, "shell-type - which shell type should be used for recording all the commands to generate yaml structure")
+	flag.StringVar(&c.MCPName, "mcp-name", c.MCPName, "mcp-name - set MCP server name")
+	flag.StringVar(&c.MCPVersion, "mcp-version", c.MCPVersion, "mcp-version - set MCP server version")
 
 	flag.IntVar(&c.Port, "port", c.Port, "port - set http port for rest api mode (default http port is 8080)")
 
