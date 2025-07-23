@@ -77,5 +77,11 @@ func (c *Config) ParseFlags() error {
 	flag.IntVar(&c.Port, "port", c.Port, "port - set http port for rest api mode (default http port is 8080)")
 
 	flag.Parse()
+
+	// For MCP mode, default to stdio transport (port 0) unless explicitly set
+	if c.MCP && c.Port == 8080 {
+		c.Port = 0
+	}
+
 	return nil
 }

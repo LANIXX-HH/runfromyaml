@@ -13,7 +13,7 @@ import (
 func (s *MCPServer) registerTools() {
 	s.tools["generate_and_execute_workflow"] = &Tool{
 		Name:        "generate_and_execute_workflow",
-		Description: "Generate workflow from natural language description and execute it",
+		Description: "Generate workflow from natural language description and execute it. This tool creates and immediately runs infrastructure automation based on your description. Use with caution as it will execute commands on your system.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -34,7 +34,7 @@ func (s *MCPServer) registerTools() {
 
 	s.tools["generate_workflow"] = &Tool{
 		Name:        "generate_workflow",
-		Description: "Generate workflow YAML from natural language description without executing",
+		Description: "Generate workflow YAML from natural language description without executing. Perfect for Amazon Q to create infrastructure-as-code workflows that you can review before execution.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -50,7 +50,7 @@ func (s *MCPServer) registerTools() {
 
 	s.tools["execute_existing_workflow"] = &Tool{
 		Name:        "execute_existing_workflow",
-		Description: "Execute an existing YAML workflow",
+		Description: "Execute an existing YAML workflow. This tool runs commands defined in the provided YAML on your system. Use with caution and review workflows before execution.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -66,7 +66,7 @@ func (s *MCPServer) registerTools() {
 
 	s.tools["validate_workflow"] = &Tool{
 		Name:        "validate_workflow",
-		Description: "Validate workflow YAML structure and syntax",
+		Description: "Validate workflow YAML structure and syntax. Use this tool with Amazon Q to check if your workflow is correctly formatted before execution.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -82,7 +82,7 @@ func (s *MCPServer) registerTools() {
 
 	s.tools["explain_workflow"] = &Tool{
 		Name:        "explain_workflow",
-		Description: "Explain what a workflow will do without executing it",
+		Description: "Explain what a workflow will do without executing it. This tool helps Amazon Q provide clear explanations of workflow steps and potential impacts before execution.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -98,7 +98,7 @@ func (s *MCPServer) registerTools() {
 
 	s.tools["workflow_from_template"] = &Tool{
 		Name:        "workflow_from_template",
-		Description: "Generate workflow from a predefined template",
+		Description: "Generate workflow from a predefined template. Amazon Q can use this to quickly create standardized workflows for common scenarios like web apps, databases, or CI/CD pipelines.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{

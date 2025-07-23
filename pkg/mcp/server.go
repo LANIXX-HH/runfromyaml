@@ -92,7 +92,11 @@ func StartServer(cfg *config.Config) error {
 
 	if cfg.Debug {
 		fmt.Printf("🚀 Starting MCP server '%s' v%s\n", cfg.MCPName, cfg.MCPVersion)
-		fmt.Printf("📡 Listening on %s:%d\n", cfg.Host, cfg.Port)
+		if cfg.Port > 0 {
+			fmt.Printf("📡 Will use TCP transport on %s:%d\n", cfg.Host, cfg.Port)
+		} else {
+			fmt.Println("📡 Will use stdio transport (default for MCP)")
+		}
 	}
 
 	// For MCP, we typically use stdio transport, but we'll support both
@@ -290,6 +294,9 @@ func (s *MCPServer) handleInitialize(params map[string]interface{}) map[string]i
 		"serverInfo": map[string]interface{}{
 			"name":    s.config.MCPName,
 			"version": s.config.MCPVersion,
+			"vendor": "LANIXX",
+			"description": "Workflow generation and execution server for runfromyaml",
+			"amazonQCompatible": true,
 		},
 	}
 }

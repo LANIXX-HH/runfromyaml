@@ -49,19 +49,12 @@ At the moment I am testing this on my android phone, on my windows machine, on m
 
 ## TODO's
 
-- [x] ~~write tests !!~~ **COMPLETED**: Comprehensive test suite implemented
 - [ ] implement connection between blocks (artifacts or other way. i don't know)
 - [ ] implement dependency between blocks
-- [x] ~~update AI model defaults to newer OpenAI models (currently using deprecated text-davinci-003)~~ **COMPLETED**: Updated to gpt-3.5-turbo
 - [ ] add support for other AI providers (Claude, Gemini, etc.)
 - [ ] add version command flag
 - [ ] implement dry-run mode
 - [ ] add YAML validation and schema support
-- [x] **COMPLETED**: Support for empty values blocks and empty command blocks
-- [x] **COMPLETED**: Organize documentation in docs/ folder
-- [x] **COMPLETED**: Add comprehensive testing infrastructure
-- [x] **COMPLETED**: Add GitHub Actions CI/CD pipeline
-- [x] **COMPLETED**: Add golangci-lint for code quality
 
 ## HowTo build
 
@@ -92,7 +85,9 @@ go test -v -cover ./...
 - **Example Tests**: Validation of example YAML configurations
 - **CI/CD**: Automated testing via GitHub Actions
 
-## How To get the binary
+## Installation
+
+### Quick Binary Installation
 
 ~~~shell
 curl --silent --location "https://github.com/lanixx-hh/runfromyaml/releases/latest/download/runfromyaml-$(uname -s)-$(uname -m).tar.gz" | tar xz
