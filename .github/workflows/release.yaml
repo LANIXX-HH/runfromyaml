@@ -1,5 +1,10 @@
-on: release
+on:
+  release:
+    types: [created]
 name: Build Release
+permissions:
+    contents: write
+    packages: write
 jobs:
   release:
     name: "Build multi-platform release"
@@ -32,9 +37,9 @@ jobs:
             goarch: amd64
             asset_name: runfromyaml-Windows-x86_64
     steps:
-    - uses: actions/checkout@master
+    - uses: actions/checkout@v4
     - name: compile and release
-      uses: wangyoucao577/go-release-action@v1.51
+      uses: wangyoucao577/go-release-action@v1
       with:
         github_token: ${{ secrets.MY_GITHUB_TOKEN }}
         goos: ${{ matrix.goos }}
