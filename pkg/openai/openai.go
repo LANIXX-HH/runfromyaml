@@ -55,16 +55,46 @@ func (c *Client) GenerateCompletion(ctx context.Context, prompt string) (string,
 		return "", fmt.Errorf("OpenAI is not enabled")
 	}
 
-	reqBody := map[string]interface{}{
-		"model": c.config.Model,
-		"messages": []map[string]string{
+	// Check if this is a workflow generation request (longer, more complex)
+	isWorkflowRequest := strings.Contains(strings.ToLower(prompt), "workflow") ||
+		strings.Contains(strings.ToLower(prompt), "yaml") ||
+		len(prompt) > 200
+
+	var messages []map[string]string
+	var maxTokens int
+	var temperature float64
+
+	if isWorkflowRequest {
+		// For workflow generation: use system prompt and more tokens
+		messages = []map[string]string{
+			{
+				"role":    "system",
+				"content": "You are an expert in creating runfromyaml workflow configurations. Generate complete, production-ready YAML workflows. Only return valid YAML, no explanations.",
+			},
+			{
+				"role":    "user",
+				"content": prompt,
+			},
+		}
+		maxTokens = 2000
+		temperature = 0.3
+	} else {
+		// For shell commands: use original format
+		messages = []map[string]string{
 			{
 				"role":    "user",
 				"content": fmt.Sprintf("%s. show a %s example. Please do not write explanations. Please just a suggestion as %s code.", prompt, c.config.ShellType, c.config.ShellType),
 			},
-		},
-		"max_tokens":  100,
-		"temperature": 0,
+		}
+		maxTokens = 100
+		temperature = 0
+	}
+
+	reqBody := map[string]interface{}{
+		"model":       c.config.Model,
+		"messages":    messages,
+		"max_tokens":  maxTokens,
+		"temperature": temperature,
 		"top_p":       1.0,
 	}
 

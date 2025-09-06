@@ -116,6 +116,31 @@ func (s *MCPServer) registerTools() {
 		},
 		Handler: s.handleWorkflowFromTemplate,
 	}
+
+	s.tools["improve_workflow"] = &Tool{
+		Name:        "improve_workflow",
+		Description: "Improve an existing workflow YAML with additional requirements. This tool takes an existing workflow and enhances it based on new requirements while preserving the original structure and commands.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"existing_yaml": map[string]interface{}{
+					"type":        "string",
+					"description": "The existing workflow YAML content to improve",
+				},
+				"additional_requirements": map[string]interface{}{
+					"type":        "string",
+					"description": "Additional requirements or improvements to apply to the workflow",
+				},
+				"preserve_commands": map[string]interface{}{
+					"type":        "boolean",
+					"description": "Whether to preserve existing commands exactly (default: true)",
+					"default":     true,
+				},
+			},
+			"required": []string{"existing_yaml", "additional_requirements"},
+		},
+		Handler: s.handleImproveWorkflow,
+	}
 }
 
 // handleGenerateAndExecuteWorkflow generates and executes a workflow
@@ -130,8 +155,8 @@ func (s *MCPServer) handleGenerateAndExecuteWorkflow(args map[string]interface{}
 
 	dryRun, _ := args["dry_run"].(bool)
 
-	// Generate workflow
-	workflow, err := s.generateWorkflowFromDescription(description)
+	// Use AI workflow generator instead of simple pattern matching
+	workflow, err := s.aiWorkflowGen.GenerateWorkflowFromDescription(description)
 	if err != nil {
 		return &ToolResult{
 			Content: []Content{{Type: "text", Text: fmt.Sprintf("Error generating workflow: %v", err)}},
@@ -153,7 +178,7 @@ func (s *MCPServer) handleGenerateAndExecuteWorkflow(args map[string]interface{}
 	if dryRun {
 		return &ToolResult{
 			Content: []Content{
-				{Type: "text", Text: "Generated workflow (dry run - not executed):"},
+				{Type: "text", Text: "🤖 AI-Generated workflow (dry run - not executed):"},
 				{Type: "text", Text: "```yaml\n" + yamlContent + "\n```"},
 			},
 		}, nil
@@ -164,7 +189,7 @@ func (s *MCPServer) handleGenerateAndExecuteWorkflow(args map[string]interface{}
 	if err != nil {
 		return &ToolResult{
 			Content: []Content{
-				{Type: "text", Text: "Generated workflow:"},
+				{Type: "text", Text: "🤖 AI-Generated workflow:"},
 				{Type: "text", Text: "```yaml\n" + yamlContent + "\n```"},
 				{Type: "text", Text: fmt.Sprintf("Execution failed: %v", err)},
 			},
@@ -174,7 +199,7 @@ func (s *MCPServer) handleGenerateAndExecuteWorkflow(args map[string]interface{}
 
 	return &ToolResult{
 		Content: []Content{
-			{Type: "text", Text: "✅ Workflow generated and executed successfully!"},
+			{Type: "text", Text: "✅ AI-Generated workflow executed successfully!"},
 			{Type: "text", Text: "Generated workflow:"},
 			{Type: "text", Text: "```yaml\n" + yamlContent + "\n```"},
 		},
@@ -191,8 +216,8 @@ func (s *MCPServer) handleGenerateWorkflow(args map[string]interface{}) (*ToolRe
 		}, fmt.Errorf("missing or invalid description")
 	}
 
-	// Generate workflow
-	workflow, err := s.generateWorkflowFromDescription(description)
+	// Use AI workflow generator instead of simple pattern matching
+	workflow, err := s.aiWorkflowGen.GenerateWorkflowFromDescription(description)
 	if err != nil {
 		return &ToolResult{
 			Content: []Content{{Type: "text", Text: fmt.Sprintf("Error generating workflow: %v", err)}},
@@ -211,7 +236,7 @@ func (s *MCPServer) handleGenerateWorkflow(args map[string]interface{}) (*ToolRe
 
 	return &ToolResult{
 		Content: []Content{
-			{Type: "text", Text: "Generated workflow:"},
+			{Type: "text", Text: "🤖 AI-Generated workflow:"},
 			{Type: "text", Text: "```yaml\n" + string(yamlBytes) + "\n```"},
 		},
 	}, nil
@@ -354,6 +379,60 @@ func (s *MCPServer) handleWorkflowFromTemplate(args map[string]interface{}) (*To
 		Content: []Content{
 			{Type: "text", Text: fmt.Sprintf("Generated workflow from template '%s':", templateName)},
 			{Type: "text", Text: "```yaml\n" + string(yamlBytes) + "\n```"},
+		},
+	}, nil
+}
+
+// handleImproveWorkflow improves an existing workflow with additional requirements
+func (s *MCPServer) handleImproveWorkflow(args map[string]interface{}) (*ToolResult, error) {
+	existingYAML, ok := args["existing_yaml"].(string)
+	if !ok {
+		return &ToolResult{
+			Content: []Content{{Type: "text", Text: "Error: Missing or invalid existing_yaml"}},
+			IsError: true,
+		}, fmt.Errorf("missing or invalid existing_yaml")
+	}
+
+	additionalRequirements, ok := args["additional_requirements"].(string)
+	if !ok {
+		return &ToolResult{
+			Content: []Content{{Type: "text", Text: "Error: Missing or invalid additional_requirements"}},
+			IsError: true,
+		}, fmt.Errorf("missing or invalid additional_requirements")
+	}
+
+	preserveCommands, _ := args["preserve_commands"].(bool)
+	if preserveCommands == false {
+		// Default to true if not specified
+		preserveCommands = true
+	}
+
+	// Use AI to improve the workflow
+	improvedWorkflow, err := s.aiWorkflowGen.ImproveWorkflow(existingYAML, additionalRequirements)
+	if err != nil {
+		return &ToolResult{
+			Content: []Content{{Type: "text", Text: fmt.Sprintf("Error improving workflow: %v", err)}},
+			IsError: true,
+		}, err
+	}
+
+	// Convert to YAML
+	yamlBytes, err := yaml.Marshal(improvedWorkflow)
+	if err != nil {
+		return &ToolResult{
+			Content: []Content{{Type: "text", Text: fmt.Sprintf("Error marshaling improved YAML: %v", err)}},
+			IsError: true,
+		}, err
+	}
+
+	return &ToolResult{
+		Content: []Content{
+			{Type: "text", Text: "🔧 Improved workflow with additional requirements:"},
+			{Type: "text", Text: "```yaml\n" + string(yamlBytes) + "\n```"},
+			{Type: "text", Text: "📝 **Review Notes:**"},
+			{Type: "text", Text: "- Look for `# ADDED:` comments to see new functionality"},
+			{Type: "text", Text: "- Check `# TODO:` comments for manual customization needed"},
+			{Type: "text", Text: "- Verify that existing commands are preserved as expected"},
 		},
 	}, nil
 }

@@ -15,10 +15,11 @@ import (
 
 // MCPServer represents the MCP server instance
 type MCPServer struct {
-	config    *config.Config
-	tools     map[string]*Tool
-	resources map[string]*Resource
-	listener  net.Listener
+	config        *config.Config
+	tools         map[string]*Tool
+	resources     map[string]*Resource
+	listener      net.Listener
+	aiWorkflowGen *AIWorkflowGenerator
 }
 
 // MCPRequest represents an MCP protocol request
@@ -79,6 +80,16 @@ func NewServer(cfg *config.Config) *MCPServer {
 		tools:     make(map[string]*Tool),
 		resources: make(map[string]*Resource),
 	}
+
+	// Initialize AI workflow generator
+	// Use AI configuration from config if available
+	apiKey := cfg.AIKey
+	model := cfg.AIModel
+	if model == "" {
+		model = "gpt-3.5-turbo" // Default model
+	}
+
+	server.aiWorkflowGen = NewAIWorkflowGenerator(apiKey, model)
 
 	server.registerTools()
 	server.registerResources()
@@ -292,10 +303,10 @@ func (s *MCPServer) handleInitialize(params map[string]interface{}) map[string]i
 			"resources": map[string]interface{}{},
 		},
 		"serverInfo": map[string]interface{}{
-			"name":    s.config.MCPName,
-			"version": s.config.MCPVersion,
-			"vendor": "LANIXX",
-			"description": "Workflow generation and execution server for runfromyaml",
+			"name":              s.config.MCPName,
+			"version":           s.config.MCPVersion,
+			"vendor":            "LANIXX",
+			"description":       "Workflow generation and execution server for runfromyaml",
 			"amazonQCompatible": true,
 		},
 	}
