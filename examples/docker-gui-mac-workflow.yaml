@@ -1,0 +1,164 @@
+logging:
+  - level: info
+  - output: stdout
+env:
+  - key: LANIXX_DISPLAY
+    value: ":0"
+  - key: DISPLAY_PORT
+    value: "6000"
+cmd:
+  - name: install-dependencies
+    desc: Install required dependencies (XQuartz and socat)
+    type: shell
+    expandenv: true
+    values:
+      - echo "Installing XQuartz and socat...";
+      - brew install socat;
+      - brew install --cask xquartz;
+      - echo "Dependencies installed successfully"
+
+  - name: create-dockerfile
+    desc: Create Dockerfile for Firefox GUI app
+    type: shell
+    expandenv: true
+    values:
+      - echo "Creating APP/Dockerfile...";
+      - mkdir -p APP;
+      - |
+        cat > APP/Dockerfile << 'EOF'
+        FROM ubuntu:14.04
+        RUN apt-get update && apt-get install -y firefox
+        # Replace 1000 with your user / group id
+        RUN export uid=1000 gid=1000 && \
+            mkdir -p /home/developer && \
+            echo "developer:x:${uid}:${gid}:Developer,,,:/home/developer:/bin/bash" >> /etc/passwd && \
+            echo "developer:x:${uid}:" >> /etc/group && \
+            echo "developer ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/developer && \
+            chmod 0440 /etc/sudoers.d/developer && \
+            chown ${uid}:${gid} -R /home/developer
+        USER developer
+        ENV HOME /home/developer
+        CMD /usr/bin/firefox
+        EOF
+      - echo "Dockerfile created"
+
+  - name: detect-network-interface
+    desc: Detect active network interface and set DISPLAY variable
+    type: shell
+    expandenv: true
+    values:
+      - echo "Detecting network interface...";
+      - |
+        if [ "$(ifconfig en0 2>/dev/null | grep "inet " | awk '{print $2}')" != "" ]; then
+          echo "Using en0 interface"
+          export LANIXX_DISPLAY=$(ifconfig en0 | grep "inet " | awk '{print $2}')
+        elif [ "$(ifconfig en1 2>/dev/null | grep "inet " | awk '{print $2}')" != "" ]; then
+          echo "Using en1 interface"
+          export LANIXX_DISPLAY=$(ifconfig en1 | grep "inet " | awk '{print $2}')
+        elif [ "$(ifconfig en2 2>/dev/null | grep "inet " | awk '{print $2}')" != "" ]; then
+          echo "Using en2 interface"
+          export LANIXX_DISPLAY=$(ifconfig en2 | grep "inet " | awk '{print $2}')
+        else
+          echo "No suitable network interface found"
+          exit 1
+        fi
+      - echo "Network interface detected - $LANIXX_DISPLAY"
+
+  - name: create-docker-compose
+    desc: Create docker-compose.yml with dynamic DISPLAY setting
+    type: shell
+    expandenv: true
+    values:
+      - echo "Creating docker-compose.yml...";
+      - |
+        # Get the IP address
+        if [ "$(ifconfig en0 2>/dev/null | grep "inet " | awk '{print $2}')" != "" ]; then
+          DISPLAY_IP=$(ifconfig en0 | grep "inet " | awk '{print $2}')
+        elif [ "$(ifconfig en1 2>/dev/null | grep "inet " | awk '{print $2}')" != "" ]; then
+          DISPLAY_IP=$(ifconfig en1 | grep "inet " | awk '{print $2}')
+        elif [ "$(ifconfig en2 2>/dev/null | grep "inet " | awk '{print $2}')" != "" ]; then
+          DISPLAY_IP=$(ifconfig en2 | grep "inet " | awk '{print $2}')
+        fi
+        
+        cat > docker-compose.yml << EOF
+        version: '3'
+        services:
+          firefox:
+            build: APP
+            environment:
+              - DISPLAY=${DISPLAY_IP}:0
+            volumes:
+              - /tmp/.X11-unix:/tmp/.X11-unix
+        EOF
+      - echo "docker-compose.yml created with DISPLAY=${DISPLAY_IP}:0"
+
+  - name: start-xquartz
+    desc: Start XQuartz application
+    type: shell
+    expandenv: true
+    values:
+      - echo "Starting XQuartz...";
+      - open -a XQuartz;
+      - echo "XQuartz started - please allow connections from network clients in XQuartz preferences";
+      - sleep 3
+
+  - name: start-socat
+    desc: Start socat for X11 forwarding (if not already running)
+    type: shell
+    expandenv: true
+    values:
+      - echo "Checking if socat is already running...";
+      - |
+        SOCAT=$(ps axu | grep socat | grep -v "grep socat")
+        if [ "$SOCAT" = "" ]; then
+          echo "Starting socat for X11 forwarding..."
+          socat TCP-LISTEN:6000,reuseaddr,fork UNIX-CLIENT:"$DISPLAY" &
+          echo "socat started in background"
+        else
+          echo "socat is already running"
+        fi
+
+  - name: build-and-run-docker
+    desc: Build and run the Docker container with Firefox
+    type: shell
+    expandenv: true
+    values:
+      - echo "Building and starting Docker container...";
+      - docker-compose up -d;
+      - echo "Firefox container started successfully";
+      - echo "Firefox should now be running in the Docker container with GUI support"
+
+  - name: create-start-script
+    desc: Create a convenient start script for future use
+    type: shell
+    expandenv: true
+    values:
+      - echo "Creating start script...";
+      - |
+        cat > start-docker-gui.sh << 'EOF'
+        #!/bin/bash
+        LANIXX_DISPLAY=""
+        
+        if [ "$(ifconfig en0 2>/dev/null | grep "inet " | awk '{print $2}')" != "" ]; then
+          echo "parse en0 ip ..."
+          export LANIXX_DISPLAY=$(ifconfig en0 | grep "inet " | awk '{print $2}')
+        elif [ "$(ifconfig en1 2>/dev/null | grep "inet " | awk '{print $2}')" != "" ]; then
+          echo "parse en1 ip ..."
+          export LANIXX_DISPLAY=$(ifconfig en1 | grep "inet " | awk '{print $2}')
+        elif [ "$(ifconfig en2 2>/dev/null | grep "inet " | awk '{print $2}')" != "" ]; then
+          echo "parse en2 ip ..."
+          export LANIXX_DISPLAY=$(ifconfig en2 | grep "inet " | awk '{print $2}')
+        fi
+        
+        SOCAT=$(ps axu | grep socat | grep -v "grep socat")
+        if [ "$SOCAT" = "" ]; then
+          echo "start socat ..."
+          socat TCP-LISTEN:6000,reuseaddr,fork UNIX-CLIENT:"$DISPLAY" &
+        fi
+        
+        echo "start docker app ..."
+        docker-compose up -d
+        EOF
+      - chmod +x start-docker-gui.sh;
+      - echo "Start script created start-docker-gui.sh";
+      - ./start-docker-gui.sh

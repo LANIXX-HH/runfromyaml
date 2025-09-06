@@ -1,0 +1,295 @@
+logging:
+  - level: info
+  - output: stdout
+
+env:
+  - key: SERVER_NAME
+    value: myhost
+  - key: VM_HOSTNAME
+    value: myvm
+  - key: VM_IP
+    value: 192.168.10.102
+  - key: SERVER_IP
+    value: 123.234.22.111
+
+cmd:
+  - type: shell
+    name: rescue-mode-check
+    desc: "Verify server is in rescue mode and accessible"
+    values:
+      - ping -c 10 $SERVER_IP;
+      - ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no root@$SERVER_IP "uname -a"
+
+  - type: shell
+    name: hetzner-install
+    desc: "Install current Debian via Hetzner installimage"
+    values:
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "cd /root/.oldroot/nfs && installimage -r yes -l 1 -i images/Debian-1204-bookworm-amd64-base.tar.gz -n $SERVER_NAME -p /boot:ext4:1G,lvm:myvm:all -v myvm:root:/:ext4:80G,myvm:swap:swap:swap:8G -a"
+
+  - type: shell
+    name: reboot-server
+    desc: "Reboot server after installation"
+    values:
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "reboot";
+      - sleep 120;
+      - timeout 300 bash -c 'until ping -c 1 $SERVER_IP; do sleep 10; done'
+
+  - type: shell
+    name: update-system
+    desc: "Update base system and install essential packages"
+    values:
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "DEBIAN_FRONTEND=noninteractive apt-get -qq update";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "DEBIAN_FRONTEND=noninteractive apt-get -qq -y upgrade";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "DEBIAN_FRONTEND=noninteractive apt-get -qq -y install vim nano less chrony rsync sudo ssh bash-completion bridge-utils debootstrap xfsprogs"
+
+  - type: shell
+    name: install-xen-hypervisor
+    desc: "Install XEN hypervisor and tools for Debian 12"
+    values:
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "DEBIAN_FRONTEND=noninteractive apt-get -qq -y install xen-hypervisor-4.17-amd64 xen-tools xen-utils-4.17";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "systemctl enable xen-qemu-dom0-disk-backend.service";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "systemctl enable xen-init-dom0.service"
+
+  - type: shell
+    name: configure-vim
+    desc: "Configure vim editor settings"
+    values:
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "sed -i 's|^\"\\(syntax on\\)|\\1|' /etc/vim/vimrc";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "sed -i 's|^\"\\(set background=dark\\)|\\1|' /etc/vim/vimrc";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "sed -i 's|^\"\\(set showcmd\\)|\\1|' /etc/vim/vimrc";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "sed -i 's|^\"\\(set showmatch\\)|\\1|' /etc/vim/vimrc";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "sed -i 's|^\"\\(set ignorecase\\)|\\1|' /etc/vim/vimrc";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "sed -i 's|^\"\\(set smartcase\\)|\\1|' /etc/vim/vimrc";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "sed -i 's|^\"\\(set incsearch\\)|\\1|' /etc/vim/vimrc"
+
+  - type: shell
+    name: configure-time-sync
+    desc: "Configure modern time synchronization with chrony"
+    values:
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "systemctl enable chrony";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "systemctl start chrony";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "chrony sources"
+
+  - type: shell
+    name: configure-grub-xen
+    desc: "Configure GRUB to boot XEN by default with memory settings"
+    values:
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "sed -i 's|GRUB_DEFAULT=0|GRUB_DEFAULT=\"Debian GNU/Linux, with Xen hypervisor\"|' /etc/default/grub";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "echo 'GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=1024M,max:1024M\"' >> /etc/default/grub";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "mv /etc/grub.d/20_linux_xen /etc/grub.d/05_xen";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "update-grub"
+
+  - type: shell
+    name: configure-ssh-security
+    desc: "Configure SSH security settings"
+    values:
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "sed -i 's|^#PermitRootLogin yes|PermitRootLogin prohibit-password|' /etc/ssh/sshd_config";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "systemctl restart ssh"
+
+  - type: conf
+    name: xen-tools-config
+    desc: "Create modern XEN tools configuration"
+    confdest: /tmp/xen-tools.conf
+    confperm: 0644
+    confdata: |
+      install-method = debootstrap
+      size = 200G
+      memory = 2G
+      swap = 8G
+      fs = ext4
+      dist = bookworm
+      image = full
+      gateway = 192.168.10.1
+      netmask = 255.255.255.0
+      nameserver = 1.1.1.1 8.8.8.8 8.8.4.4
+      bridge = xenbr0
+      genpass = 1
+      genpass_len = 32
+      hash_method = sha256
+      kernel = /boot/vmlinuz-$(uname -r)
+      initrd = /boot/initrd.img-$(uname -r)
+      mirror = http://deb.debian.org/debian/
+      mirror_jammy = http://archive.ubuntu.com/ubuntu
+      ext4_options = noatime,nodiratime,errors=remount-ro
+      serial_device = hvc0
+      lvm = myvm
+      pygrub = 1
+      admins = root
+
+  - type: shell
+    name: upload-xen-config
+    desc: "Upload XEN tools configuration"
+    values:
+      - scp -o StrictHostKeyChecking=no /tmp/xen-tools.conf root@$SERVER_IP:/etc/xen-tools/xen-tools.conf;
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "echo 'extra = \"console=hvc0 xencons=hvc0\"' >> /etc/xen-tools/xm.tmpl"
+
+  - type: shell
+    name: install-configure-firewall
+    desc: "Install and configure modern firewall (ufw instead of shorewall)"
+    values:
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "DEBIAN_FRONTEND=noninteractive apt-get -qq -y install ufw";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "ufw --force enable";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "ufw allow ssh";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "ufw allow from 192.168.10.0/24";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "ufw deny in on xenbr0 to any port 22"
+
+  - type: conf
+    name: network-interfaces
+    desc: "Configure network interfaces with XEN bridge"
+    confdest: /tmp/interfaces
+    confperm: 0644
+    confdata: |
+      # The loopback network interface
+      auto lo
+      iface lo inet loopback
+
+      # Primary network interface
+      auto eth0
+      iface eth0 inet manual
+
+      # XEN Bridge
+      auto xenbr0
+      iface xenbr0 inet static
+        bridge_ports eth0
+        bridge_stp off
+        bridge_fd 0
+        bridge_maxwait 0
+        address 192.168.10.1
+        netmask 255.255.255.0
+
+  - type: shell
+    name: upload-network-config
+    desc: "Upload and apply network configuration"
+    values:
+      - scp -o StrictHostKeyChecking=no /tmp/interfaces root@$SERVER_IP:/etc/network/interfaces
+
+  - type: conf
+    name: xen-startup-script
+    desc: "Create modern XEN startup script"
+    confdest: /tmp/xen-startup.sh
+    confperm: 0755
+    confdata: |
+      #!/bin/bash
+      LOG=/var/log/xen-startup.log
+      
+      _echo(){
+        echo -e "$(date "+%Y-%m-%d %H:%M:%S"): $1" | tee -a $LOG
+      }
+      
+      _status(){
+        status_=$?
+        if [ "$status_" != "0" ]; then
+          _echo "$1 ... FAILED"
+          return 1
+        else
+          _echo "$1 ... OK"
+          return 0
+        fi
+      }
+      
+      _echo "=== XEN Startup Script ==="
+      
+      # Enable IP forwarding
+      echo 1 > /proc/sys/net/ipv4/ip_forward
+      _status "Enable IP forwarding"
+      
+      # Load dummy network module
+      modprobe dummy numdummies=1
+      _status "Load dummy network module"
+      
+      # Block IPv6 (if required)
+      ip6tables -A INPUT -j DROP 2>/dev/null
+      ip6tables -A OUTPUT -j DROP 2>/dev/null
+      _status "Block IPv6 traffic"
+      
+      # Start XEN domains
+      systemctl start xendomains
+      _status "Start XEN domains service"
+      
+      # Load connection tracking for FTP
+      modprobe nf_conntrack_ftp
+      _status "Load FTP connection tracking"
+      
+      _echo "=== XEN Startup Complete ==="
+
+  - type: conf
+    name: xen-startup-service
+    desc: "Create systemd service for XEN startup"
+    confdest: /tmp/xen-startup.service
+    confperm: 0644
+    confdata: |
+      [Unit]
+      Description=XEN Host Startup Configuration
+      After=network.target xen-init-dom0.service
+      Wants=xen-init-dom0.service
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/xen-startup.sh
+      RemainAfterExit=yes
+
+      [Install]
+      WantedBy=multi-user.target
+
+  - type: shell
+    name: install-startup-scripts
+    desc: "Install XEN startup scripts and services"
+    values:
+      - scp -o StrictHostKeyChecking=no /tmp/xen-startup.sh root@$SERVER_IP:/usr/local/bin/;
+      - scp -o StrictHostKeyChecking=no /tmp/xen-startup.service root@$SERVER_IP:/etc/systemd/system/;
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "systemctl daemon-reload";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "systemctl enable xen-startup.service"
+
+  - type: shell
+    name: configure-sysctl
+    desc: "Configure kernel parameters for XEN"
+    values:
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "echo 'net.bridge.bridge-nf-call-iptables=0' >> /etc/sysctl.conf";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "echo 'net.bridge.bridge-nf-call-ip6tables=0' >> /etc/sysctl.conf"
+
+  - type: shell
+    name: reboot-for-xen
+    desc: "Reboot server to boot into XEN hypervisor"
+    values:
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "reboot";
+      - sleep 180;
+      - timeout 300 bash -c 'until ping -c 1 $SERVER_IP; do sleep 10; done'
+
+  - type: shell
+    name: verify-xen-installation
+    desc: "Verify XEN hypervisor is working correctly"
+    values:
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "xl info";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "xl list";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "systemctl status xen-qemu-dom0-disk-backend";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "brctl show"
+
+  - type: shell
+    name: create-vm
+    desc: "Create XEN virtual machine"
+    values:
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "xen-create-image --hostname=$VM_HOSTNAME --dist=jammy --ip=$VM_IP --memory=2048M --size=80G"
+
+  - type: shell
+    name: start-vm
+    desc: "Start virtual machine using xl command"
+    values:
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "xl create /etc/xen/$VM_HOSTNAME.cfg"
+
+  - type: shell
+    name: enable-autoboot
+    desc: "Enable VM autoboot on server restart"
+    values:
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "mkdir -p /etc/xen/auto";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "ln -sf /etc/xen/$VM_HOSTNAME.cfg /etc/xen/auto/"
+
+  - type: shell
+    name: final-verification
+    desc: "Final system verification and status"
+    values:
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "xl list";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "ls -la /etc/xen/auto/";
+      - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "systemctl status xendomains";
+      - ping -c 5 $VM_IP
+

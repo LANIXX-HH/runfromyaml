@@ -1,0 +1,67 @@
+# Example: AI-Generated Workflow Configuration
+# This demonstrates how to configure runfromyaml for AI-powered workflow generation
+
+# Global options for AI integration
+options:
+  - key: "mcp"
+    value: true
+  - key: "ai-key"
+    value: "sk-your-openai-api-key-here"
+  - key: "ai-model"
+    value: "gpt-4"
+  - key: "debug"
+    value: true
+
+# Example workflow that could be AI-generated
+logging:
+  - level: info
+  - output: stdout
+
+env:
+  - key: PROJECT_NAME
+    value: "ai-generated-project"
+  - key: DOCKER_IMAGE
+    value: "node:18-alpine"
+
+cmd:
+  - type: shell
+    name: setup-project
+    desc: "Initialize a new Node.js project with AI assistance"
+    expandenv: true
+    values:
+      - mkdir -p $PROJECT_NAME
+      - cd $PROJECT_NAME
+      - npm init -y
+
+  - type: conf
+    name: dockerfile-creation
+    desc: "Create Dockerfile for the project"
+    confdest: ./$PROJECT_NAME/Dockerfile
+    confperm: 0644
+    confdata: |
+      FROM node:18-alpine
+      WORKDIR /app
+      COPY package*.json ./
+      RUN npm install
+      COPY . .
+      EXPOSE 3000
+      CMD ["npm", "start"]
+
+  - type: docker
+    name: build-image
+    desc: "Build Docker image for the project"
+    expandenv: true
+    command: run
+    container: docker:latest
+    values:
+      - cd $PROJECT_NAME
+      - docker build -t $PROJECT_NAME .
+
+  - type: shell
+    name: final-setup
+    desc: "Complete project setup"
+    expandenv: true
+    values:
+      - echo "✅ AI-generated project setup complete!"
+      - echo "Project: $PROJECT_NAME"
+      - ls -la $PROJECT_NAME

@@ -1,0 +1,171 @@
+logging:
+  - level: info
+  - output: stdout
+
+env:
+  - key: SERVER_NAME
+    value: myhost
+  - key: VM_HOSTNAME
+    value: myvm
+  - key: VM_IP
+    value: 192.168.10.100
+  - key: SERVER_IP
+    value: 123.234.22.111
+
+cmd:
+  - type: shell
+    name: rescue-mode-check
+    desc: "Verify server is in rescue mode and accessible"
+    values:
+      - ping -c 10 $SERVER_IP;
+      - ssh root@$SERVER_IP "uname -a"
+
+  - type: shell
+    name: hetzner-install
+    desc: "Install Debian via Hetzner installimage"
+    values:
+      - ssh root@$SERVER_IP "cd /root/.oldroot/nfs && installimage -r yes -l 1 -i images/Debian-78-wheezy-64-minimal.tar.gz -n $SERVER_NAME -p /boot:ext3:512M,lvm:$VM_HOSTNAME:all -v $VM_HOSTNAME:root:/:ext4:80G,$VM_HOSTNAME:swap:swap:swap:8G -a"
+
+  - type: shell
+    name: reboot-server
+    desc: "Reboot server after installation"
+    values:
+      - ssh root@$SERVER_IP "reboot";
+      - sleep 60;
+      - ping -c 5 $SERVER_IP
+
+  - type: conf
+    name: sources-list
+    desc: "Create Debian sources.list configuration"
+    confdest: /tmp/sources.list
+    confperm: 0644
+    confdata: |
+      deb http://ftp.de.debian.org/debian/ wheezy main non-free contrib
+      deb-src http://ftp.de.debian.org/debian/ wheezy main non-free contrib
+      deb http://security.debian.org/ wheezy/updates main contrib non-free
+      deb-src http://security.debian.org/ wheezy/updates main contrib non-free
+      deb http://ftp.de.debian.org/debian/ wheezy-updates main non-free contrib
+      deb-src http://ftp.de.debian.org/debian/ wheezy-updates main non-free contrib
+
+  - type: shell
+    name: upload-sources
+    desc: "Upload and install sources.list"
+    values:
+      - scp /tmp/sources.list root@$SERVER_IP:/etc/apt/sources.list;
+      - ssh root@$SERVER_IP "apt-get update && apt-get install -y subversion"
+
+  - type: shell
+    name: download-lanixx-scripts
+    desc: "Download LANIXX installation scripts"
+    values:
+      - ssh root@$SERVER_IP "cd /usr/local/bin && svn export http://svn.lanixx.com/lanixx/skr/xen-install-server_wheezy.sh";
+      - ssh root@$SERVER_IP "cd /usr/local/bin && svn export http://svn.lanixx.com/lanixx/skr/xen-install-server_after.sh"
+
+  - type: shell
+    name: run-xen-install
+    desc: "Execute XEN server installation scripts"
+    values:
+      - ssh root@$SERVER_IP "chmod +x /usr/local/bin/xen-install-server_wheezy.sh";
+      - ssh root@$SERVER_IP "/usr/local/bin/xen-install-server_wheezy.sh";
+      - ssh root@$SERVER_IP "chmod +x /usr/local/bin/xen-install-server_after.sh";
+      - ssh root@$SERVER_IP "/usr/local/bin/xen-install-server_after.sh"
+
+  - type: shell
+    name: disable-ipv6
+    desc: "Disable IPv6 and remove IPv6 address"
+    values:
+      - ssh root@$SERVER_IP "ip addr show"
+
+  - type: shell
+    name: configure-xen-network
+    desc: "Configure XEN network bridge settings"
+    values:
+      - ssh root@$SERVER_IP "sed -i 's/network-script.*network-bridge bridge=xenbr0 netdev=dummy0.*/network-script network-bridge bridge=xenbr0 netdev=eth1/' /etc/xen/xend-config.sxp"
+
+  - type: shell
+    name: reboot-after-config
+    desc: "Reboot server after configuration changes"
+    values:
+      - ssh root@$SERVER_IP "reboot";
+      - sleep 60;
+      - ping -c 5 $SERVER_IP
+
+  - type: shell
+    name: update-xen-tools
+    desc: "Download and install updated XEN tools and debootstrap"
+    values:
+      - ssh root@$SERVER_IP "cd /tmp && wget http://ftp.de.debian.org/debian/pool/main/d/debootstrap/debootstrap_1.0.67_all.deb";
+      - ssh root@$SERVER_IP "cd /tmp && wget http://ftp.de.debian.org/debian/pool/main/x/xen-tools/xen-tools_4.5-1_all.deb";
+      - ssh root@$SERVER_IP "dpkg -i /tmp/debootstrap_1.0.67_all.deb /tmp/xen-tools_4.5-1_all.deb"
+
+  - type: conf
+    name: xen-tools-config
+    desc: "Create XEN tools configuration"
+    confdest: /tmp/xen-tools.conf
+    confperm: 0644
+    confdata: |
+      install-method = debootstrap
+      size = 200G
+      memory = 2G
+      swap = 8G
+      fs = ext4
+      dist = `xt-guess-suite-and-mirror --suite`
+      image = full
+      gateway = 192.168.10.2
+      netmask = 255.255.255.0
+      nameserver = 213.133.98.98 213.133.99.99 213.133.100.100
+      bridge = xenbr0
+      genpass = 1
+      genpass_len = 24
+      hash_method = sha256
+      kernel = /boot/vmlinuz-`uname -r`
+      initrd = /boot/initrd.img-`uname -r`
+      mirror = `xt-guess-suite-and-mirror --mirror`
+      mirror_trusty = http://archive.ubuntu.com/ubuntu
+      ext4_options = noatime,nodiratime,errors=remount-ro
+      ext3_options = noatime,nodiratime,errors=remount-ro
+      ext2_options = noatime,nodiratime,errors=remount-ro
+      xfs_options = defaults
+      reiserfs_options = defaults
+      btrfs_options = defaults
+      serial_device = hvc0
+      lvm = $VM_HOSTNAME
+
+  - type: shell
+    name: upload-xen-config
+    desc: "Upload XEN tools configuration"
+    values:
+      - scp /tmp/xen-tools.conf root@$SERVER_IP:/etc/xen-tools/xen-tools.conf;
+
+  - type: shell
+    name: enable-ip-forward
+    desc: "Enable IP forwarding"
+    values:
+      - ssh root@$SERVER_IP "echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf";
+      - ssh root@$SERVER_IP "echo 1 > /proc/sys/net/ipv4/ip_forward"
+
+  - type: shell
+    name: create-vm
+    desc: "Create XEN virtual machine"
+    values:
+      - ssh root@$SERVER_IP "xen-create-image --hostname=$VM_HOSTNAME --dist=trusty --ip $VM_IP --mirror=http://archive.ubuntu.com/ubuntu"
+
+  - type: shell
+    name: start-vm
+    desc: "Start virtual machine"
+    values:
+      - ssh root@$SERVER_IP "xm create $VM_HOSTNAME.cfg"
+
+  - type: shell
+    name: enable-autoboot
+    desc: "Enable VM autoboot on server restart"
+    values:
+      - ssh root@$SERVER_IP "mkdir -p /etc/xen/auto";
+      - ssh root@$SERVER_IP "ln -s /etc/xen/$VM_HOSTNAME.cfg /etc/xen/auto/"
+
+  - type: shell
+    name: verify-setup
+    desc: "Verify XEN setup and VM status"
+    values:
+      - ssh root@$SERVER_IP "xm list";
+      - ssh root@$SERVER_IP "ls -la /etc/xen/auto/"

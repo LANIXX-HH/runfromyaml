@@ -1,0 +1,19 @@
+options:
+  - key: "mcp"
+    value: true
+  - key: "ai-key"
+    value: "sk-your-openai-api-key-here"
+  - key: "ai-model"
+    value: "gpt-4"
+  - key: "debug"
+    value: true
+  - key: "no-file"
+    value: true
+  - key: "mcp-name"
+    value: "runfromyaml-workflow-server"
+  - key: "mcp-version"
+    value: "1.0.0"
+
+logging:
+  - level: info
+  - output: stdout
