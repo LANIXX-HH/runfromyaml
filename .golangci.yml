@@ -5,7 +5,7 @@ run:
 
 output:
   formats:
-    colored-line-number: stdout
+    - format: colored-line-number
 
 linters-settings:
   govet:
