@@ -401,12 +401,6 @@ func (s *MCPServer) handleImproveWorkflow(args map[string]interface{}) (*ToolRes
 		}, fmt.Errorf("missing or invalid additional_requirements")
 	}
 
-	preserveCommands, _ := args["preserve_commands"].(bool)
-	if preserveCommands == false {
-		// Default to true if not specified
-		preserveCommands = true
-	}
-
 	// Use AI to improve the workflow
 	improvedWorkflow, err := s.aiWorkflowGen.ImproveWorkflow(existingYAML, additionalRequirements)
 	if err != nil {
