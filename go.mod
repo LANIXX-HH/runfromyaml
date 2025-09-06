@@ -1,8 +1,6 @@
 module github.com/lanixx/runfromyaml
 
-go 1.23.0
-
-toolchain go1.23.2
+go 1.25.1
 
 require (
 	github.com/abbot/go-http-auth v0.4.0
