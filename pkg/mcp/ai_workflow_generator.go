@@ -98,7 +98,7 @@ WORKFLOW STRUCTURE REQUIREMENTS:
 
 AVAILABLE BLOCK TYPES:
 - shell: Execute shell commands (use for most operations)
-- exec: Execute system commands directly  
+- exec: Execute system commands directly
 - docker: Run Docker containers (command: run/exec, container: image_name)
 - docker-compose: Docker Compose operations (dcoptions, command, cmdoptions, service)
 - ssh: Remote SSH commands (user, host, port, options)
@@ -129,7 +129,7 @@ cmd:
       - command_part_2;
       - next_command_part_1
       - next_command_part_2
-  
+
   # GENERATED: Verification step
   - type: shell
     name: verify-operation
@@ -150,7 +150,7 @@ CORRECT COMMAND EXAMPLES FROM runfromyaml:
 - Multiple commands in shell:
   values:
     - pwd;
-    - uname 
+    - uname
     - -a
 
 - Exec with command separation:
@@ -170,23 +170,23 @@ CORRECT COMMAND EXAMPLES FROM runfromyaml:
     - ls $HOME/.ssh/id_rsa-localhost || ssh-keygen -t rsa -b 4096 -N '' -f $HOME/.ssh/id_rsa-localhost
 
 ENHANCED COMMAND PRESERVATION EXAMPLES:
-1. Description: "brew install socat and check version" → 
+1. Description: "brew install socat and check version" →
    values:
      - brew install socat;
      - socat -version
 
-2. Description: "check ifconfig en0 and en1" → 
+2. Description: "check ifconfig en0 and en1" →
    values:
      - ifconfig en0;
      - ifconfig en1
 
-3. Description: "list directory and show system info" → 
+3. Description: "list directory and show system info" →
    values:
      - ls -la;
      - uname
      - -a
 
-4. Description: "git status and show current branch" → 
+4. Description: "git status and show current branch" →
    values:
      - git
      - status;
@@ -206,7 +206,7 @@ PLATFORM-SPECIFIC OPTIMIZATIONS:
 - Networking: Include proper port forwarding and firewall considerations
 - SSH: Include key management and connection verification
 
-IMPORTANT: 
+IMPORTANT:
 - Only return valid YAML, no explanations
 - Use realistic commands and configurations based on the exact description
 - Make it production-ready with proper error handling
@@ -351,9 +351,9 @@ func (g *AIWorkflowGenerator) validateAndEnhanceWorkflow(workflow map[string]int
 	// Add metadata section for better tracking
 	if _, exists := workflow["metadata"]; !exists {
 		workflow["metadata"] = map[string]interface{}{
-			"generated_by":    "runfromyaml-ai-generator",
+			"generated_by":       "runfromyaml-ai-generator",
 			"source_description": originalDescription,
-			"generation_notes": "Review sections marked with TODO for customization",
+			"generation_notes":   "Review sections marked with TODO for customization",
 		}
 	}
 
@@ -425,7 +425,7 @@ func (g *AIWorkflowGenerator) validateAndEnhanceWorkflow(workflow map[string]int
 				"name":      "generated-workflow",
 				"desc":      "GENERATED: AI-generated workflow based on: " + originalDescription,
 				"expandenv": true,
-				"values":    []string{
+				"values": []string{
 					"echo 'AI-generated workflow executed'",
 					"echo 'TODO: Add your specific commands here'",
 				},
@@ -443,7 +443,7 @@ func (g *AIWorkflowGenerator) needsCustomization(command string) bool {
 		"password", "secret", "token", "key", "/path/to/", "TODO",
 		"customize", "replace", "modify", "update", "configure",
 	}
-	
+
 	commandLower := strings.ToLower(command)
 	for _, indicator := range customizationIndicators {
 		if strings.Contains(commandLower, indicator) {

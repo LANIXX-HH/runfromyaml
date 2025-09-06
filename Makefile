@@ -43,7 +43,7 @@ deps:
 	go mod download
 
 # update to latest
-update: 
+update:
 	go get -u ./...
 
 # clean the project
@@ -67,4 +67,12 @@ vet:
 # run all quality checks
 quality: fmt vet lint test
 
-.PHONY: build test test-coverage test-race benchmark test-full test-config test-cli test-functions test-errors deps update clean lint fmt vet quality
+# setup pre-commit hooks
+setup-precommit:
+	./scripts/setup-precommit.sh
+
+# run pre-commit on all files
+precommit-all:
+	pre-commit run --all-files
+
+.PHONY: build test test-coverage test-race benchmark test-full test-config test-cli test-functions test-errors deps update clean lint fmt vet quality setup-precommit precommit-all
