@@ -7,8 +7,8 @@ import (
 
 func TestSSHExpandenvOptions(t *testing.T) {
 	// Set up test environment variable
-	os.Setenv("TEST_SSH_KEY", "/path/to/test/key")
-	defer os.Unsetenv("TEST_SSH_KEY")
+	_ = os.Setenv("TEST_SSH_KEY", "/path/to/test/key")
+	defer func() { _ = os.Unsetenv("TEST_SSH_KEY") }()
 
 	executor := &CommandExecutor{}
 
@@ -74,11 +74,11 @@ func TestSSHExpandenvOptions(t *testing.T) {
 
 func TestSSHExpandenvUserHost(t *testing.T) {
 	// Set up test environment variables
-	os.Setenv("TEST_USER", "expandeduser")
-	os.Setenv("TEST_HOST", "expandedhost")
+	_ = os.Setenv("TEST_USER", "expandeduser")
+	_ = os.Setenv("TEST_HOST", "expandedhost")
 	defer func() {
-		os.Unsetenv("TEST_USER")
-		os.Unsetenv("TEST_HOST")
+		_ = os.Unsetenv("TEST_USER")
+		_ = os.Unsetenv("TEST_HOST")
 	}()
 
 	executor := &CommandExecutor{}

@@ -146,7 +146,7 @@ func (s *MCPServer) startTCPServer() error {
 	if err != nil {
 		return fmt.Errorf("failed to start TCP server: %w", err)
 	}
-	defer listener.Close()
+	defer func() { _ = listener.Close() }()
 
 	s.listener = listener
 
@@ -169,7 +169,7 @@ func (s *MCPServer) startTCPServer() error {
 
 // handleConnection handles a TCP connection
 func (s *MCPServer) handleConnection(conn net.Conn) {
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	if s.config.Debug {
 		fmt.Printf("📞 New connection from %s\n", conn.RemoteAddr())

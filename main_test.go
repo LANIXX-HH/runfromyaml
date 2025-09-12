@@ -65,7 +65,7 @@ func TestFileExists(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	existingFile := filepath.Join(tempDir, "existing.yaml")
 	if err := os.WriteFile(existingFile, []byte("test: content"), 0644); err != nil {
@@ -156,7 +156,7 @@ func TestMainWorkflow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	yamlContent := `
 logging:

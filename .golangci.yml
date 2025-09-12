@@ -1,3 +1,4 @@
+version: 2
 run:
   timeout: 5m
   tests: true
@@ -5,7 +6,8 @@ run:
 
 output:
   formats:
-    - format: colored-line-number
+     text:
+       colors: true
 
 linters-settings:
   govet:
@@ -21,8 +23,6 @@ linters-settings:
     locale: US
   lll:
     line-length: 160
-  goimports:
-    local-prefixes: github.com/lanixx/runfromyaml
   gocritic:
     enabled-tags:
       - diagnostic
@@ -50,16 +50,19 @@ linters-settings:
       - G115
       - G302
 
+formatters:
+  enable:
+   - gofmt
+   - goimports
+  gofmt:
+  goimports:
+    local-prefixes: github.com/lanixx/runfromyaml
 linters:
   enable:
     - errcheck
-    - gofmt
-    - goimports
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
-    - typecheck
     - unused
   disable:
     # Disable overly strict linters for now
@@ -71,7 +74,6 @@ linters:
     - gosec
     - exhaustive
     - lll
-    - stylecheck
     - unparam
     - whitespace
 

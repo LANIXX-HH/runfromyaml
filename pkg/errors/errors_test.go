@@ -62,8 +62,8 @@ func TestRunFromYAMLError_Error(t *testing.T) {
 
 func TestRunFromYAMLError_WithContext(t *testing.T) {
 	err := New(ErrorTypeConfig, "test error")
-	err.WithContext("key1", "value1")
-	err.WithContext("key2", 42)
+	_ = err.WithContext("key1", "value1")
+	_ = err.WithContext("key2", 42)
 
 	if len(err.Context) != 2 {
 		t.Errorf("Expected 2 context entries, got %d", len(err.Context))
@@ -80,8 +80,8 @@ func TestRunFromYAMLError_WithContext(t *testing.T) {
 
 func TestRunFromYAMLError_WithSuggestion(t *testing.T) {
 	err := New(ErrorTypeConfig, "test error")
-	err.WithSuggestion("suggestion 1")
-	err.WithSuggestion("suggestion 2")
+	_ = err.WithSuggestion("suggestion 1")
+	_ = err.WithSuggestion("suggestion 2")
 
 	if len(err.Suggestions) != 2 {
 		t.Errorf("Expected 2 suggestions, got %d", len(err.Suggestions))
